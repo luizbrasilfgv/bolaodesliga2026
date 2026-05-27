@@ -1885,7 +1885,7 @@ select.input {
 /* ───────────── OPERATOR ───────────── */
 .op-match-row {
   display: grid;
-  grid-template-columns: 1fr auto auto;
+  grid-template-columns: 1fr auto;
   gap: 14px;
   align-items: center;
   padding: 12px 16px;
@@ -1894,39 +1894,94 @@ select.input {
 }
 .op-match-row:last-child { border-bottom: 0; }
 .op-match-row:hover { background: var(--surface-2); }
+.op-match-info { min-width: 0; }
 .op-match-teams {
   display: flex;
   align-items: center;
   gap: 10px;
   font-size: 13px;
   font-weight: 600;
+  margin-top: 5px;
 }
-.op-match-teams .flag-big { font-size: 22px; }
-.op-match-vs { color: var(--muted-2); font-weight: 800; }
+.op-team { display:flex;align-items:center;gap:5px; }
+.op-team.away { flex-direction:row-reverse; }
+.op-vs { color: var(--muted-2); font-weight: 800; min-width:40px; text-align:center; }
 .op-match-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
   font-size: 10px;
   color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  margin-top: 2px;
   font-weight: 700;
 }
-.op-score-input {
+.phase-tag { background:rgba(46,123,255,.12);color:var(--blue);padding:1px 6px;border-radius:4px;font-size:10px; }
+.group-tag { background:rgba(139,92,246,.12);color:var(--purple);padding:1px 6px;border-radius:4px;font-size:10px; }
+.date-tag  { color:var(--muted-2); }
+.venue-tag { color:var(--muted-2);font-weight:400;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px; }
+.op-match-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  flex-shrink: 0;
+}
+.op-score-wrap {
   display: flex;
   align-items: center;
   gap: 6px;
 }
-.op-score-input input {
-  width: 48px; height: 38px;
+.op-score-input {
+  width: 44px; height: 36px;
   background: var(--surface-2);
   border: 2px solid var(--border);
   border-radius: 7px;
   text-align: center;
   font-family: var(--font-numeric);
-  font-size: 18px;
+  font-size: 17px;
   font-weight: 700;
+  color: var(--text);
+  outline: none;
 }
-.op-score-input input:focus { border-color: var(--green-2); }
+.op-score-input:focus { border-color: var(--green-2); }
+.op-score-sep { color:var(--muted-2);font-weight:800;font-size:14px; }
+.op-status-sel {
+  background: var(--surface-2);
+  border: 1px solid var(--border-2);
+  border-radius: 7px;
+  padding: 5px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+  outline: none;
+  max-width: 130px;
+}
+.op-filter-sel {
+  background: var(--surface-2);
+  border: 1px solid var(--border-2);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+  outline: none;
+  appearance: none;
+  padding-right: 24px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%236b7a95' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+}
+.op-filter-sel:focus { border-color: var(--gold); }
+.op-filter-sel.active { background-color:rgba(255,182,39,.1);border-color:rgba(255,182,39,.4);color:var(--gold-2); }
+.op-list { display:grid;gap:0; }
+@media(max-width:768px){
+  .op-match-row { grid-template-columns:1fr; gap:10px; }
+  .op-match-actions { justify-content:flex-start; }
+}
+
 
 /* ───────────── TWEAKS PANEL ───────────── */
 .tweaks-panel {
@@ -2081,6 +2136,25 @@ select.input {
     <button class="nav-btn admin-only" data-view="admin" onclick="goView('admin',this)" style="display:none"><span class="nav-ic">⚙️</span> Admin</button>
     <button class="nav-btn" onclick="toggleTweaks()" style="margin-left:auto"><span class="nav-ic">🎨</span> Personalizar</button>
   </nav>
+
+  <!-- FILTRO GLOBAL — afeta Início e Jogos -->
+  <div id="globalFilterBar" style="background:var(--surface);border-bottom:1px solid var(--border);padding:7px 20px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;position:sticky;top:58px;z-index:40;">
+    <span style="font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);font-weight:800;flex-shrink:0">Filtrar:</span>
+    <select id="gfGroupSel" onchange="applyGlobalFilter('group',this.value)" style="background:var(--surface-2);border:1px solid var(--border-2);border-radius:8px;padding:5px 24px 5px 10px;font-size:12px;font-weight:600;color:var(--text);cursor:pointer;appearance:none;background-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2210%22 height=%226%22%3E%3Cpath d=%22M1 1l4 4 4-4%22 stroke=%22%236b7a95%22 stroke-width=%221.5%22 fill=%22none%22 stroke-linecap=%22round%22/%3E%3C/svg%3E');background-repeat:no-repeat;background-position:right 8px center;outline:none;" id="gfGroupSel">
+      <option value="all">Todos os grupos</option>
+      <option value="A">Grupo A</option><option value="B">Grupo B</option>
+      <option value="C">Grupo C</option><option value="D">Grupo D</option>
+      <option value="E">Grupo E</option><option value="F">Grupo F</option>
+      <option value="G">Grupo G</option><option value="H">Grupo H</option>
+      <option value="I">Grupo I</option><option value="J">Grupo J</option>
+      <option value="K">Grupo K</option><option value="L">Grupo L</option>
+    </select>
+    <select id="gfTeamSel" onchange="applyGlobalFilter('team',this.value)" style="background:var(--surface-2);border:1px solid var(--border-2);border-radius:8px;padding:5px 24px 5px 10px;font-size:12px;font-weight:600;color:var(--text);cursor:pointer;appearance:none;background-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2210%22 height=%226%22%3E%3Cpath d=%22M1 1l4 4 4-4%22 stroke=%22%236b7a95%22 stroke-width=%221.5%22 fill=%22none%22 stroke-linecap=%22round%22/%3E%3C/svg%3E');background-repeat:no-repeat;background-position:right 8px center;outline:none;">
+      <option value="all">Todos os times</option>
+    </select>
+    <button id="gfClear" onclick="clearGlobalFilter()" style="display:none;font-size:11px;color:var(--muted);padding:4px 9px;border:1px solid var(--border-2);border-radius:6px;background:none;cursor:pointer;font-weight:700">✕ Limpar</button>
+    <span id="gfStatus" style="font-size:11px;color:var(--gold-2);font-weight:800"></span>
+  </div>
 
   <main>
     <div class="view active" id="view-home"></div>
@@ -2251,7 +2325,11 @@ const COPA2026_MATCHES = (function(){
   const m = [];
   const mk = (id, phase, group, home, away, datetime, venue, knockoutLabel) => {
     const dt = new Date(datetime);
-    const deadline = new Date(dt.getTime() - 60*60*1000); // 1h antes
+    // D-1: prazo às 23:59 do dia anterior à partida
+    const prev = new Date(dt);
+    prev.setDate(prev.getDate() - 1);
+    prev.setHours(23, 59, 0, 0);
+    const deadline = prev;
     m.push({
       id, phase, group: group||'',
       home, away,
@@ -2457,6 +2535,7 @@ let state = {
 };
 
 let currentUser   = null;
+let globalFilter = { type:'all', value:'all' };
 let confirmCb     = null;
 let currentMatchTab = 'upcoming';   // 'upcoming' | 'live' | 'finished' | 'all'
 let currentPhaseFilter = 'all';
@@ -2711,6 +2790,7 @@ function showApp(){
   badge.className   = 'h-badge ' + (roleClass[currentUser.role] || 'player');
   document.querySelectorAll('.admin-only').forEach(el => el.style.display = isAdmin() ? '' : 'none');
   document.querySelectorAll('.operator-only').forEach(el => el.style.display = isOperator() ? '' : 'none');
+  buildGlobalTeamSelect(null);
   goView('home', document.querySelector('[data-view="home"]'));
 }
 
@@ -2812,6 +2892,72 @@ function renderTweaks(){
       </div>
     </div>
   `;
+}
+
+// ═══════════════════════════════════════════
+// GLOBAL FILTER (barra persistente — Início + Jogos)
+// ═══════════════════════════════════════════
+function buildGlobalTeamSelect(groupKey){
+  const sel = document.getElementById('gfTeamSel');
+  if(!sel) return;
+  const teams = groupKey && groupKey !== 'all'
+    ? (COPA_GROUPS[groupKey]||[])
+    : Object.values(COPA_GROUPS).flat();
+  const sorted = [...new Set(teams)].sort((a,b)=>teamName(a).localeCompare(teamName(b)));
+  sel.innerHTML = `<option value="all">${groupKey&&groupKey!=='all'?'Todos do Gr.'+groupKey:'Todos os times'}</option>` +
+    sorted.map(t=>`<option value="${t}">${teamName(t)}</option>`).join('');
+  if(globalFilter.type==='team') sel.value = globalFilter.value;
+}
+
+function applyGlobalFilter(type, value){
+  if(value === 'all'){ clearGlobalFilter(); return; }
+  globalFilter = { type, value };
+  const gfGroup = document.getElementById('gfGroupSel');
+  const gfTeam  = document.getElementById('gfTeamSel');
+  if(type==='group'){
+    buildGlobalTeamSelect(value);
+    if(gfTeam) gfTeam.value = 'all';
+    if(gfGroup) gfGroup.style.borderColor = 'var(--gold)';
+  }
+  if(type==='team'){
+    if(gfGroup) gfGroup.style.borderColor = '';
+    if(gfTeam)  gfTeam.style.borderColor  = 'var(--gold)';
+  }
+  const label = type==='group' ? `Grupo ${value}` : teamName(value);
+  const status = document.getElementById('gfStatus');
+  if(status) status.textContent = '— ' + label;
+  const clear = document.getElementById('gfClear');
+  if(clear) clear.style.display = '';
+  refreshGlobalFilterViews();
+}
+
+function clearGlobalFilter(){
+  globalFilter = { type:'all', value:'all' };
+  const gfGroup = document.getElementById('gfGroupSel');
+  const gfTeam  = document.getElementById('gfTeamSel');
+  if(gfGroup){ gfGroup.value='all'; gfGroup.style.borderColor=''; }
+  if(gfTeam) { buildGlobalTeamSelect(null); gfTeam.value='all'; gfTeam.style.borderColor=''; }
+  const status = document.getElementById('gfStatus');
+  if(status) status.textContent = '';
+  const clear = document.getElementById('gfClear');
+  if(clear) clear.style.display = 'none';
+  refreshGlobalFilterViews();
+}
+
+function refreshGlobalFilterViews(){
+  const activeView = document.querySelector('.view.active')?.id;
+  if(activeView === 'view-home')    renderHome();
+  if(activeView === 'view-matches') renderMatches();
+}
+
+function applyGlobalFilterToMatches(matches){
+  if(globalFilter.type === 'all') return matches;
+  if(globalFilter.type === 'group') return matches.filter(m => m.group === globalFilter.value);
+  if(globalFilter.type === 'team'){
+    const t = globalFilter.value;
+    return matches.filter(m => m.home === t || m.away === t);
+  }
+  return matches;
 }
 
 // ═══════════════════════════════════════════
@@ -3535,87 +3681,314 @@ function renderRules(){
 // ───────────────────────────────────────────
 // OPERATOR — lançamento rápido de resultados
 // ───────────────────────────────────────────
+// ═══════════════════════════════════════════
+// OPERATOR — filtros avançados + TheSportsDB
+// ═══════════════════════════════════════════
+
+// TheSportsDB — plano free, resultados do dia anterior
+const TSDB_LEAGUE_ID = '4429'; // FIFA World Cup
+const TSDB_KEY = '3';          // chave pública free
+
+let opFilters = { phase:'all', group:'all', team:'all', day:'all', status:'pending' };
+
 function renderOperator(){
   const view = document.getElementById('view-operator');
-  const pending = state.matches.filter(m => m.status === 'scheduled' || m.status === 'open' || m.status === 'live' || m.status === 'closed');
+  if(!view) return;
 
-  // group by day
-  const now = new Date();
-  const today = pending.filter(m => {
-    if(!m.datetime) return false;
-    const d = new Date(m.datetime);
-    return d.toDateString() === now.toDateString();
+  const phases = ['all', ...new Set(state.matches.map(m=>m.phase).filter(Boolean))];
+  const days   = [...new Set(state.matches.map(m=>m.datetime?m.datetime.slice(0,10):null).filter(Boolean))].sort();
+
+  // apply filters
+  let filtered = state.matches.filter(m => {
+    if(opFilters.phase  !== 'all' && m.phase   !== opFilters.phase)   return false;
+    if(opFilters.group  !== 'all' && m.group   !== opFilters.group)   return false;
+    if(opFilters.day    !== 'all' && (!m.datetime || !m.datetime.startsWith(opFilters.day))) return false;
+    if(opFilters.team   !== 'all' && m.home    !== opFilters.team && m.away !== opFilters.team) return false;
+    if(opFilters.status === 'pending'  && m.status === 'finished') return false;
+    if(opFilters.status === 'finished' && m.status !== 'finished') return false;
+    return true;
   });
-  const others = pending.filter(m => !today.includes(m));
 
-  const renderRow = m => `
-    <div class="op-match-row">
-      <div>
-        <div class="op-match-teams">
-          <span class="flag-big">${flag(m.home)}</span>
-          <span>${teamName(m.home)}</span>
-          <span class="op-match-vs">×</span>
-          <span>${teamName(m.away)}</span>
-          <span class="flag-big">${flag(m.away)}</span>
-        </div>
-        <div class="op-match-meta">${PHASE_SHORT[m.phase]||m.phase} ${m.group?'· Grupo '+m.group:''} · ${m.datetime?fmtDate(m.datetime):'sem data'}</div>
-      </div>
-      <div class="op-score-input">
-        <input type="number" min="0" max="30" id="op-h-${m.id}" value="${m.result?.home??''}" placeholder="?">
-        <span style="color:var(--muted-2);font-weight:800">–</span>
-        <input type="number" min="0" max="30" id="op-a-${m.id}" value="${m.result?.away??''}" placeholder="?">
-      </div>
-      <button class="btn btn-green btn-sm" onclick="saveResult('${m.id}')">Salvar</button>
-    </div>
-  `;
+  const statusOpts = {
+    scheduled:'Agendado', open:'Aberto', closed:'Encerrado', live:'🔴 Ao vivo', finished:'Finalizado'
+  };
+
+  const teamList = opFilters.group !== 'all'
+    ? (COPA_GROUPS[opFilters.group]||[])
+    : Object.values(COPA_GROUPS).flat();
+
+  const rows = filtered.length === 0
+    ? `<div class="empty"><div class="icon">🔍</div><div class="title">Nenhum jogo</div><p>Tente limpar os filtros.</p></div>`
+    : filtered.map(m => {
+        const hasResult = m.result?.home !== null && m.result?.home !== undefined;
+        const isKO = m.phase !== 'Fase de Grupos';
+        const homeIsPlaceholder = isKO && (!m.home || /^[12][A-L]|^Venc\.|^Perd\.|^3/.test(m.home));
+        const awayIsPlaceholder = isKO && (!m.away || /^[12][A-L]|^Venc\.|^Perd\.|^3/.test(m.away));
+        return `
+        <div class="op-match-row" id="opr-${m.id}">
+          <div class="op-match-info">
+            <div class="op-match-meta">
+              <span class="phase-tag">${PHASE_SHORT[m.phase]||m.phase}</span>
+              ${m.group?`<span class="group-tag">Gr. ${m.group}</span>`:''}
+              <span class="status-dot status-${m.status}">${statusOpts[m.status]||m.status}</span>
+              <span class="date-tag">${m.datetime?fmtDate(m.datetime,'short'):'--'}</span>
+              ${m.venue?`<span class="venue-tag">📍${m.venue}</span>`:''}
+            </div>
+            <div class="op-match-teams">
+              <span class="op-team">${flag(m.home,'sm')} <strong>${teamName(m.home)}</strong></span>
+              <span class="op-vs">${hasResult?`<strong style="color:var(--gold);font-size:18px">${m.result.home}–${m.result.away}</strong>`:'vs'}</span>
+              <span class="op-team away">${flag(m.away,'sm')} <strong>${teamName(m.away)}</strong></span>
+            </div>
+          </div>
+          <div class="op-match-actions">
+            ${isKO&&(homeIsPlaceholder||awayIsPlaceholder)?`
+              <button class="btn btn-ghost btn-sm" onclick="opEditTeams('${m.id}')" title="Definir times classificados">⚽ Times</button>`:''}
+            <div class="op-score-wrap">
+              <input class="op-score-input" type="number" min="0" max="30" id="op-h-${m.id}"
+                value="${hasResult?m.result.home:''}" placeholder="?">
+              <span class="op-score-sep">–</span>
+              <input class="op-score-input" type="number" min="0" max="30" id="op-a-${m.id}"
+                value="${hasResult?m.result.away:''}" placeholder="?">
+            </div>
+            <select class="op-status-sel" id="op-s-${m.id}">
+              ${Object.entries(statusOpts).map(([v,l])=>`<option value="${v}" ${m.status===v?'selected':''}>${l}</option>`).join('')}
+            </select>
+            <button class="btn btn-green btn-sm" onclick="opSaveResult('${m.id}')">✓ Salvar</button>
+          </div>
+        </div>`;
+      }).join('');
+
+  const anyFilterActive = Object.entries(opFilters).some(([k,v]) => v !== 'all' && !(k==='status' && v==='pending'));
 
   view.innerHTML = `
-    <div class="section-title">🎯 Lançar resultados</div>
-    <div class="section-sub">Pontuação é calculada automaticamente ao salvar</div>
+    <div class="section-title">🎯 Lançar Resultados</div>
+    <div class="section-sub">Pontuação recalculada automaticamente ao salvar · ${state.matches.filter(m=>m.status==='finished').length} de ${state.matches.length} jogos finalizados</div>
 
-    ${today.length ? `
-      <div class="panel" style="margin-bottom:14px">
-        <div class="panel-head">
-          <div><h2>🔴 Jogos de hoje</h2><p>${today.length} jogo${today.length>1?'s':''}</p></div>
+    <div class="panel" style="margin-bottom:14px">
+      <div class="panel-head" style="flex-wrap:wrap;gap:10px">
+        <div><h2>Filtros</h2></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;flex:1">
+
+          <select class="op-filter-sel ${opFilters.phase!=='all'?'active':''}" onchange="setOpFilter('phase',this.value)">
+            <option value="all">Todas as fases</option>
+            ${phases.filter(p=>p!=='all').map(p=>`<option value="${p}" ${opFilters.phase===p?'selected':''}>${PHASE_SHORT[p]||p}</option>`).join('')}
+          </select>
+
+          <select class="op-filter-sel ${opFilters.group!=='all'?'active':''}" id="opGrpSel" onchange="setOpFilter('group',this.value)">
+            <option value="all">Todos grupos</option>
+            ${Object.keys(COPA_GROUPS).map(g=>`<option value="${g}" ${opFilters.group===g?'selected':''}>Grupo ${g}</option>`).join('')}
+          </select>
+
+          <select class="op-filter-sel ${opFilters.team!=='all'?'active':''}" id="opTeamSel" onchange="setOpFilter('team',this.value)">
+            <option value="all">Todos os times</option>
+            ${teamList.sort((a,b)=>teamName(a).localeCompare(teamName(b)))
+              .map(t=>`<option value="${t}" ${opFilters.team===t?'selected':''}>${teamName(t)}</option>`).join('')}
+          </select>
+
+          <select class="op-filter-sel ${opFilters.day!=='all'?'active':''}" onchange="setOpFilter('day',this.value)">
+            <option value="all">Todos os dias</option>
+            ${days.map(d=>{
+              const label = new Date(d+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',weekday:'short'});
+              return `<option value="${d}" ${opFilters.day===d?'selected':''}>${label}</option>`;
+            }).join('')}
+          </select>
+
+          <select class="op-filter-sel ${opFilters.status!=='all'?'active':''}" onchange="setOpFilter('status',this.value)">
+            <option value="all">Todos status</option>
+            <option value="pending"  ${opFilters.status==='pending' ?'selected':''}>Pendentes</option>
+            <option value="finished" ${opFilters.status==='finished'?'selected':''}>Finalizados</option>
+          </select>
+
+          ${anyFilterActive?`<button class="btn btn-ghost btn-sm" onclick="clearOpFilters()">✕ Limpar</button>`:''}
         </div>
-        <div>${today.map(renderRow).join('')}</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-ghost btn-sm" onclick="opSyncTSDB()" title="Busca resultados de ontem no TheSportsDB (gratuito)">🔄 Buscar resultados (ontem)</button>
+          <button class="btn btn-primary btn-sm" onclick="opRecalcAll()">📊 Recalcular pontos</button>
+        </div>
       </div>
-    ` : ''}
+    </div>
 
     <div class="panel">
       <div class="panel-head">
-        <div><h2>Pendentes de resultado</h2><p>${others.length} jogo${others.length!==1?'s':''}</p></div>
+        <div><h2>${filtered.length} jogo(s)</h2></div>
       </div>
-      ${others.length
-        ? `<div>${others.map(renderRow).join('')}</div>`
-        : `<div class="empty"><div class="icon">✅</div><div class="title">Tudo em dia!</div><p>Nenhum jogo pendente de resultado.</p></div>`
-      }
+      <div class="op-list">${rows}</div>
     </div>
   `;
 }
 
-async function saveResult(matchId){
-  const m = state.matches.find(x => x.id === matchId);
-  if(!m){ toast('Jogo não encontrado','err'); return; }
-  const h = parseInt(document.getElementById('op-h-'+matchId).value);
-  const a = parseInt(document.getElementById('op-a-'+matchId).value);
-  if(isNaN(h) || isNaN(a) || h < 0 || a < 0){ toast('Informe um placar válido','err'); return; }
-
-  m.result = { home: h, away: a };
-  m.status = 'finished';
-
-  // recalc pred points for this match
-  state.predictions.forEach(p => {
-    if(p.matchId === matchId){
-      const pts = calcPoints(p, m);
-      if(pts !== null){ p.points = pts; p.status = 'pontuado'; }
-    }
-  });
-
-  await saveState();
-  toast(`Resultado salvo: ${teamName(m.home)} ${h}–${a} ${teamName(m.away)}`,'ok');
+function setOpFilter(key, value){
+  opFilters[key] = value;
+  if(key === 'group') opFilters.team = 'all'; // reset team when group changes
   renderOperator();
 }
+
+function clearOpFilters(){
+  opFilters = { phase:'all', group:'all', team:'all', day:'all', status:'pending' };
+  renderOperator();
+}
+
+async function opSaveResult(matchId){
+  if(!isOperator()){ toast('Sem permissão','err'); return; }
+  const m  = state.matches.find(x => x.id === matchId);
+  if(!m){ toast('Jogo não encontrado','err'); return; }
+
+  const hVal = document.getElementById('op-h-'+matchId)?.value;
+  const aVal = document.getElementById('op-a-'+matchId)?.value;
+  const st   = document.getElementById('op-s-'+matchId)?.value;
+
+  if(st) m.status = st;
+
+  if(hVal !== '' && aVal !== '' && hVal !== undefined && aVal !== undefined){
+    const h = parseInt(hVal), a = parseInt(aVal);
+    if(!isNaN(h) && !isNaN(a) && h >= 0 && a >= 0){
+      m.result = { home: h, away: a };
+      if(m.status === 'finished'){
+        state.predictions.forEach(p => {
+          if(p.matchId !== matchId) return;
+          const pts = calcPoints(p, m);
+          if(pts !== null){ p.points = pts; p.status = 'pontuado'; }
+        });
+      }
+    }
+  }
+
+  await saveState();
+  toast(`${teamName(m.home)} ${m.result?.home??'?'}–${m.result?.away??'?'} ${teamName(m.away)} · salvo!`, 'ok');
+  renderOperator();
+}
+
+async function opRecalcAll(){
+  if(!isOperator()){ toast('Sem permissão','err'); return; }
+  let changed = 0;
+  state.predictions.forEach(pred => {
+    const match = state.matches.find(m => m.id === pred.matchId);
+    if(!match) return;
+    const pts = calcPoints(pred, match);
+    if(pts !== null){ pred.points = pts; pred.status = 'pontuado'; changed++; }
+  });
+  await saveState();
+  toast(`${changed} palpite(s) recalculado(s)!`, 'ok');
+  renderOperator();
+}
+
+function opEditTeams(matchId){
+  const m = state.matches.find(x => x.id === matchId);
+  if(!m) return;
+  const allTeams = Object.values(COPA_GROUPS).flat().sort((a,b)=>teamName(a).localeCompare(teamName(b)));
+  document.getElementById('modalTitle').textContent = `Times — ${m.knockoutLabel||m.phase}`;
+  document.getElementById('modalBody').innerHTML = `
+    <div style="background:rgba(255,182,39,.08);border:1px solid rgba(255,182,39,.2);border-radius:10px;padding:10px 14px;margin-bottom:16px;font-size:12px;color:var(--muted)">
+      Preencha com os times classificados. Clique nos atalhos ou digite o nome em inglês.
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+      <div>
+        <label class="label">Mandante</label>
+        <input class="input" id="otHome" value="${m.home}" placeholder="Ex: Brazil">
+        <div style="font-size:10px;color:var(--muted);margin-top:3px">Atual: ${teamName(m.home)}</div>
+      </div>
+      <div>
+        <label class="label">Visitante</label>
+        <input class="input" id="otAway" value="${m.away}" placeholder="Ex: France">
+        <div style="font-size:10px;color:var(--muted);margin-top:3px">Atual: ${teamName(m.away)}</div>
+      </div>
+    </div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:6px;font-weight:700">ATALHOS — clique para preencher mandante:</div>
+    <div style="display:flex;flex-wrap:wrap;gap:4px;max-height:180px;overflow-y:auto;padding:4px">
+      ${allTeams.map(t=>`<button class="btn btn-ghost btn-xs" onclick="document.getElementById('otHome').value='${t}';document.getElementById('otHome').focus()">${flag(t,'sm')} ${teamName(t)}</button>`).join('')}
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="opSaveTeams('${matchId}')">Salvar times</button>
+    </div>`;
+  openModal();
+}
+
+async function opSaveTeams(matchId){
+  const m    = state.matches.find(x => x.id === matchId);
+  const home = document.getElementById('otHome').value.trim();
+  const away = document.getElementById('otAway').value.trim();
+  if(!home||!away){ toast('Informe os dois times','err'); return; }
+  m.home = home; m.away = away;
+  await saveState();
+  closeModal();
+  toast('Times atualizados!','ok');
+  renderOperator();
+}
+
+// ── TheSportsDB sync ──
+// Plano free: sem livescore, mas retorna resultados de partidas finalizadas
+// Liga Copa 2026: id 4429
+async function opSyncTSDB(){
+  if(!isOperator()){ toast('Sem permissão','err'); return; }
+  toast('Buscando resultados no TheSportsDB...','ok');
+
+  // busca por liga + temporada 2026
+  // endpoint: /api/v1/json/{key}/eventsseason.php?id=4429&s=2026-2027
+  const url = `https://www.thesportsdb.com/api/v1/json/${TSDB_KEY}/eventsseason.php?id=${TSDB_LEAGUE_ID}&s=2026-2027`;
+
+  try {
+    const res = await fetch(url);
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    const events = data.events || data.results || [];
+
+    if(!events.length){
+      toast('TheSportsDB: nenhum evento encontrado. Tente mais tarde.','err');
+      return;
+    }
+
+    let updRes = 0;
+
+    events.forEach(ev => {
+      // só processa jogos com resultado
+      const h = parseInt(ev.intHomeScore), a = parseInt(ev.intAwayScore);
+      if(isNaN(h) || isNaN(a)) return;
+
+      const apiHome = ev.strHomeTeam || '';
+      const apiAway = ev.strAwayTeam || '';
+
+      // tenta casar com jogo no estado — por nomes normalizados
+      const norm = s => (s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+      const match = state.matches.find(x => {
+        const mh = norm(x.home), ma = norm(x.away);
+        const ah = norm(apiHome), aa = norm(apiAway);
+        return (mh===ah && ma===aa) || (mh===aa && ma===ah);
+      });
+
+      if(!match) return;
+      if(match.status === 'finished' && match.result?.home !== null) return; // já tem resultado
+
+      const swapped = norm(match.home) !== norm(apiHome);
+      match.result  = { home: swapped ? a : h, away: swapped ? h : a };
+      match.status  = 'finished';
+
+      // recalc pontos
+      state.predictions.forEach(p => {
+        if(p.matchId !== match.id) return;
+        const pts = calcPoints(p, match);
+        if(pts !== null){ p.points = pts; p.status = 'pontuado'; }
+      });
+
+      updRes++;
+    });
+
+    if(updRes === 0){
+      toast('TheSportsDB: sem novos resultados para atualizar.','ok');
+    } else {
+      await saveState();
+      toast(`${updRes} resultado(s) atualizado(s) via TheSportsDB!`,'ok');
+    }
+
+    renderOperator();
+
+  } catch(e) {
+    console.error('TheSportsDB sync:', e);
+    toast('Erro ao buscar TheSportsDB: ' + e.message,'err');
+  }
+}
+
+
 
 </script>
 

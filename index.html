@@ -61,6 +61,7 @@ header{background:var(--surface);border-bottom:1px solid var(--border);padding:0
 .h-badge{padding:3px 9px;border-radius:999px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;}
 .h-badge.admin{background:rgba(245,200,66,.15);color:var(--gold);border:1px solid rgba(245,200,66,.3);}
 .h-badge.player{background:rgba(59,130,246,.15);color:var(--blue);border:1px solid rgba(59,130,246,.3);}
+.h-badge.operator{background:rgba(8,145,178,.15);color:var(--cyan);border:1px solid rgba(8,145,178,.3);}
 .btn-logout{font-size:12px;color:var(--muted);padding:5px 10px;border:1px solid var(--border2);border-radius:7px;transition:color .2s;}
 .btn-logout:hover{color:var(--red);}
 
@@ -238,6 +239,23 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
   .rank-item{grid-template-columns:34px 1fr auto;}
 }
 
+  /* === OPERATOR VIEW === */
+  .op-match-list{display:grid;gap:0;}
+  .op-match-row{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;padding:10px 16px;border-bottom:1px solid var(--border);transition:background .15s;}
+  .op-match-row:last-child{border-bottom:0;}
+  .op-match-row:hover{background:rgba(37,99,235,.03);}
+  .op-match-info{min-width:0;}
+  .op-match-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:5px;}
+  .op-match-teams{display:flex;align-items:center;gap:10px;}
+  .op-team{font-size:13px;display:flex;align-items:center;gap:5px;min-width:0;}
+  .op-team.away{flex-direction:row-reverse;}
+  .op-score{font-size:14px;font-weight:800;color:var(--muted2);min-width:50px;text-align:center;flex-shrink:0;}
+  .op-match-actions{display:flex;align-items:center;gap:8px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end;}
+  @media(max-width:768px){
+    .op-match-row{grid-template-columns:1fr;gap:8px;}
+    .op-match-actions{justify-content:flex-start;}
+  }
+
   /* === GLOBAL FILTER === */
   .global-filter-bar{background:var(--surface);border-bottom:1px solid var(--border);padding:8px 24px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
   .gf-label{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);font-weight:700;white-space:nowrap;}
@@ -296,6 +314,7 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
     <button class="nav-btn" data-view="matches" onclick="goView('matches',this)">⚽ Jogos</button>
     <button class="nav-btn" data-view="ranking" onclick="goView('ranking',this)">🏆 Ranking</button>
     <button class="nav-btn" data-view="rules" onclick="goView('rules',this)">📋 Regras</button>
+    <button class="nav-btn operator-only" data-view="operator" onclick="goView('operator',this)" style="display:none">🎯 Lançar Resultados</button>
     <button class="nav-btn admin-only" data-view="admin" onclick="goView('admin',this)" style="display:none">⚙️ Admin</button>
   </nav>
 
@@ -353,6 +372,11 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
         <div class="panel-head"><div><h2>Regras do Bolão</h2></div></div>
         <div id="rulesContent" style="padding:20px"></div>
       </div>
+    </div>
+
+    <!-- OPERATOR -->
+    <div class="view" id="view-operator">
+      <div id="operatorContent"></div>
     </div>
 
     <!-- ADMIN -->
@@ -2133,7 +2157,8 @@ function initials(name){
   return String(name||'?').trim().split(/\s+/).map(w=>w[0]).join('').slice(0,2).toUpperCase();
 }
 
-function isAdmin(){ return currentUser?.role === 'admin'; }
+function isAdmin()   { return currentUser?.role === 'admin'; }
+function isOperator(){ return currentUser?.role === 'operator' || currentUser?.role === 'admin'; }
 
 function isPredOpen(match){
   if(!state.pool.predictionsOpen) return false;
@@ -2286,10 +2311,15 @@ function showApp(){
   document.getElementById('hAvatar').textContent = initials(currentUser.name);
   document.getElementById('headerPoolName').textContent = state.pool.name || 'Bolão Copa 2026';
   const badge = document.getElementById('hBadge');
-  badge.textContent = isAdmin() ? 'Admin' : 'Participante';
-  badge.className   = 'h-badge ' + (isAdmin() ? 'admin' : 'player');
+  const roleLabel = {admin:'Admin', operator:'Operador', player:'Participante'};
+  const roleClass = {admin:'admin', operator:'operator', player:'player'};
+  badge.textContent = roleLabel[currentUser.role] || 'Participante';
+  badge.className   = 'h-badge ' + (roleClass[currentUser.role] || 'player');
   document.querySelectorAll('.admin-only').forEach(el => {
     el.style.display = isAdmin() ? '' : 'none';
+  });
+  document.querySelectorAll('.operator-only').forEach(el => {
+    el.style.display = isOperator() ? '' : 'none';
   });
   buildTeamSelect();
   renderHome();
@@ -2304,11 +2334,12 @@ function goView(name, btn){
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('view-'+name).classList.add('active');
   if(btn) btn.classList.add('active');
-  if(name==='home')    renderHome();
-  if(name==='matches') renderMatches();
-  if(name==='ranking') renderRanking();
-  if(name==='rules')   renderRules();
-  if(name==='admin')   renderAdmin(currentAdminTab);
+  if(name==='home')     renderHome();
+  if(name==='matches')  renderMatches();
+  if(name==='ranking')  renderRanking();
+  if(name==='rules')    renderRules();
+  if(name==='operator') renderOperator();
+  if(name==='admin')    renderAdmin(currentAdminTab);
 }
 
 // ═══════════════════════════════════════════
@@ -2778,7 +2809,7 @@ function adminParticipantsHTML(){
     <tr>
       <td><strong>${p.name}</strong></td>
       <td>${p.login}</td>
-      <td><span class="h-badge ${p.role==='admin'?'admin':'player'}">${p.role==='admin'?'Admin':'Participante'}</span></td>
+      <td><span class="h-badge ${{admin:'admin',operator:'operator',player:'player'}[p.role]||'player'}">${{admin:'Admin',operator:'Operador',player:'Participante'}[p.role]||'Participante'}</span></td>
       <td>${p.inactive?'<span style="color:var(--red)">Inativo</span>':'<span style="color:var(--green)">Ativo</span>'}</td>
       <td>
         <div style="display:flex;gap:5px">
@@ -3260,6 +3291,7 @@ function openParticipantModal(participant){
         <label class="label">Perfil</label>
         <select class="input" id="pRole">
           <option value="player"${participant?.role==='player'?' selected':''}>Participante</option>
+          <option value="operator"${participant?.role==='operator'?' selected':''}>Operador (lança resultados)</option>
           <option value="admin"${participant?.role==='admin'?' selected':''}>Administrador</option>
         </select>
       </div>
@@ -3360,6 +3392,238 @@ function toast(msg,type='ok'){
   el.innerHTML = `<span style="color:${type==='ok'?'var(--green)':'var(--red)'}">${type==='ok'?'✓':'✕'}</span> ${msg}`;
   document.getElementById('toastWrap').appendChild(el);
   setTimeout(()=>el.remove(),3200);
+}
+
+// ═══════════════════════════════════════════
+// OPERATOR VIEW
+// ═══════════════════════════════════════════
+let opFilters = { phase:'all', group:'all', team:'all', day:'all', status:'all' };
+
+function renderOperator(){
+  const el = document.getElementById('operatorContent');
+  if(!el) return;
+
+  // Build unique days from matches
+  const days = [...new Set(
+    state.matches.map(m => m.datetime ? m.datetime.slice(0,10) : null).filter(Boolean)
+  )].sort();
+
+  // Build phases
+  const phases = [...new Set(state.matches.map(m=>m.phase).filter(Boolean))];
+
+  // Apply filters
+  let filtered = state.matches.filter(m => {
+    if(opFilters.phase  !== 'all' && m.phase !== opFilters.phase)  return false;
+    if(opFilters.group  !== 'all' && m.group !== opFilters.group)  return false;
+    if(opFilters.status !== 'all' && m.status !== opFilters.status) return false;
+    if(opFilters.day    !== 'all' && (!m.datetime || !m.datetime.startsWith(opFilters.day))) return false;
+    if(opFilters.team   !== 'all' && m.home !== opFilters.team && m.away !== opFilters.team) return false;
+    return true;
+  });
+
+  const statusLabels = {
+    scheduled:'Agendado', open:'Aberto', closed:'Encerrado', live:'Ao vivo', finished:'Finalizado'
+  };
+
+  const matchRows = filtered.length === 0
+    ? `<div class="empty"><div class="icon">🔍</div><p>Nenhum jogo encontrado com os filtros selecionados.</p></div>`
+    : filtered.map(m => {
+        const isKnockout = m.phase !== 'Fase de Grupos';
+        const homeIsPlaceholder = isKnockoutPlaceholder(m.home);
+        const awayIsPlaceholder = isKnockoutPlaceholder(m.away);
+        const hasResult = m.result?.home !== null && m.result?.home !== undefined;
+
+        return `<div class="op-match-row" id="opr-${m.id}">
+          <div class="op-match-info">
+            <div class="op-match-meta">
+              <span class="phase-badge" style="font-size:10px">${m.phase}</span>
+              ${m.group ? `<span style="font-size:11px;color:var(--muted)">Gr. ${m.group}</span>` : ''}
+              <span class="match-status status-${m.status||'scheduled'}" style="font-size:10px;padding:1px 6px">${statusLabels[m.status]||m.status}</span>
+              <span style="font-size:11px;color:var(--muted)">${m.datetime ? fmtDate(m.datetime) : '--'}</span>
+            </div>
+            <div class="op-match-teams">
+              <span class="op-team">${flag(m.home)} <strong>${m.home}</strong></span>
+              <span class="op-score">${hasResult ? `<strong style="color:var(--gold)">${m.result.home} - ${m.result.away}</strong>` : 'vs'}</span>
+              <span class="op-team away">${flag(m.away)} <strong>${m.away}</strong></span>
+            </div>
+          </div>
+          <div class="op-match-actions">
+            ${isKnockout && (homeIsPlaceholder || awayIsPlaceholder) ? `
+              <button class="btn btn-ghost btn-sm" onclick="opEditTeams('${m.id}')" title="Preencher times classificados">
+                ⚽ Times
+              </button>` : ''}
+            <div class="op-score-inputs">
+              <input class="score-input" type="number" min="0" max="30" id="oph-${m.id}"
+                value="${hasResult ? m.result.home : ''}" placeholder="?" style="width:38px">
+              <span style="color:var(--muted2);font-weight:800;font-size:14px">-</span>
+              <input class="score-input" type="number" min="0" max="30" id="opa-${m.id}"
+                value="${hasResult ? m.result.away : ''}" placeholder="?" style="width:38px">
+            </div>
+            <select class="input" id="ops-${m.id}" style="width:130px;font-size:12px;padding:5px 8px">
+              <option value="scheduled" ${m.status==='scheduled'?'selected':''}>Agendado</option>
+              <option value="open"      ${m.status==='open'     ?'selected':''}>Aberto</option>
+              <option value="closed"    ${m.status==='closed'   ?'selected':''}>Encerrado</option>
+              <option value="live"      ${m.status==='live'     ?'selected':''}>Ao vivo</option>
+              <option value="finished"  ${m.status==='finished' ?'selected':''}>Finalizado</option>
+            </select>
+            <button class="btn btn-green btn-sm" onclick="opSaveResult('${m.id}')">
+              ✓ Salvar
+            </button>
+          </div>
+        </div>`;
+      }).join('');
+
+  el.innerHTML = `
+    <div class="panel" style="margin-bottom:14px">
+      <div class="panel-head">
+        <div>
+          <h2>🎯 Lançamento de Resultados</h2>
+          <p>${filtered.length} jogo(s) · ${state.matches.filter(m=>m.status==='finished').length} finalizado(s) de ${state.matches.length}</p>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="opRecalcAll()">🔄 Recalcular pontuações</button>
+      </div>
+
+      <!-- FILTROS -->
+      <div style="padding:12px 16px;background:var(--surface2);border-bottom:1px solid var(--border);display:flex;flex-wrap:wrap;gap:10px;align-items:center">
+        <span style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--muted)">Filtros:</span>
+
+        <select class="gf-select ${opFilters.phase!=='all'?'gf-active':''}" onchange="setOpFilter('phase',this.value)">
+          <option value="all">Todas as fases</option>
+          ${phases.map(p=>`<option value="${p}" ${opFilters.phase===p?'selected':''}>${p}</option>`).join('')}
+        </select>
+
+        <select class="gf-select ${opFilters.group!=='all'?'gf-active':''}" onchange="setOpFilter('group',this.value)" id="opGroupSel">
+          <option value="all">Todos os grupos</option>
+          ${Object.keys(COPA_GROUPS).map(g=>`<option value="${g}" ${opFilters.group===g?'selected':''}>Grupo ${g}</option>`).join('')}
+        </select>
+
+        <select class="gf-select ${opFilters.team!=='all'?'gf-active':''}" onchange="setOpFilter('team',this.value)" id="opTeamSel">
+          <option value="all">Todos os times</option>
+          ${(opFilters.group!=='all' ? COPA_GROUPS[opFilters.group]||[] : Object.values(COPA_GROUPS).flat())
+            .sort((a,b)=>a.localeCompare(b))
+            .map(t=>`<option value="${t}" ${opFilters.team===t?'selected':''}>${COPA2026_FLAGS[t]||''} ${t}</option>`).join('')}
+        </select>
+
+        <select class="gf-select ${opFilters.day!=='all'?'gf-active':''}" onchange="setOpFilter('day',this.value)">
+          <option value="all">Todos os dias</option>
+          ${days.map(d=>`<option value="${d}" ${opFilters.day===d?'selected':''}>${fmtDate(d+'T12:00:00-03:00').slice(0,8)}</option>`).join('')}
+        </select>
+
+        <select class="gf-select ${opFilters.status!=='all'?'gf-active':''}" onchange="setOpFilter('status',this.value)">
+          <option value="all">Todos os status</option>
+          <option value="scheduled" ${opFilters.status==='scheduled'?'selected':''}>Agendados</option>
+          <option value="open"      ${opFilters.status==='open'     ?'selected':''}>Abertos</option>
+          <option value="live"      ${opFilters.status==='live'     ?'selected':''}>Ao vivo</option>
+          <option value="finished"  ${opFilters.status==='finished' ?'selected':''}>Finalizados</option>
+        </select>
+
+        ${Object.values(opFilters).some(v=>v!=='all') ? `
+          <button class="gf-clear" onclick="clearOpFilters()">✕ Limpar filtros</button>` : ''}
+      </div>
+
+      <!-- MATCH LIST -->
+      <div class="op-match-list">${matchRows}</div>
+    </div>`;
+}
+
+function setOpFilter(key, value){
+  opFilters[key] = value;
+  // if group changed, reset team filter
+  if(key === 'group') opFilters.team = 'all';
+  renderOperator();
+}
+
+function clearOpFilters(){
+  opFilters = { phase:'all', group:'all', team:'all', day:'all', status:'all' };
+  renderOperator();
+}
+
+async function opSaveResult(matchId){
+  if(!isOperator()){ toast('Sem permissão','err'); return; }
+  const m   = state.matches.find(x=>x.id===matchId);
+  if(!m) return;
+  const h   = document.getElementById('oph-'+matchId)?.value;
+  const a   = document.getElementById('opa-'+matchId)?.value;
+  const st  = document.getElementById('ops-'+matchId)?.value;
+
+  if(st) m.status = st;
+
+  if(h !== '' && a !== '' && h !== undefined && a !== undefined){
+    const rh = parseInt(h), ra = parseInt(a);
+    if(!isNaN(rh) && !isNaN(ra) && rh >= 0 && ra >= 0){
+      m.result = { home: rh, away: ra };
+      if(st === 'finished' || m.status === 'finished'){
+        // auto-calc points for this match
+        state.predictions.filter(p=>p.matchId===matchId).forEach(pred=>{
+          pred.points = calcPoints(pred, m);
+          pred.status = 'pontuado';
+        });
+      }
+    }
+  }
+
+  await saveState();
+  toast(`Jogo atualizado!`, 'ok');
+  renderOperator();
+}
+
+async function opRecalcAll(){
+  if(!isOperator()){ toast('Sem permissão','err'); return; }
+  let changed = 0;
+  state.predictions.forEach(pred=>{
+    const match = state.matches.find(m=>m.id===pred.matchId);
+    if(!match) return;
+    const pts = calcPoints(pred, match);
+    if(pts !== null){ pred.points = pts; pred.status = 'pontuado'; changed++; }
+  });
+  await saveState();
+  toast(`${changed} palpite(s) recalculado(s)!`, 'ok');
+  renderOperator();
+}
+
+function opEditTeams(matchId){
+  const m = state.matches.find(x=>x.id===matchId);
+  if(!m) return;
+  document.getElementById('modalTitle').textContent = `Classificados — ${m.knockoutLabel||m.phase}`;
+  document.getElementById('modalBody').innerHTML = `
+    <div style="background:rgba(201,134,15,.08);border:1px solid rgba(201,134,15,.2);border-radius:9px;padding:10px 14px;margin-bottom:16px;font-size:12px;color:var(--muted)">
+      Preencha com os nomes dos times classificados. Use os nomes exatos dos times (ex: Brazil, France, Argentina).
+    </div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="label">Mandante</label>
+        <input class="input" id="otHome" value="${m.home}" placeholder="Nome do time">
+        <div style="font-size:10px;color:var(--muted);margin-top:3px">Atual: ${m.home}</div>
+      </div>
+      <div class="form-group">
+        <label class="label">Visitante</label>
+        <input class="input" id="otAway" value="${m.away}" placeholder="Nome do time">
+        <div style="font-size:10px;color:var(--muted);margin-top:3px">Atual: ${m.away}</div>
+      </div>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:12px;margin-bottom:4px">
+      <div style="font-size:11px;color:var(--muted);width:100%;margin-bottom:4px">Atalhos — clique para inserir:</div>
+      ${Object.values(COPA_GROUPS).flat().sort((a,b)=>a.localeCompare(b))
+        .map(t=>`<button class="btn btn-ghost btn-xs" onclick="document.getElementById('otHome').value='${t}'">${COPA2026_FLAGS[t]||''} ${t}</button>`)
+        .join('')}
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="opSaveTeams('${matchId}')">Salvar times</button>
+    </div>`;
+  openModal();
+}
+
+async function opSaveTeams(matchId){
+  const m    = state.matches.find(x=>x.id===matchId);
+  const home = document.getElementById('otHome').value.trim();
+  const away = document.getElementById('otAway').value.trim();
+  if(!home||!away){ toast('Informe os dois times','err'); return; }
+  m.home = home; m.away = away;
+  await saveState();
+  closeModal();
+  toast('Times atualizados!','ok');
+  renderOperator();
 }
 
 // ═══════════════════════════════════════════

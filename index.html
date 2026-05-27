@@ -404,11 +404,6 @@ const API_KEY = '$2a$10$40YJyDbx2qjgu7U8t69n9e5Hh981rItZ6FoKG76pr1UwYpUhQ/rzu';
 const URL_BIN = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
 const STORAGE  = 'bolao_copa2026';
 
-// ── API-FOOTBALL ──
-const APIFOOTBALL_KEY = 'b2181acf85bd58ab8189d15db7bed662';
-const APIFOOTBALL_URL = 'https://v3.football.api-sports.io';
-const APIFOOTBALL_LEAGUE = 1;
-const APIFOOTBALL_SEASON = 2026;
 
 // Copa 2026 — 48 jogos fase de grupos (simplificado com seleções reais)
 const COPA_GROUPS = {
@@ -2904,17 +2899,7 @@ function adminSettingsHTML(){
         <button class="btn btn-primary" onclick="saveSettings()">Salvar configurações</button>
       </div>
     </div>
-    <div class="panel">
-      <div class="panel-head"><div><h2>Sincronizar com API-Football</h2><p>Busca resultados e times classificados automaticamente</p></div></div>
-      <div style="padding:16px 20px;display:grid;gap:14px">
-        <p style="font-size:13px;color:var(--muted)">Sincroniza resultados dos jogos encerrados e preenche os times classificados nas fases eliminatórias. Usa 1 requisição da sua cota diária (limite: 100/dia).</p>
-        <div style="display:flex;gap:10px;flex-wrap:wrap">
-          <button class="btn btn-green" onclick="syncFromAPI('results')">⚡ Sincronizar resultados de hoje</button>
-          <button class="btn btn-ghost" onclick="syncFromAPI('all')">🔄 Sincronizar tudo (todos os jogos)</button>
-        </div>
-        <div id="apiSyncStatus" style="font-size:12px;color:var(--muted);min-height:18px"></div>
-      </div>
-    </div>
+
     <div class="panel">
       <div class="panel-head"><div><h2>Recalcular pontuações</h2><p>Use se houver ajuste de resultado ou regras</p></div></div>
       <div style="padding:16px 20px">
@@ -2969,22 +2954,63 @@ async function recalcAllPoints(){
 function openAddMatch(){ openMatchModal(null); }
 function openEditMatch(id){ openMatchModal(state.matches.find(m=>m.id===id)); }
 
+function isKnockoutPlaceholder(name){
+  if(!name) return true;
+  return /^[12][A-L]/.test(name) ||
+    name.startsWith('Venc.') || name.startsWith('Perd.') ||
+    name.startsWith('3') || name === 'A definir' || name === '3rem';
+}
+
 function openMatchModal(match){
   const isEdit = !!match;
+  const isKnockout = isEdit && match.phase !== 'Fase de Grupos';
   document.getElementById('modalTitle').textContent = isEdit ? 'Editar Partida' : 'Nova Partida';
 
-  // build team options
+  // build team options from groups
   const allTeams = [...new Set(Object.values(COPA_GROUPS).flat())].sort();
   const teamOpts = allTeams.map(t=>`<option value="${t}">${flag(t)} ${t}</option>`).join('');
 
+  // for knockout: detect if home/away are placeholders
+  const homeIsPlaceholder = isEdit ? isKnockoutPlaceholder(match.home) : false;
+  const awayIsPlaceholder = isEdit ? isKnockoutPlaceholder(match.away) : false;
+
+  const homeField = (isKnockout && homeIsPlaceholder)
+    ? `<div class="form-group">
+        <label class="label">Mandante <span style="color:var(--gold);font-size:10px">— classificado a definir</span></label>
+        <input class="input" id="mHome" placeholder="${match?.home||'Ex: Brazil'}" value="${match?.home||''}">
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">Digite o nome do time classificado ou deixe o placeholder</div>
+       </div>`
+    : `<div class="form-group">
+        <label class="label">Mandante</label>
+        <select class="input" id="mHome">${teamOpts}</select>
+       </div>`;
+
+  const awayField = (isKnockout && awayIsPlaceholder)
+    ? `<div class="form-group">
+        <label class="label">Visitante <span style="color:var(--gold);font-size:10px">— classificado a definir</span></label>
+        <input class="input" id="mAway" placeholder="${match?.away||'Ex: France'}" value="${match?.away||''}">
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">Digite o nome do time classificado ou deixe o placeholder</div>
+       </div>`
+    : `<div class="form-group">
+        <label class="label">Visitante</label>
+        <select class="input" id="mAway">${teamOpts}</select>
+       </div>`;
+
   document.getElementById('modalBody').innerHTML = `
+    ${isKnockout && match?.knockoutLabel ? `
+    <div style="background:rgba(201,134,15,.08);border:1px solid rgba(201,134,15,.2);border-radius:9px;padding:10px 14px;margin-bottom:14px;font-size:13px">
+      <strong style="color:var(--gold)">${match.knockoutLabel}</strong>
+      <span style="color:var(--muted);margin-left:8px">${match.phase}</span>
+      ${isKnockoutPlaceholder(match.home)||isKnockoutPlaceholder(match.away) ? `<div style="font-size:11px;color:var(--muted);margin-top:4px">⚽ Preencha os times quando os classificados forem definidos</div>` : ''}
+    </div>` : ''}
     <div class="form-grid">
       <div class="form-group">
         <label class="label">Fase</label>
         <select class="input" id="mPhase">
           <option value="Fase de Grupos">Fase de Grupos</option>
-          <option value="Oitavas">Oitavas de Final</option>
-          <option value="Quartas">Quartas de Final</option>
+          <option value="Oitavas (R32)">Oitavas (R32)</option>
+          <option value="Oitavas de Final">Oitavas de Final</option>
+          <option value="Quartas de Final">Quartas de Final</option>
           <option value="Semifinal">Semifinal</option>
           <option value="Terceiro Lugar">Terceiro Lugar</option>
           <option value="Final">Final</option>
@@ -2997,25 +3023,19 @@ function openMatchModal(match){
           ${Object.keys(COPA_GROUPS).map(g=>`<option value="${g}">Grupo ${g}</option>`).join('')}
         </select>
       </div>
+      ${homeField}
+      ${awayField}
       <div class="form-group">
-        <label class="label">Mandante</label>
-        <select class="input" id="mHome">${teamOpts}</select>
-      </div>
-      <div class="form-group">
-        <label class="label">Visitante</label>
-        <select class="input" id="mAway">${teamOpts}</select>
-      </div>
-      <div class="form-group">
-        <label class="label">Data e hora</label>
+        <label class="label">Data e hora (BRT)</label>
         <input class="input" id="mDatetime" type="datetime-local">
       </div>
       <div class="form-group">
-        <label class="label">Prazo palpite</label>
+        <label class="label">Prazo palpite (BRT)</label>
         <input class="input" id="mDeadline" type="datetime-local">
       </div>
       <div class="form-group">
         <label class="label">Local/Estádio</label>
-        <input class="input" id="mVenue" placeholder="Ex: Estádio Azteca">
+        <input class="input" id="mVenue" placeholder="Ex: Estádio MetLife, Nova York">
       </div>
       <div class="form-group">
         <label class="label">Status</label>
@@ -3035,23 +3055,26 @@ function openMatchModal(match){
 
   // fill values
   if(match){
-    document.getElementById('mPhase').value    = match.phase||'Fase de Grupos';
-    document.getElementById('mGroup').value    = match.group||'';
-    document.getElementById('mHome').value     = match.home||'';
-    document.getElementById('mAway').value     = match.away||'';
-    document.getElementById('mVenue').value    = match.venue||'';
-    document.getElementById('mStatus').value   = match.status||'scheduled';
+    document.getElementById('mPhase').value  = match.phase||'Fase de Grupos';
+    document.getElementById('mGroup').value  = match.group||'';
+    document.getElementById('mVenue').value  = match.venue||'';
+    document.getElementById('mStatus').value = match.status||'scheduled';
     if(match.datetime) document.getElementById('mDatetime').value = match.datetime.slice(0,16);
     if(match.deadline) document.getElementById('mDeadline').value = match.deadline.slice(0,16);
+    // set home/away — for selects try .value, for inputs already set via value attr
+    const hEl = document.getElementById('mHome');
+    const aEl = document.getElementById('mAway');
+    if(hEl && hEl.tagName==='SELECT') hEl.value = match.home||'';
+    if(aEl && aEl.tagName==='SELECT') aEl.value = match.away||'';
   }
   openModal();
 }
 
 async function saveMatch(id){
-  const home = document.getElementById('mHome').value;
-  const away = document.getElementById('mAway').value;
-  if(!home||!away){ toast('Selecione os times','err'); return; }
-  if(home===away){ toast('Os times não podem ser iguais','err'); return; }
+  const home = document.getElementById('mHome').value.trim();
+  const away = document.getElementById('mAway').value.trim();
+  if(!home||!away){ toast('Informe os times','err'); return; }
+  if(home===away && !isKnockoutPlaceholder(home)){ toast('Os times não podem ser iguais','err'); return; }
 
   const dt = document.getElementById('mDatetime').value;
   const dl = document.getElementById('mDeadline').value;
@@ -3356,110 +3379,6 @@ function refreshFilteredViews(){
   const activeView = document.querySelector('.view.active')?.id;
   if(activeView === 'view-home')    renderHome();
   if(activeView === 'view-matches') renderMatches();
-}
-
-// ═══════════════════════════════════════════
-// API-FOOTBALL SYNC
-// ═══════════════════════════════════════════
-
-const API_TEAM_MAP = {
-  'Mexico':'Mexico','South Africa':'South Africa','South Korea':'South Korea',
-  'Czech Republic':'Czech Republic','Canada':'Canada','Bosnia':'Bosnia-Herzegovina',
-  'Qatar':'Qatar','Switzerland':'Switzerland','Brazil':'Brazil','Morocco':'Morocco',
-  'Haiti':'Haiti','Scotland':'Scotland','United States':'USA','Paraguay':'Paraguay',
-  'Australia':'Australia','Turkey':'Turkey','Germany':'Germany','Curacao':'Curacao',
-  "Cote d'Ivoire":'Ivory Coast','Ecuador':'Ecuador','Netherlands':'Netherlands',
-  'Japan':'Japan','Sweden':'Sweden','Tunisia':'Tunisia','Belgium':'Belgium',
-  'Egypt':'Egypt','Iran':'Iran','New Zealand':'New Zealand','Spain':'Spain',
-  'Cape Verde':'Cape Verde','Saudi Arabia':'Saudi Arabia','Uruguay':'Uruguay',
-  'France':'France','Senegal':'Senegal','Iraq':'Iraq','Norway':'Norway',
-  'Argentina':'Argentina','Algeria':'Algeria','Austria':'Austria','Jordan':'Jordan',
-  'Portugal':'Portugal','DR Congo':'DR Congo','Uzbekistan':'Uzbekistan','Colombia':'Colombia',
-  'England':'England','Croatia':'Croatia','Ghana':'Ghana','Panama':'Panama'
-};
-
-function normTeam(n){ return API_TEAM_MAP[n] || n; }
-
-async function syncFromAPI(mode){
-  const status = document.getElementById('apiSyncStatus');
-  if(status) status.textContent = 'Conectando a API-Football...';
-
-  const today = new Date().toISOString().slice(0,10);
-  const qs = mode === 'results'
-    ? `league=${APIFOOTBALL_LEAGUE}&season=${APIFOOTBALL_SEASON}&date=${today}&status=FT`
-    : `league=${APIFOOTBALL_LEAGUE}&season=${APIFOOTBALL_SEASON}`;
-
-  try {
-    const res = await fetch(`${APIFOOTBALL_URL}/fixtures?${qs}`, {
-      headers: { 'x-apisports-key': APIFOOTBALL_KEY }
-    });
-    if(!res.ok) throw new Error('HTTP ' + res.status);
-    const data = await res.json();
-    if(data.errors && Object.keys(data.errors).length){
-      throw new Error(Object.values(data.errors)[0]);
-    }
-
-    const fixtures = data.response || [];
-    let updRes = 0, updTeams = 0;
-
-    fixtures.forEach(fix => {
-      const apiHome   = normTeam(fix.teams?.home?.name || '');
-      const apiAway   = normTeam(fix.teams?.away?.name || '');
-      const apiStatus = fix.fixture?.status?.short || '';
-      const gh = fix.goals?.home;
-      const ga = fix.goals?.away;
-
-      // match by teams
-      let m = state.matches.find(x =>
-        (x.home === apiHome && x.away === apiAway) ||
-        (x.home === apiAway && x.away === apiHome)
-      );
-
-      if(!m) return;
-
-      // update result if finished
-      if(['FT','AET','PEN'].includes(apiStatus) && gh !== null && ga !== null){
-        const swapped = m.home !== apiHome;
-        m.result = { home: swapped ? ga : gh, away: swapped ? gh : ga };
-        m.status = 'finished';
-        state.predictions.filter(p => p.matchId === m.id).forEach(pred => {
-          pred.points = calcPoints(pred, m);
-          pred.status = 'pontuado';
-        });
-        updRes++;
-      }
-
-      // live
-      if(['1H','2H','HT','ET'].includes(apiStatus)){
-        m.status = 'live';
-        if(gh !== null && ga !== null){
-          const swapped = m.home !== apiHome;
-          m.result = { home: swapped ? ga : gh, away: swapped ? gh : ga };
-        }
-      }
-
-      // fill knockout placeholders
-      const isPlaceholder = n => n && (
-        /^[12][A-L]/.test(n) || n.startsWith('Venc.') || n.startsWith('Perd.') || n.startsWith('3')
-      );
-      if(isPlaceholder(m.home) && apiHome){ m.home = apiHome; updTeams++; }
-      if(isPlaceholder(m.away) && apiAway){ m.away = apiAway; updTeams++; }
-    });
-
-    await saveState();
-    const msg = [
-      updRes   ? updRes   + ' resultado(s)' : '',
-      updTeams ? updTeams + ' time(s) preenchido(s)' : ''
-    ].filter(Boolean).join(' · ');
-    if(status) status.textContent = 'Sincronizado! ' + (msg || 'Sem novidades.') + ' (' + fixtures.length + ' jogos da API)';
-    toast('Sincronizacao concluida!', 'ok');
-    renderAdmin('settings');
-    if(document.getElementById('view-matches').classList.contains('active')) renderMatches();
-    renderRanking();
-  } catch(e){
-    if(status) status.textContent = 'Erro: ' + e.message;
-    toast('Erro ao sincronizar: ' + e.message, 'err');
-  }
 }
 
 // ═══════════════════════════════════════════

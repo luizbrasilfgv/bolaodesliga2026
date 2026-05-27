@@ -3059,18 +3059,18 @@ function renderHome(){
   const leader = ranked[0];
   const gap = leader ? leader.pts - myStats.total : 0;
 
-  // pending: open matches without my pred
-  const openMatches = state.matches.filter(m => isPredOpen(m));
-  const myPending = openMatches.filter(m => !getMyPred(m.id));
+  // pending: open matches without my pred — filtered by global filter
+  const openMatches    = applyGlobalFilterToMatches(state.matches.filter(m => isPredOpen(m)));
+  const myPending      = openMatches.filter(m => !getMyPred(m.id));
 
-  // next match overall (status open or scheduled, with future datetime)
+  // next match — NOT filtered (hero always shows next real match)
   const upcoming = state.matches
     .filter(m => m.datetime && new Date(m.datetime) > new Date() && m.status !== 'finished')
     .sort((a,b) => a.datetime.localeCompare(b.datetime));
   const nextMatch = upcoming[0];
 
-  // recent results with my pred
-  const recent = state.matches
+  // recent results with my pred — filtered by global filter
+  const recent = applyGlobalFilterToMatches(state.matches)
     .filter(m => m.status==='finished' && m.result?.home !== null)
     .sort((a,b) => (b.datetime||'').localeCompare(a.datetime||''))
     .slice(0, 4);
@@ -3123,9 +3123,11 @@ function renderHome(){
       </div>`;
   }
 
-  // — STATS GRID —
+  // stats use unfiltered open matches (progress bar reflects global reality)
+  const allOpenMatches = state.matches.filter(m => isPredOpen(m));
   const total = allPlayers.length;
-  const pct = openMatches.length>0 ? Math.round(((openMatches.length-myPending.length)/openMatches.length)*100) : 100;
+  const pct = allOpenMatches.length>0 ? Math.round(((allOpenMatches.length-allOpenMatches.filter(m=>!getMyPred(m.id)).length)/allOpenMatches.length)*100) : 100;
+  // — STATS GRID —
   const accPct = myStats.scored > 0 ? myStats.accuracy : 0;
 
   const statsHTML = `
@@ -3255,6 +3257,8 @@ function renderMatches(){
   }
   // apply phase/group/search
   filtered = filterMatches(filtered);
+  // apply global filter (barra superior)
+  filtered = applyGlobalFilterToMatches(filtered);
 
   // sort by datetime
   filtered.sort((a,b) => (a.datetime||'').localeCompare(b.datetime||''));

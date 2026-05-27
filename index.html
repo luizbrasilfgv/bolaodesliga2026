@@ -377,34 +377,1688 @@ const STORAGE  = 'bolao_copa2026';
 
 // Copa 2026 — 48 jogos fase de grupos (simplificado com seleções reais)
 const COPA_GROUPS = {
-  A:['Brasil','Alemanha','Argentina','França'],
-  B:['Espanha','Portugal','Inglaterra','Itália'],
-  C:['Países Baixos','Bélgica','Croácia','Dinamarca'],
-  D:['Uruguai','Colômbia','México','EUA'],
-  E:['Japão','Coreia do Sul','Austrália','Irã'],
-  F:['Marrocos','Senegal','Egito','Gana'],
-  G:['Sérvia','Polônia','Suíça','Escócia'],
-  H:['Equador','Venezuela','Peru','Chile'],
-  I:['Arábia Saudita','Catar','Tunísia','Camarões'],
-  J:['Costa Rica','Panamá','Jamaica','Honduras'],
-  K:['Nova Zelândia','Fiji','Papua Nova Guiné','Taiti'],
-  L:['África do Sul','Nigéria','Argélia','RD Congo']
+  A:['Mexico','South Africa','South Korea','Czech Republic'],
+  B:['Canada','Bosnia-Herzegovina','Qatar','Switzerland'],
+  C:['Brazil','Morocco','Haiti','Scotland'],
+  D:['USA','Paraguay','Australia','Turkey'],
+  E:['Germany','Curacao','Ivory Coast','Ecuador'],
+  F:['Netherlands','Japan','Sweden','Tunisia'],
+  G:['Belgium','Egypt','Iran','New Zealand'],
+  H:['Spain','Cape Verde','Saudi Arabia','Uruguay'],
+  I:['France','Senegal','Iraq','Norway'],
+  J:['Argentina','Algeria','Austria','Jordan'],
+  K:['Portugal','DR Congo','Uzbekistan','Colombia'],
+  L:['England','Croatia','Ghana','Panama']
 };
 
-const FLAGS = {
-  'Brasil':'🇧🇷','Alemanha':'🇩🇪','Argentina':'🇦🇷','França':'🇫🇷',
-  'Espanha':'🇪🇸','Portugal':'🇵🇹','Inglaterra':'🏴󠁧󠁢󠁥󠁮󠁧󠁿','Itália':'🇮🇹',
-  'Países Baixos':'🇳🇱','Bélgica':'🇧🇪','Croácia':'🇭🇷','Dinamarca':'🇩🇰',
-  'Uruguai':'🇺🇾','Colômbia':'🇨🇴','México':'🇲🇽','EUA':'🇺🇸',
-  'Japão':'🇯🇵','Coreia do Sul':'🇰🇷','Austrália':'🇦🇺','Irã':'🇮🇷',
-  'Marrocos':'🇲🇦','Senegal':'🇸🇳','Egito':'🇪🇬','Gana':'🇬🇭',
-  'Sérvia':'🇷🇸','Polônia':'🇵🇱','Suíça':'🇨🇭','Escócia':'🏴󠁧󠁢󠁳󠁣󠁴󠁿',
-  'Equador':'🇪🇨','Venezuela':'🇻🇪','Peru':'🇵🇪','Chile':'🇨🇱',
-  'Arábia Saudita':'🇸🇦','Catar':'🇶🇦','Tunísia':'🇹🇳','Camarões':'🇨🇲',
-  'Costa Rica':'🇨🇷','Panamá':'🇵🇦','Jamaica':'🇯🇲','Honduras':'🇭🇳',
-  'Nova Zelândia':'🇳🇿','Fiji':'🇫🇯','Papua Nova Guiné':'🇵🇬','Taiti':'🇵🇫',
-  'África do Sul':'🇿🇦','Nigéria':'🇳🇬','Argélia':'🇩🇿','RD Congo':'🇨🇩'
-};
+const COPA2026_MATCHES = [
+  {
+    "id": "m001",
+    "phase": "Fase de Grupos",
+    "group": "A",
+    "home": "Mexico",
+    "away": "South Africa",
+    "datetime": "2026-06-11T16:00:00-03:00",
+    "deadline": "2026-06-11T15:00:00-03:00",
+    "venue": "Estádio Azteca, Cidade do México",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": null
+  },
+  {
+    "id": "m002",
+    "phase": "Fase de Grupos",
+    "group": "A",
+    "home": "South Korea",
+    "away": "Czech Republic",
+    "datetime": "2026-06-11T23:00:00-03:00",
+    "deadline": "2026-06-11T22:00:00-03:00",
+    "venue": "Estadio Akron, Guadalajara",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": null
+  },
+  {
+    "id": "m003",
+    "phase": "Fase de Grupos",
+    "group": "B",
+    "home": "Canada",
+    "away": "Bosnia-Herzegovina",
+    "datetime": "2026-06-12T20:00:00-03:00",
+    "deadline": "2026-06-12T19:00:00-03:00",
+    "venue": "Estádio BC Place, Vancouver",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": null
+  },
+  {
+    "id": "m004",
+    "phase": "Fase de Grupos",
+    "group": "B",
+    "home": "Qatar",
+    "away": "Switzerland",
+    "datetime": "2026-06-12T23:00:00-03:00",
+    "deadline": "2026-06-12T22:00:00-03:00",
+    "venue": "Estádio Lincoln Financial Field, Filadélfia",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": null
+  },
+  {
+    "id": "m005",
+    "phase": "Fase de Grupos",
+    "group": "C",
+    "home": "Brazil",
+    "away": "Morocco",
+    "datetime": "2026-06-12T20:00:00-03:00",
+    "deadline": "2026-06-12T19:00:00-03:00",
+    "venue": "Estádio SoFi, Los Angeles",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": null
+  },
+  {
+    "id": "m006",
+    "phase": "Fase de Grupos",
+    "group": "C",
+    "home": "Haiti",
+    "away": "Scotland",
+    "datetime": "2026-06-12T17:00:00-03:00",
+    "deadline": "2026-06-12T16:00:00-03:00",
+    "venue": "Estádio AT&T, Dallas",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": null
+  },
+  {
+    "id": "m007",
+    "phase": "Fase de Grupos",
+    "group": "D",
+    "home": "USA",
+    "away": "Paraguay",
+    "datetime": "2026-06-13T22:00:00-03:00",
+    "deadline": "2026-06-13T21:00:00-03:00",
+    "venue": "Estádio MetLife, Nova York/Nova Jersey",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": null
+  },
+  {
+    "id": "m008",
+    "phase": "Fase de Grupos",
+    "group": "D",
+    "home": "Australia",
+    "away": "Turkey",
+    "datetime": "2026-06-13T19:00:00-03:00",
+    "deadline": "2026-06-13T18:00:00-03:00",
+    "venue": "Estádio Levi's, São Francisco",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": null
+  },
+  {
+    "id": "m009",
+    "phase": "Fase de Grupos",
+    "group": "E",
+    "home": "Germany",
+    "away": "Curacao",
+    "datetime": "2026-06-13T16:00:00-03:00",
+    "deadline": "2026-06-13T15:00:00-03:00",
+    "venue": "Estádio Arrowhead, Kansas City",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": null
+  },
+  {
+    "id": "m010",
+    "phase": "Fase de Grupos",
+    "group": "E",
+    "home": "Ivory Coast",
+    "away": "Ecuador",
+    "datetime": "2026-06-13T23:00:00-03:00",
+    "deadline": "2026-06-13T22:00:00-03:00",
+    "venue": "Estádio NRG, Houston",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": null
+  },
+  {
+    "id": "m011",
+    "phase": "Fase de Grupos",
+    "group": "F",
+    "home": "Netherlands",
+    "away": "Japan",
+    "datetime": "2026-06-14T16:00:00-03:00",
+    "deadline": "2026-06-14T15:00:00-03:00",
+    "venue": "Estádio Allegiant, Las Vegas",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": null
+  },
+  {
+    "id": "m012",
+    "phase": "Fase de Grupos",
+    "group": "F",
+    "home": "Sweden",
+    "away": "Tunisia",
+    "datetime": "2026-06-14T19:00:00-03:00",
+    "deadline": "2026-06-14T18:00:00-03:00",
+    "venue": "Estádio Mercedes-Benz, Atlanta",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": null
+  },
+  {
+    "id": "m013",
+    "phase": "Fase de Grupos",
+    "group": "G",
+    "home": "Belgium",
+    "away": "Egypt",
+    "datetime": "2026-06-14T22:00:00-03:00",
+    "deadline": "2026-06-14T21:00:00-03:00",
+    "venue": "Estádio Hard Rock, Miami",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": null
+  },
+  {
+    "id": "m014",
+    "phase": "Fase de Grupos",
+    "group": "G",
+    "home": "Iran",
+    "away": "New Zealand",
+    "datetime": "2026-06-14T22:00:00-03:00",
+    "deadline": "2026-06-14T21:00:00-03:00",
+    "venue": "Estádio Camping World, Orlando",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": null
+  },
+  {
+    "id": "m015",
+    "phase": "Fase de Grupos",
+    "group": "H",
+    "home": "Spain",
+    "away": "Cape Verde",
+    "datetime": "2026-06-15T16:00:00-03:00",
+    "deadline": "2026-06-15T15:00:00-03:00",
+    "venue": "Estádio Gillette, Boston",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": null
+  },
+  {
+    "id": "m016",
+    "phase": "Fase de Grupos",
+    "group": "H",
+    "home": "Saudi Arabia",
+    "away": "Uruguay",
+    "datetime": "2026-06-15T19:00:00-03:00",
+    "deadline": "2026-06-15T18:00:00-03:00",
+    "venue": "Estádio Estadio BBVA, Monterrey",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": null
+  },
+  {
+    "id": "m017",
+    "phase": "Fase de Grupos",
+    "group": "I",
+    "home": "France",
+    "away": "Senegal",
+    "datetime": "2026-06-15T22:00:00-03:00",
+    "deadline": "2026-06-15T21:00:00-03:00",
+    "venue": "Estádio MetLife, Nova York/Nova Jersey",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": null
+  },
+  {
+    "id": "m018",
+    "phase": "Fase de Grupos",
+    "group": "I",
+    "home": "Iraq",
+    "away": "Norway",
+    "datetime": "2026-06-15T22:00:00-03:00",
+    "deadline": "2026-06-15T21:00:00-03:00",
+    "venue": "Estádio Azteca, Cidade do México",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": null
+  },
+  {
+    "id": "m019",
+    "phase": "Fase de Grupos",
+    "group": "J",
+    "home": "Argentina",
+    "away": "Algeria",
+    "datetime": "2026-06-16T16:00:00-03:00",
+    "deadline": "2026-06-16T15:00:00-03:00",
+    "venue": "Estádio AT&T, Dallas",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": null
+  },
+  {
+    "id": "m020",
+    "phase": "Fase de Grupos",
+    "group": "J",
+    "home": "Austria",
+    "away": "Jordan",
+    "datetime": "2026-06-16T19:00:00-03:00",
+    "deadline": "2026-06-16T18:00:00-03:00",
+    "venue": "Estádio Rose Bowl, Los Angeles",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": null
+  },
+  {
+    "id": "m021",
+    "phase": "Fase de Grupos",
+    "group": "K",
+    "home": "Portugal",
+    "away": "DR Congo",
+    "datetime": "2026-06-16T22:00:00-03:00",
+    "deadline": "2026-06-16T21:00:00-03:00",
+    "venue": "Estádio Estadio BBVA, Monterrey",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": null
+  },
+  {
+    "id": "m022",
+    "phase": "Fase de Grupos",
+    "group": "K",
+    "home": "Uzbekistan",
+    "away": "Colombia",
+    "datetime": "2026-06-16T22:00:00-03:00",
+    "deadline": "2026-06-16T21:00:00-03:00",
+    "venue": "Estádio SoFi, Los Angeles",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": null
+  },
+  {
+    "id": "m023",
+    "phase": "Fase de Grupos",
+    "group": "L",
+    "home": "England",
+    "away": "Croatia",
+    "datetime": "2026-06-17T19:00:00-03:00",
+    "deadline": "2026-06-17T18:00:00-03:00",
+    "venue": "Estádio Arrowhead, Kansas City",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": null
+  },
+  {
+    "id": "m024",
+    "phase": "Fase de Grupos",
+    "group": "L",
+    "home": "Ghana",
+    "away": "Panama",
+    "datetime": "2026-06-17T16:00:00-03:00",
+    "deadline": "2026-06-17T15:00:00-03:00",
+    "venue": "Estádio Hard Rock, Miami",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": null
+  },
+  {
+    "id": "m025",
+    "phase": "Fase de Grupos",
+    "group": "A",
+    "home": "Czech Republic",
+    "away": "South Africa",
+    "datetime": "2026-06-18T15:00:00-03:00",
+    "deadline": "2026-06-18T14:00:00-03:00",
+    "venue": "Estádio Mercedes-Benz, Atlanta",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": null
+  },
+  {
+    "id": "m026",
+    "phase": "Fase de Grupos",
+    "group": "A",
+    "home": "Mexico",
+    "away": "South Korea",
+    "datetime": "2026-06-18T22:00:00-03:00",
+    "deadline": "2026-06-18T21:00:00-03:00",
+    "venue": "Estadio Akron, Guadalajara",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": null
+  },
+  {
+    "id": "m027",
+    "phase": "Fase de Grupos",
+    "group": "B",
+    "home": "Bosnia-Herzegovina",
+    "away": "Qatar",
+    "datetime": "2026-06-19T15:00:00-03:00",
+    "deadline": "2026-06-19T14:00:00-03:00",
+    "venue": "Estádio Lincoln Financial Field, Filadélfia",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": null
+  },
+  {
+    "id": "m028",
+    "phase": "Fase de Grupos",
+    "group": "B",
+    "home": "Canada",
+    "away": "Switzerland",
+    "datetime": "2026-06-19T22:00:00-03:00",
+    "deadline": "2026-06-19T21:00:00-03:00",
+    "venue": "Estádio BC Place, Vancouver",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": null
+  },
+  {
+    "id": "m029",
+    "phase": "Fase de Grupos",
+    "group": "C",
+    "home": "Morocco",
+    "away": "Haiti",
+    "datetime": "2026-06-19T15:00:00-03:00",
+    "deadline": "2026-06-19T14:00:00-03:00",
+    "venue": "Estádio AT&T, Dallas",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": null
+  },
+  {
+    "id": "m030",
+    "phase": "Fase de Grupos",
+    "group": "C",
+    "home": "Brazil",
+    "away": "Scotland",
+    "datetime": "2026-06-19T22:00:00-03:00",
+    "deadline": "2026-06-19T21:00:00-03:00",
+    "venue": "Estádio SoFi, Los Angeles",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": null
+  },
+  {
+    "id": "m031",
+    "phase": "Fase de Grupos",
+    "group": "D",
+    "home": "Turkey",
+    "away": "USA",
+    "datetime": "2026-06-20T22:00:00-03:00",
+    "deadline": "2026-06-20T21:00:00-03:00",
+    "venue": "Estádio Allegiant, Las Vegas",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": null
+  },
+  {
+    "id": "m032",
+    "phase": "Fase de Grupos",
+    "group": "D",
+    "home": "Paraguay",
+    "away": "Australia",
+    "datetime": "2026-06-20T19:00:00-03:00",
+    "deadline": "2026-06-20T18:00:00-03:00",
+    "venue": "Estádio Levi's, São Francisco",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": null
+  },
+  {
+    "id": "m033",
+    "phase": "Fase de Grupos",
+    "group": "E",
+    "home": "Curacao",
+    "away": "Ivory Coast",
+    "datetime": "2026-06-20T15:00:00-03:00",
+    "deadline": "2026-06-20T14:00:00-03:00",
+    "venue": "Estádio NRG, Houston",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": null
+  },
+  {
+    "id": "m034",
+    "phase": "Fase de Grupos",
+    "group": "E",
+    "home": "Germany",
+    "away": "Ecuador",
+    "datetime": "2026-06-20T22:00:00-03:00",
+    "deadline": "2026-06-20T21:00:00-03:00",
+    "venue": "Estádio Arrowhead, Kansas City",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": null
+  },
+  {
+    "id": "m035",
+    "phase": "Fase de Grupos",
+    "group": "F",
+    "home": "Tunisia",
+    "away": "Netherlands",
+    "datetime": "2026-06-21T22:00:00-03:00",
+    "deadline": "2026-06-21T21:00:00-03:00",
+    "venue": "Estádio Hard Rock, Miami",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": null
+  },
+  {
+    "id": "m036",
+    "phase": "Fase de Grupos",
+    "group": "F",
+    "home": "Japan",
+    "away": "Sweden",
+    "datetime": "2026-06-21T19:00:00-03:00",
+    "deadline": "2026-06-21T18:00:00-03:00",
+    "venue": "Estádio Camping World, Orlando",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": null
+  },
+  {
+    "id": "m037",
+    "phase": "Fase de Grupos",
+    "group": "G",
+    "home": "New Zealand",
+    "away": "Belgium",
+    "datetime": "2026-06-21T15:00:00-03:00",
+    "deadline": "2026-06-21T14:00:00-03:00",
+    "venue": "Estádio Estadio BBVA, Monterrey",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": null
+  },
+  {
+    "id": "m038",
+    "phase": "Fase de Grupos",
+    "group": "G",
+    "home": "Egypt",
+    "away": "Iran",
+    "datetime": "2026-06-21T22:00:00-03:00",
+    "deadline": "2026-06-21T21:00:00-03:00",
+    "venue": "Estádio Rose Bowl, Los Angeles",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": null
+  },
+  {
+    "id": "m039",
+    "phase": "Fase de Grupos",
+    "group": "H",
+    "home": "Cape Verde",
+    "away": "Saudi Arabia",
+    "datetime": "2026-06-22T19:00:00-03:00",
+    "deadline": "2026-06-22T18:00:00-03:00",
+    "venue": "Estádio Azteca, Cidade do México",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": null
+  },
+  {
+    "id": "m040",
+    "phase": "Fase de Grupos",
+    "group": "H",
+    "home": "Spain",
+    "away": "Uruguay",
+    "datetime": "2026-06-22T22:00:00-03:00",
+    "deadline": "2026-06-22T21:00:00-03:00",
+    "venue": "Estádio Gillette, Boston",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": null
+  },
+  {
+    "id": "m041",
+    "phase": "Fase de Grupos",
+    "group": "I",
+    "home": "Senegal",
+    "away": "Iraq",
+    "datetime": "2026-06-22T19:00:00-03:00",
+    "deadline": "2026-06-22T18:00:00-03:00",
+    "venue": "Estádio MetLife, Nova York/Nova Jersey",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": null
+  },
+  {
+    "id": "m042",
+    "phase": "Fase de Grupos",
+    "group": "I",
+    "home": "France",
+    "away": "Norway",
+    "datetime": "2026-06-22T22:00:00-03:00",
+    "deadline": "2026-06-22T21:00:00-03:00",
+    "venue": "Estádio SoFi, Los Angeles",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": null
+  },
+  {
+    "id": "m043",
+    "phase": "Fase de Grupos",
+    "group": "J",
+    "home": "Algeria",
+    "away": "Austria",
+    "datetime": "2026-06-23T19:00:00-03:00",
+    "deadline": "2026-06-23T18:00:00-03:00",
+    "venue": "Estádio AT&T, Dallas",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": null
+  },
+  {
+    "id": "m044",
+    "phase": "Fase de Grupos",
+    "group": "J",
+    "home": "Argentina",
+    "away": "Jordan",
+    "datetime": "2026-06-23T22:00:00-03:00",
+    "deadline": "2026-06-23T21:00:00-03:00",
+    "venue": "Estádio MetLife, Nova York/Nova Jersey",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": null
+  },
+  {
+    "id": "m045",
+    "phase": "Fase de Grupos",
+    "group": "K",
+    "home": "Colombia",
+    "away": "Portugal",
+    "datetime": "2026-06-23T19:00:00-03:00",
+    "deadline": "2026-06-23T18:00:00-03:00",
+    "venue": "Estádio Hard Rock, Miami",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": null
+  },
+  {
+    "id": "m046",
+    "phase": "Fase de Grupos",
+    "group": "K",
+    "home": "DR Congo",
+    "away": "Uzbekistan",
+    "datetime": "2026-06-23T22:00:00-03:00",
+    "deadline": "2026-06-23T21:00:00-03:00",
+    "venue": "Estádio NRG, Houston",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": null
+  },
+  {
+    "id": "m047",
+    "phase": "Fase de Grupos",
+    "group": "L",
+    "home": "Panama",
+    "away": "England",
+    "datetime": "2026-06-24T22:00:00-03:00",
+    "deadline": "2026-06-24T21:00:00-03:00",
+    "venue": "Estádio Mercedes-Benz, Atlanta",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": null
+  },
+  {
+    "id": "m048",
+    "phase": "Fase de Grupos",
+    "group": "L",
+    "home": "Croatia",
+    "away": "Ghana",
+    "datetime": "2026-06-24T19:00:00-03:00",
+    "deadline": "2026-06-24T18:00:00-03:00",
+    "venue": "Estádio Arrowhead, Kansas City",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": null
+  },
+  {
+    "id": "m049",
+    "phase": "Fase de Grupos",
+    "group": "A",
+    "home": "South Africa",
+    "away": "South Korea",
+    "datetime": "2026-06-25T20:00:00-03:00",
+    "deadline": "2026-06-25T19:00:00-03:00",
+    "venue": "Estadio Akron, Guadalajara",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": null
+  },
+  {
+    "id": "m050",
+    "phase": "Fase de Grupos",
+    "group": "A",
+    "home": "Czech Republic",
+    "away": "Mexico",
+    "datetime": "2026-06-25T20:00:00-03:00",
+    "deadline": "2026-06-25T19:00:00-03:00",
+    "venue": "Estádio Azteca, Cidade do México",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": null
+  },
+  {
+    "id": "m051",
+    "phase": "Fase de Grupos",
+    "group": "B",
+    "home": "Switzerland",
+    "away": "Bosnia-Herzegovina",
+    "datetime": "2026-06-26T20:00:00-03:00",
+    "deadline": "2026-06-26T19:00:00-03:00",
+    "venue": "Estádio BC Place, Vancouver",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": null
+  },
+  {
+    "id": "m052",
+    "phase": "Fase de Grupos",
+    "group": "B",
+    "home": "Qatar",
+    "away": "Canada",
+    "datetime": "2026-06-26T20:00:00-03:00",
+    "deadline": "2026-06-26T19:00:00-03:00",
+    "venue": "Estádio Lincoln Financial Field, Filadélfia",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": null
+  },
+  {
+    "id": "m053",
+    "phase": "Fase de Grupos",
+    "group": "C",
+    "home": "Scotland",
+    "away": "Morocco",
+    "datetime": "2026-06-26T20:00:00-03:00",
+    "deadline": "2026-06-26T19:00:00-03:00",
+    "venue": "Estádio AT&T, Dallas",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": null
+  },
+  {
+    "id": "m054",
+    "phase": "Fase de Grupos",
+    "group": "C",
+    "home": "Haiti",
+    "away": "Brazil",
+    "datetime": "2026-06-26T20:00:00-03:00",
+    "deadline": "2026-06-26T19:00:00-03:00",
+    "venue": "Estádio SoFi, Los Angeles",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": null
+  },
+  {
+    "id": "m055",
+    "phase": "Fase de Grupos",
+    "group": "D",
+    "home": "Australia",
+    "away": "USA",
+    "datetime": "2026-06-27T20:00:00-03:00",
+    "deadline": "2026-06-27T19:00:00-03:00",
+    "venue": "Estádio Levi's, São Francisco",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": null
+  },
+  {
+    "id": "m056",
+    "phase": "Fase de Grupos",
+    "group": "D",
+    "home": "Turkey",
+    "away": "Paraguay",
+    "datetime": "2026-06-27T20:00:00-03:00",
+    "deadline": "2026-06-27T19:00:00-03:00",
+    "venue": "Estádio Allegiant, Las Vegas",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": null
+  },
+  {
+    "id": "m057",
+    "phase": "Fase de Grupos",
+    "group": "E",
+    "home": "Ecuador",
+    "away": "Curacao",
+    "datetime": "2026-06-27T20:00:00-03:00",
+    "deadline": "2026-06-27T19:00:00-03:00",
+    "venue": "Estádio NRG, Houston",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": null
+  },
+  {
+    "id": "m058",
+    "phase": "Fase de Grupos",
+    "group": "E",
+    "home": "Ivory Coast",
+    "away": "Germany",
+    "datetime": "2026-06-27T20:00:00-03:00",
+    "deadline": "2026-06-27T19:00:00-03:00",
+    "venue": "Estádio Arrowhead, Kansas City",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": null
+  },
+  {
+    "id": "m059",
+    "phase": "Fase de Grupos",
+    "group": "F",
+    "home": "Japan",
+    "away": "Tunisia",
+    "datetime": "2026-06-28T20:00:00-03:00",
+    "deadline": "2026-06-28T19:00:00-03:00",
+    "venue": "Estádio Hard Rock, Miami",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": null
+  },
+  {
+    "id": "m060",
+    "phase": "Fase de Grupos",
+    "group": "F",
+    "home": "Netherlands",
+    "away": "Sweden",
+    "datetime": "2026-06-28T20:00:00-03:00",
+    "deadline": "2026-06-28T19:00:00-03:00",
+    "venue": "Estádio Camping World, Orlando",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": null
+  },
+  {
+    "id": "m061",
+    "phase": "Fase de Grupos",
+    "group": "G",
+    "home": "New Zealand",
+    "away": "Egypt",
+    "datetime": "2026-06-28T20:00:00-03:00",
+    "deadline": "2026-06-28T19:00:00-03:00",
+    "venue": "Estádio Rose Bowl, Los Angeles",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": null
+  },
+  {
+    "id": "m062",
+    "phase": "Fase de Grupos",
+    "group": "G",
+    "home": "Belgium",
+    "away": "Iran",
+    "datetime": "2026-06-28T20:00:00-03:00",
+    "deadline": "2026-06-28T19:00:00-03:00",
+    "venue": "Estádio Estadio BBVA, Monterrey",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": null
+  },
+  {
+    "id": "m063",
+    "phase": "Fase de Grupos",
+    "group": "H",
+    "home": "Uruguay",
+    "away": "Cape Verde",
+    "datetime": "2026-06-29T20:00:00-03:00",
+    "deadline": "2026-06-29T19:00:00-03:00",
+    "venue": "Estádio Gillette, Boston",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": null
+  },
+  {
+    "id": "m064",
+    "phase": "Fase de Grupos",
+    "group": "H",
+    "home": "Saudi Arabia",
+    "away": "Spain",
+    "datetime": "2026-06-29T20:00:00-03:00",
+    "deadline": "2026-06-29T19:00:00-03:00",
+    "venue": "Estádio Azteca, Cidade do México",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": null
+  },
+  {
+    "id": "m065",
+    "phase": "Fase de Grupos",
+    "group": "I",
+    "home": "Norway",
+    "away": "Senegal",
+    "datetime": "2026-06-29T20:00:00-03:00",
+    "deadline": "2026-06-29T19:00:00-03:00",
+    "venue": "Estádio MetLife, Nova York/Nova Jersey",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": null
+  },
+  {
+    "id": "m066",
+    "phase": "Fase de Grupos",
+    "group": "I",
+    "home": "Iraq",
+    "away": "France",
+    "datetime": "2026-06-29T20:00:00-03:00",
+    "deadline": "2026-06-29T19:00:00-03:00",
+    "venue": "Estádio SoFi, Los Angeles",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": null
+  },
+  {
+    "id": "m067",
+    "phase": "Fase de Grupos",
+    "group": "J",
+    "home": "Jordan",
+    "away": "Algeria",
+    "datetime": "2026-06-30T20:00:00-03:00",
+    "deadline": "2026-06-30T19:00:00-03:00",
+    "venue": "Estádio AT&T, Dallas",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": null
+  },
+  {
+    "id": "m068",
+    "phase": "Fase de Grupos",
+    "group": "J",
+    "home": "Austria",
+    "away": "Argentina",
+    "datetime": "2026-06-30T20:00:00-03:00",
+    "deadline": "2026-06-30T19:00:00-03:00",
+    "venue": "Estádio Rose Bowl, Los Angeles",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": null
+  },
+  {
+    "id": "m069",
+    "phase": "Fase de Grupos",
+    "group": "K",
+    "home": "Colombia",
+    "away": "DR Congo",
+    "datetime": "2026-06-30T20:00:00-03:00",
+    "deadline": "2026-06-30T19:00:00-03:00",
+    "venue": "Estádio Hard Rock, Miami",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": null
+  },
+  {
+    "id": "m070",
+    "phase": "Fase de Grupos",
+    "group": "K",
+    "home": "Uzbekistan",
+    "away": "Portugal",
+    "datetime": "2026-06-30T20:00:00-03:00",
+    "deadline": "2026-06-30T19:00:00-03:00",
+    "venue": "Estádio NRG, Houston",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": null
+  },
+  {
+    "id": "m071",
+    "phase": "Fase de Grupos",
+    "group": "L",
+    "home": "Ghana",
+    "away": "England",
+    "datetime": "2026-06-30T20:00:00-03:00",
+    "deadline": "2026-06-30T19:00:00-03:00",
+    "venue": "Estádio Mercedes-Benz, Atlanta",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": null
+  },
+  {
+    "id": "m072",
+    "phase": "Fase de Grupos",
+    "group": "L",
+    "home": "Panama",
+    "away": "Croatia",
+    "datetime": "2026-06-30T20:00:00-03:00",
+    "deadline": "2026-06-30T19:00:00-03:00",
+    "venue": "Estádio Arrowhead, Kansas City",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": null
+  },
+  {
+    "id": "m073",
+    "phase": "Oitavas (R32)",
+    "group": "",
+    "home": "1A",
+    "away": "2B",
+    "datetime": "2026-07-03T17:00:00-03:00",
+    "deadline": "2026-07-03T16:00:00-03:00",
+    "venue": "A definir",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": "R32-1"
+  },
+  {
+    "id": "m074",
+    "phase": "Oitavas (R32)",
+    "group": "",
+    "home": "1C",
+    "away": "2D",
+    "datetime": "2026-07-03T21:00:00-03:00",
+    "deadline": "2026-07-03T20:00:00-03:00",
+    "venue": "A definir",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": "R32-2"
+  },
+  {
+    "id": "m075",
+    "phase": "Oitavas (R32)",
+    "group": "",
+    "home": "1E",
+    "away": "2F",
+    "datetime": "2026-07-04T17:00:00-03:00",
+    "deadline": "2026-07-04T16:00:00-03:00",
+    "venue": "A definir",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": "R32-3"
+  },
+  {
+    "id": "m076",
+    "phase": "Oitavas (R32)",
+    "group": "",
+    "home": "1G",
+    "away": "2H",
+    "datetime": "2026-07-04T21:00:00-03:00",
+    "deadline": "2026-07-04T20:00:00-03:00",
+    "venue": "A definir",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": "R32-4"
+  },
+  {
+    "id": "m077",
+    "phase": "Oitavas (R32)",
+    "group": "",
+    "home": "1I",
+    "away": "2J",
+    "datetime": "2026-07-05T17:00:00-03:00",
+    "deadline": "2026-07-05T16:00:00-03:00",
+    "venue": "A definir",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": "R32-5"
+  },
+  {
+    "id": "m078",
+    "phase": "Oitavas (R32)",
+    "group": "",
+    "home": "1K",
+    "away": "2L",
+    "datetime": "2026-07-05T21:00:00-03:00",
+    "deadline": "2026-07-05T20:00:00-03:00",
+    "venue": "A definir",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": "R32-6"
+  },
+  {
+    "id": "m079",
+    "phase": "Oitavas (R32)",
+    "group": "",
+    "home": "1B",
+    "away": "2A",
+    "datetime": "2026-07-06T17:00:00-03:00",
+    "deadline": "2026-07-06T16:00:00-03:00",
+    "venue": "A definir",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": "R32-7"
+  },
+  {
+    "id": "m080",
+    "phase": "Oitavas (R32)",
+    "group": "",
+    "home": "1D",
+    "away": "2C",
+    "datetime": "2026-07-06T21:00:00-03:00",
+    "deadline": "2026-07-06T20:00:00-03:00",
+    "venue": "A definir",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": "R32-8"
+  },
+  {
+    "id": "m081",
+    "phase": "Oitavas (R32)",
+    "group": "",
+    "home": "3A/B/C/D",
+    "away": "3E/F/G/H",
+    "datetime": "2026-07-07T17:00:00-03:00",
+    "deadline": "2026-07-07T16:00:00-03:00",
+    "venue": "A definir",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": "R32-9"
+  },
+  {
+    "id": "m082",
+    "phase": "Oitavas (R32)",
+    "group": "",
+    "home": "3I/J/K/L",
+    "away": "1F",
+    "datetime": "2026-07-07T21:00:00-03:00",
+    "deadline": "2026-07-07T20:00:00-03:00",
+    "venue": "A definir",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": "R32-10"
+  },
+  {
+    "id": "m083",
+    "phase": "Oitavas (R32)",
+    "group": "",
+    "home": "1H",
+    "away": "3A/B/E/I",
+    "datetime": "2026-07-08T17:00:00-03:00",
+    "deadline": "2026-07-08T16:00:00-03:00",
+    "venue": "A definir",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": "R32-11"
+  },
+  {
+    "id": "m084",
+    "phase": "Oitavas (R32)",
+    "group": "",
+    "home": "1J",
+    "away": "3C/D/F/G",
+    "datetime": "2026-07-08T21:00:00-03:00",
+    "deadline": "2026-07-08T20:00:00-03:00",
+    "venue": "A definir",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": "R32-12"
+  },
+  {
+    "id": "m085",
+    "phase": "Oitavas (R32)",
+    "group": "",
+    "home": "1L",
+    "away": "2K",
+    "datetime": "2026-07-09T17:00:00-03:00",
+    "deadline": "2026-07-09T16:00:00-03:00",
+    "venue": "A definir",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": "R32-13"
+  },
+  {
+    "id": "m086",
+    "phase": "Oitavas (R32)",
+    "group": "",
+    "home": "2E",
+    "away": "2G",
+    "datetime": "2026-07-09T21:00:00-03:00",
+    "deadline": "2026-07-09T20:00:00-03:00",
+    "venue": "A definir",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": "R32-14"
+  },
+  {
+    "id": "m087",
+    "phase": "Oitavas (R32)",
+    "group": "",
+    "home": "2I",
+    "away": "2L",
+    "datetime": "2026-07-10T17:00:00-03:00",
+    "deadline": "2026-07-10T16:00:00-03:00",
+    "venue": "A definir",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": "R32-15"
+  },
+  {
+    "id": "m088",
+    "phase": "Oitavas (R32)",
+    "group": "",
+    "home": "1F_alt",
+    "away": "3rem",
+    "datetime": "2026-07-10T21:00:00-03:00",
+    "deadline": "2026-07-10T20:00:00-03:00",
+    "venue": "A definir",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": "R32-16"
+  },
+  {
+    "id": "m089",
+    "phase": "Oitavas de Final",
+    "group": "",
+    "home": "Venc. R32-1",
+    "away": "Venc. R32-2",
+    "datetime": "2026-07-13T21:00:00-03:00",
+    "deadline": "2026-07-13T20:00:00-03:00",
+    "venue": "A definir",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": "R16-1"
+  },
+  {
+    "id": "m090",
+    "phase": "Oitavas de Final",
+    "group": "",
+    "home": "Venc. R32-3",
+    "away": "Venc. R32-4",
+    "datetime": "2026-07-14T17:00:00-03:00",
+    "deadline": "2026-07-14T16:00:00-03:00",
+    "venue": "A definir",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": "R16-2"
+  },
+  {
+    "id": "m091",
+    "phase": "Oitavas de Final",
+    "group": "",
+    "home": "Venc. R32-5",
+    "away": "Venc. R32-6",
+    "datetime": "2026-07-14T21:00:00-03:00",
+    "deadline": "2026-07-14T20:00:00-03:00",
+    "venue": "A definir",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": "R16-3"
+  },
+  {
+    "id": "m092",
+    "phase": "Oitavas de Final",
+    "group": "",
+    "home": "Venc. R32-7",
+    "away": "Venc. R32-8",
+    "datetime": "2026-07-15T17:00:00-03:00",
+    "deadline": "2026-07-15T16:00:00-03:00",
+    "venue": "A definir",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": "R16-4"
+  },
+  {
+    "id": "m093",
+    "phase": "Oitavas de Final",
+    "group": "",
+    "home": "Venc. R32-9",
+    "away": "Venc. R32-10",
+    "datetime": "2026-07-15T21:00:00-03:00",
+    "deadline": "2026-07-15T20:00:00-03:00",
+    "venue": "A definir",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": "R16-5"
+  },
+  {
+    "id": "m094",
+    "phase": "Oitavas de Final",
+    "group": "",
+    "home": "Venc. R32-11",
+    "away": "Venc. R32-12",
+    "datetime": "2026-07-16T17:00:00-03:00",
+    "deadline": "2026-07-16T16:00:00-03:00",
+    "venue": "A definir",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": "R16-6"
+  },
+  {
+    "id": "m095",
+    "phase": "Oitavas de Final",
+    "group": "",
+    "home": "Venc. R32-13",
+    "away": "Venc. R32-14",
+    "datetime": "2026-07-16T21:00:00-03:00",
+    "deadline": "2026-07-16T20:00:00-03:00",
+    "venue": "A definir",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": "R16-7"
+  },
+  {
+    "id": "m096",
+    "phase": "Oitavas de Final",
+    "group": "",
+    "home": "Venc. R32-15",
+    "away": "Venc. R32-16",
+    "datetime": "2026-07-17T17:00:00-03:00",
+    "deadline": "2026-07-17T16:00:00-03:00",
+    "venue": "A definir",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": "R16-8"
+  },
+  {
+    "id": "m097",
+    "phase": "Quartas de Final",
+    "group": "",
+    "home": "Venc. R16-1",
+    "away": "Venc. R16-2",
+    "datetime": "2026-07-19T17:00:00-03:00",
+    "deadline": "2026-07-19T16:00:00-03:00",
+    "venue": "A definir",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": "QF-1"
+  },
+  {
+    "id": "m098",
+    "phase": "Quartas de Final",
+    "group": "",
+    "home": "Venc. R16-3",
+    "away": "Venc. R16-4",
+    "datetime": "2026-07-19T21:00:00-03:00",
+    "deadline": "2026-07-19T20:00:00-03:00",
+    "venue": "A definir",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": "QF-2"
+  },
+  {
+    "id": "m099",
+    "phase": "Quartas de Final",
+    "group": "",
+    "home": "Venc. R16-5",
+    "away": "Venc. R16-6",
+    "datetime": "2026-07-20T17:00:00-03:00",
+    "deadline": "2026-07-20T16:00:00-03:00",
+    "venue": "A definir",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": "QF-3"
+  },
+  {
+    "id": "m100",
+    "phase": "Quartas de Final",
+    "group": "",
+    "home": "Venc. R16-7",
+    "away": "Venc. R16-8",
+    "datetime": "2026-07-20T21:00:00-03:00",
+    "deadline": "2026-07-20T20:00:00-03:00",
+    "venue": "A definir",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": "QF-4"
+  },
+  {
+    "id": "m101",
+    "phase": "Semifinal",
+    "group": "",
+    "home": "Venc. QF-1",
+    "away": "Venc. QF-2",
+    "datetime": "2026-07-14T21:00:00-03:00",
+    "deadline": "2026-07-14T20:00:00-03:00",
+    "venue": "A definir",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": "SF-1"
+  },
+  {
+    "id": "m102",
+    "phase": "Semifinal",
+    "group": "",
+    "home": "Venc. QF-3",
+    "away": "Venc. QF-4",
+    "datetime": "2026-07-15T21:00:00-03:00",
+    "deadline": "2026-07-15T20:00:00-03:00",
+    "venue": "A definir",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": "SF-2"
+  },
+  {
+    "id": "m103",
+    "phase": "Terceiro Lugar",
+    "group": "",
+    "home": "Perd. SF-1",
+    "away": "Perd. SF-2",
+    "datetime": "2026-07-18T17:00:00-03:00",
+    "deadline": "2026-07-18T16:00:00-03:00",
+    "venue": "Estádio Hard Rock, Miami",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": "3P"
+  },
+  {
+    "id": "m104",
+    "phase": "Final",
+    "group": "",
+    "home": "Venc. SF-1",
+    "away": "Venc. SF-2",
+    "datetime": "2026-07-19T17:00:00-03:00",
+    "deadline": "2026-07-19T16:00:00-03:00",
+    "venue": "Estádio MetLife, Nova York/Nova Jersey",
+    "status": "scheduled",
+    "result": {
+      "home": null,
+      "away": null
+    },
+    "knockoutLabel": "F"
+  }
+];
+
+const COPA2026_FLAGS = {"Mexico": "🇲🇽", "South Africa": "🇿🇦", "South Korea": "🇰🇷", "Czech Republic": "🇨🇿", "Canada": "🇨🇦", "Bosnia-Herzegovina": "🇧🇦", "Qatar": "🇶🇦", "Switzerland": "🇨🇭", "Brazil": "🇧🇷", "Morocco": "🇲🇦", "Haiti": "🇭🇹", "Scotland": "🏴󠁧󠁢󠁳󠁣󠁴󠁿", "USA": "🇺🇸", "Paraguay": "🇵🇾", "Australia": "🇦🇺", "Turkey": "🇹🇷", "Germany": "🇩🇪", "Curacao": "🇨🇼", "Ivory Coast": "🇨🇮", "Ecuador": "🇪🇨", "Netherlands": "🇳🇱", "Japan": "🇯🇵", "Sweden": "🇸🇪", "Tunisia": "🇹🇳", "Belgium": "🇧🇪", "Egypt": "🇪🇬", "Iran": "🇮🇷", "New Zealand": "🇳🇿", "Spain": "🇪🇸", "Cape Verde": "🇨🇻", "Saudi Arabia": "🇸🇦", "Uruguay": "🇺🇾", "France": "🇫🇷", "Senegal": "🇸🇳", "Iraq": "🇮🇶", "Norway": "🇳🇴", "Argentina": "🇦🇷", "Algeria": "🇩🇿", "Austria": "🇦🇹", "Jordan": "🇯🇴", "Portugal": "🇵🇹", "DR Congo": "🇨🇩", "Uzbekistan": "🇺🇿", "Colombia": "🇨🇴", "England": "🏴󠁧󠁢󠁥󠁮󠁧󠁿", "Croatia": "🇭🇷", "Ghana": "🇬🇭", "Panama": "🇵🇦"};
 
 function flag(name){ return FLAGS[name] || '🏳️'; }
 
@@ -1383,65 +3037,48 @@ async function deleteMatch(id){
 
 // Generate group stage
 function openGenerateMatches(){
-  document.getElementById('modalTitle').textContent = 'Gerar Fase de Grupos';
+  document.getElementById('modalTitle').textContent = 'Importar jogos da Copa 2026';
   document.getElementById('modalBody').innerHTML = `
-    <p style="font-size:14px;color:var(--muted);margin-bottom:16px">Isso irá gerar os ${Object.keys(COPA_GROUPS).length * 6} jogos da fase de grupos com os times pré-configurados da Copa 2026. Você poderá editar cada jogo depois.</p>
-    <div class="form-grid">
-      <div class="form-group">
-        <label class="label">Data início (fase de grupos)</label>
-        <input class="input" id="genStart" type="date" value="2026-06-11">
+    <p style="font-size:14px;color:var(--muted);margin-bottom:16px">Importa os <strong>104 jogos reais</strong> da Copa do Mundo FIFA 2026 com datas, horários (BRT) e estádios reais.</p>
+    <div style="display:grid;gap:8px;margin-bottom:16px">
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:12px 14px;font-size:13px">
+        <strong style="color:var(--text)">72 jogos</strong> <span style="color:var(--muted)">Fase de Grupos (12 grupos × 3 rodadas)</span>
+      </div>
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:12px 14px;font-size:13px">
+        <strong style="color:var(--text)">16 jogos</strong> <span style="color:var(--muted)">Round of 32 — com classificados a preencher</span>
+      </div>
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:12px 14px;font-size:13px">
+        <strong style="color:var(--text)">16 jogos</strong> <span style="color:var(--muted)">Oitavas, Quartas, Semi, 3º lugar e Final</span>
       </div>
     </div>
-    <div style="background:rgba(245,200,66,.08);border:1px solid rgba(245,200,66,.2);border-radius:9px;padding:12px 14px;margin-top:12px;font-size:12px;color:var(--muted)">
-      ⚠️ Jogos com mesmos times que já existam serão ignorados.
+    <div style="background:rgba(201,134,15,.08);border:1px solid rgba(201,134,15,.25);border-radius:9px;padding:12px 14px;font-size:12px;color:var(--muted)">
+      ⚽ Fase de grupos com times e horários reais. Fases eliminatórias com chaveamento oficial da FIFA — admin edita os times quando os classificados forem definidos.
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
-      <button class="btn btn-primary" onclick="generateGroupMatches()">Gerar jogos</button>
+      <button class="btn btn-primary" onclick="generateGroupMatches()">Importar 104 jogos</button>
     </div>`;
   openModal();
 }
 
 async function generateGroupMatches(){
-  const startDate = new Date(document.getElementById('genStart').value + 'T12:00:00');
-  if(isNaN(startDate)){ toast('Data inválida','err'); return; }
+  if(!confirm('Importar todos os 104 jogos reais da Copa 2026? Jogos já existentes com mesmo ID serão ignorados.')) return;
 
   let added = 0;
-  const dayMs = 86400000;
-  let dayOffset = 0;
-  let timeSlot = 0;
+  const existingIds = new Set(state.matches.map(m=>m.id));
 
-  for(const [group, teams] of Object.entries(COPA_GROUPS)){
-    // round robin — each team plays the other once: 6 games per group
-    const games = [];
-    for(let i=0;i<teams.length;i++){
-      for(let j=i+1;j<teams.length;j++){
-        games.push([teams[i],teams[j]]);
-      }
-    }
-    games.forEach(([home,away])=>{
-      const exists = state.matches.find(m=>
-        (m.home===home && m.away===away)||(m.home===away&&m.away===home)
-      );
-      if(exists) return;
-      const dt = new Date(startDate.getTime() + dayOffset*dayMs + timeSlot*7200000);
-      state.matches.push({
-        id: uid(), phase:'Fase de Grupos', group,
-        home, away, venue:'A definir',
-        status:'scheduled',
-        datetime: dt.toISOString(),
-        deadline: new Date(dt.getTime()-3600000).toISOString(),
-        result:{home:null,away:null}
-      });
-      added++;
-      timeSlot = (timeSlot+1)%4;
-      if(timeSlot===0) dayOffset++;
-    });
-  }
+  COPA2026_MATCHES.forEach(m => {
+    if(existingIds.has(m.id)) return;
+    state.matches.push({...m});
+    added++;
+  });
+
+  // sort by datetime
+  state.matches.sort((a,b)=>(a.datetime||'').localeCompare(b.datetime||''));
 
   await saveState();
   closeModal();
-  toast(`${added} jogo(s) gerado(s)!`,'ok');
+  toast(`${added} jogo(s) importado(s)!`,'ok');
   renderAdmin('matches');
   renderMatchPhaseFilter();
 }

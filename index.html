@@ -375,6 +375,12 @@ const API_KEY = '$2a$10$40YJyDbx2qjgu7U8t69n9e5Hh981rItZ6FoKG76pr1UwYpUhQ/rzu';
 const URL_BIN = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
 const STORAGE  = 'bolao_copa2026';
 
+// ── API-FOOTBALL ──
+const APIFOOTBALL_KEY = 'b2181acf85bd58ab8189d15db7bed662';
+const APIFOOTBALL_URL = 'https://v3.football.api-sports.io';
+const APIFOOTBALL_LEAGUE = 1;
+const APIFOOTBALL_SEASON = 2026;
+
 // Copa 2026 — 48 jogos fase de grupos (simplificado com seleções reais)
 const COPA_GROUPS = {
   A:['Mexico','South Africa','South Korea','Czech Republic'],
@@ -2859,6 +2865,17 @@ function adminSettingsHTML(){
       </div>
     </div>
     <div class="panel">
+      <div class="panel-head"><div><h2>Sincronizar com API-Football</h2><p>Busca resultados e times classificados automaticamente</p></div></div>
+      <div style="padding:16px 20px;display:grid;gap:14px">
+        <p style="font-size:13px;color:var(--muted)">Sincroniza resultados dos jogos encerrados e preenche os times classificados nas fases eliminatórias. Usa 1 requisição da sua cota diária (limite: 100/dia).</p>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn btn-green" onclick="syncFromAPI('results')">⚡ Sincronizar resultados de hoje</button>
+          <button class="btn btn-ghost" onclick="syncFromAPI('all')">🔄 Sincronizar tudo (todos os jogos)</button>
+        </div>
+        <div id="apiSyncStatus" style="font-size:12px;color:var(--muted);min-height:18px"></div>
+      </div>
+    </div>
+    <div class="panel">
       <div class="panel-head"><div><h2>Recalcular pontuações</h2><p>Use se houver ajuste de resultado ou regras</p></div></div>
       <div style="padding:16px 20px">
         <p style="font-size:13px;color:var(--muted);margin-bottom:14px">Recalcula a pontuação de todos os palpites com base nos resultados atuais e nas regras configuradas.</p>
@@ -3238,6 +3255,110 @@ function toast(msg,type='ok'){
   el.innerHTML = `<span style="color:${type==='ok'?'var(--green)':'var(--red)'}">${type==='ok'?'✓':'✕'}</span> ${msg}`;
   document.getElementById('toastWrap').appendChild(el);
   setTimeout(()=>el.remove(),3200);
+}
+
+// ═══════════════════════════════════════════
+// API-FOOTBALL SYNC
+// ═══════════════════════════════════════════
+
+const API_TEAM_MAP = {
+  'Mexico':'Mexico','South Africa':'South Africa','South Korea':'South Korea',
+  'Czech Republic':'Czech Republic','Canada':'Canada','Bosnia':'Bosnia-Herzegovina',
+  'Qatar':'Qatar','Switzerland':'Switzerland','Brazil':'Brazil','Morocco':'Morocco',
+  'Haiti':'Haiti','Scotland':'Scotland','United States':'USA','Paraguay':'Paraguay',
+  'Australia':'Australia','Turkey':'Turkey','Germany':'Germany','Curacao':'Curacao',
+  "Cote d'Ivoire":'Ivory Coast','Ecuador':'Ecuador','Netherlands':'Netherlands',
+  'Japan':'Japan','Sweden':'Sweden','Tunisia':'Tunisia','Belgium':'Belgium',
+  'Egypt':'Egypt','Iran':'Iran','New Zealand':'New Zealand','Spain':'Spain',
+  'Cape Verde':'Cape Verde','Saudi Arabia':'Saudi Arabia','Uruguay':'Uruguay',
+  'France':'France','Senegal':'Senegal','Iraq':'Iraq','Norway':'Norway',
+  'Argentina':'Argentina','Algeria':'Algeria','Austria':'Austria','Jordan':'Jordan',
+  'Portugal':'Portugal','DR Congo':'DR Congo','Uzbekistan':'Uzbekistan','Colombia':'Colombia',
+  'England':'England','Croatia':'Croatia','Ghana':'Ghana','Panama':'Panama'
+};
+
+function normTeam(n){ return API_TEAM_MAP[n] || n; }
+
+async function syncFromAPI(mode){
+  const status = document.getElementById('apiSyncStatus');
+  if(status) status.textContent = 'Conectando a API-Football...';
+
+  const today = new Date().toISOString().slice(0,10);
+  const qs = mode === 'results'
+    ? `league=${APIFOOTBALL_LEAGUE}&season=${APIFOOTBALL_SEASON}&date=${today}&status=FT`
+    : `league=${APIFOOTBALL_LEAGUE}&season=${APIFOOTBALL_SEASON}`;
+
+  try {
+    const res = await fetch(`${APIFOOTBALL_URL}/fixtures?${qs}`, {
+      headers: { 'x-apisports-key': APIFOOTBALL_KEY }
+    });
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    if(data.errors && Object.keys(data.errors).length){
+      throw new Error(Object.values(data.errors)[0]);
+    }
+
+    const fixtures = data.response || [];
+    let updRes = 0, updTeams = 0;
+
+    fixtures.forEach(fix => {
+      const apiHome   = normTeam(fix.teams?.home?.name || '');
+      const apiAway   = normTeam(fix.teams?.away?.name || '');
+      const apiStatus = fix.fixture?.status?.short || '';
+      const gh = fix.goals?.home;
+      const ga = fix.goals?.away;
+
+      // match by teams
+      let m = state.matches.find(x =>
+        (x.home === apiHome && x.away === apiAway) ||
+        (x.home === apiAway && x.away === apiHome)
+      );
+
+      if(!m) return;
+
+      // update result if finished
+      if(['FT','AET','PEN'].includes(apiStatus) && gh !== null && ga !== null){
+        const swapped = m.home !== apiHome;
+        m.result = { home: swapped ? ga : gh, away: swapped ? gh : ga };
+        m.status = 'finished';
+        state.predictions.filter(p => p.matchId === m.id).forEach(pred => {
+          pred.points = calcPoints(pred, m);
+          pred.status = 'pontuado';
+        });
+        updRes++;
+      }
+
+      // live
+      if(['1H','2H','HT','ET'].includes(apiStatus)){
+        m.status = 'live';
+        if(gh !== null && ga !== null){
+          const swapped = m.home !== apiHome;
+          m.result = { home: swapped ? ga : gh, away: swapped ? gh : ga };
+        }
+      }
+
+      // fill knockout placeholders
+      const isPlaceholder = n => n && (
+        /^[12][A-L]/.test(n) || n.startsWith('Venc.') || n.startsWith('Perd.') || n.startsWith('3')
+      );
+      if(isPlaceholder(m.home) && apiHome){ m.home = apiHome; updTeams++; }
+      if(isPlaceholder(m.away) && apiAway){ m.away = apiAway; updTeams++; }
+    });
+
+    await saveState();
+    const msg = [
+      updRes   ? updRes   + ' resultado(s)' : '',
+      updTeams ? updTeams + ' time(s) preenchido(s)' : ''
+    ].filter(Boolean).join(' · ');
+    if(status) status.textContent = 'Sincronizado! ' + (msg || 'Sem novidades.') + ' (' + fixtures.length + ' jogos da API)';
+    toast('Sincronizacao concluida!', 'ok');
+    renderAdmin('settings');
+    if(document.getElementById('view-matches').classList.contains('active')) renderMatches();
+    renderRanking();
+  } catch(e){
+    if(status) status.textContent = 'Erro: ' + e.message;
+    toast('Erro ao sincronizar: ' + e.message, 'err');
+  }
 }
 
 // ═══════════════════════════════════════════

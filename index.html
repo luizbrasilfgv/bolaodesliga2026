@@ -8,21 +8,21 @@
 @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800;900&display=swap');
 
 :root {
-  --bg: #0a0e1a;
-  --surface: #111827;
-  --surface2: #1a2234;
-  --surface3: #1f2d45;
-  --border: #1e2d45;
-  --border2: #2a3f5f;
-  --gold: #f5c842;
-  --gold2: #e8a800;
-  --green: #00d084;
-  --red: #ff4757;
-  --blue: #3b82f6;
-  --cyan: #06b6d4;
-  --text: #f0f4ff;
-  --muted: #6b7fa3;
-  --muted2: #4a5878;
+  --bg: #f4f7fb;
+  --surface: #ffffff;
+  --surface2: #f0f4f8;
+  --surface3: #e8eef5;
+  --border: #dde5ef;
+  --border2: #c8d5e8;
+  --gold: #c9860f;
+  --gold2: #a36b00;
+  --green: #1a9e5c;
+  --red: #d94339;
+  --blue: #2563eb;
+  --cyan: #0891b2;
+  --text: #0f1729;
+  --muted: #5a6a85;
+  --muted2: #8a9ab5;
   --font-display: 'Bebas Neue', 'Impact', sans-serif;
   --font: 'Inter', system-ui, sans-serif;
   --rx: 12px;
@@ -30,7 +30,7 @@
 
 *{margin:0;padding:0;box-sizing:border-box;}
 body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh;overflow-x:hidden;}
-body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80% 60% at 50% -10%,rgba(59,130,246,0.12),transparent 70%),radial-gradient(ellipse 50% 40% at 90% 80%,rgba(245,200,66,0.06),transparent 60%);pointer-events:none;z-index:0;}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80% 60% at 50% -10%,rgba(37,99,235,0.06),transparent 70%),radial-gradient(ellipse 50% 40% at 90% 80%,rgba(201,134,15,0.04),transparent 60%);pointer-events:none;z-index:0;}
 .app{position:relative;z-index:1;}
 button,input,select,textarea{font-family:var(--font);}
 button{border:0;cursor:pointer;background:none;}
@@ -39,9 +39,9 @@ input,select,textarea{outline:none;}
 /* ── LOGIN ── */
 .login-screen{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:var(--bg);}
 .login-card{width:min(420px,calc(100vw - 32px));text-align:center;}
-.login-logo{font-family:var(--font-display);font-size:52px;letter-spacing:2px;background:linear-gradient(135deg,var(--gold),var(--gold2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1;margin-bottom:4px;}
+.login-logo{font-family:var(--font-display);font-size:52px;letter-spacing:2px;color:var(--gold);line-height:1;margin-bottom:4px;}
 .login-sub{font-size:12px;text-transform:uppercase;letter-spacing:4px;color:var(--muted);margin-bottom:36px;}
-.login-box{background:var(--surface);border:1px solid var(--border2);border-radius:20px;padding:32px;box-shadow:0 24px 64px rgba(0,0,0,0.5);}
+.login-box{background:var(--surface);border:1px solid var(--border2);border-radius:20px;padding:32px;box-shadow:0 24px 64px rgba(0,0,0,0.12);}
 .login-pool-name{font-size:20px;font-weight:800;color:var(--gold);margin-bottom:24px;min-height:28px;}
 .field{margin-bottom:16px;text-align:left;}
 .field label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);font-weight:600;margin-bottom:7px;}
@@ -106,9 +106,9 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 
 /* ── RANKING ── */
 .rank-grid{padding:14px;display:grid;gap:8px;}
-.rank-item{display:grid;grid-template-columns:44px 1fr auto auto;gap:10px;align-items:center;padding:12px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:11px;transition:border-color .2s;}
-.rank-item:hover{border-color:var(--border2);}
-.rank-item.first{border-color:rgba(245,200,66,.4);background:linear-gradient(90deg,rgba(245,200,66,.06),var(--surface2) 60%);}
+.rank-item{display:grid;grid-template-columns:44px 1fr auto auto;gap:10px;align-items:center;padding:12px 14px;background:var(--surface);border:1px solid var(--border);border-radius:11px;transition:border-color .2s,box-shadow .2s;box-shadow:0 1px 3px rgba(0,0,0,.04);}
+.rank-item:hover{border-color:var(--border2);box-shadow:0 3px 10px rgba(0,0,0,.07);}
+.rank-item.first{border-color:rgba(201,134,15,.4);background:linear-gradient(90deg,rgba(201,134,15,.06),var(--surface) 60%);}
 .rank-pos{font-family:var(--font-display);font-size:22px;color:var(--muted2);text-align:center;}
 .rank-pos.gold{color:var(--gold);}
 .rank-name{font-weight:700;font-size:14px;}
@@ -118,9 +118,9 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 
 /* ── MATCHES ── */
 .matches-grid{padding:14px;display:grid;gap:10px;}
-.match-card{background:var(--surface2);border:1px solid var(--border);border-radius:12px;overflow:hidden;transition:border-color .2s;}
-.match-card:hover{border-color:var(--border2);}
-.match-header{padding:8px 14px;background:rgba(255,255,255,.03);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;font-size:11px;color:var(--muted);}
+.match-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;transition:border-color .2s,box-shadow .2s;box-shadow:0 1px 4px rgba(0,0,0,.05);}
+.match-card:hover{border-color:var(--border2);box-shadow:0 4px 14px rgba(0,0,0,.08);}
+.match-header{padding:8px 14px;background:var(--surface2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;font-size:11px;color:var(--muted);}
 .match-header .phase-badge{padding:2px 7px;border-radius:4px;background:rgba(59,130,246,.15);color:var(--blue);font-weight:700;font-size:10px;}
 .match-body{padding:14px;display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:center;}
 .match-team{display:flex;flex-direction:column;align-items:center;gap:5px;text-align:center;}
@@ -128,7 +128,7 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 .match-team-name{font-size:13px;font-weight:700;}
 .match-vs{font-family:var(--font-display);font-size:20px;color:var(--muted2);text-align:center;}
 .match-score{display:flex;align-items:center;gap:6px;}
-.score-box{width:36px;height:36px;background:var(--surface3);border:1px solid var(--border2);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:var(--text);}
+.score-box{width:36px;height:36px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:var(--text);}
 .score-sep{color:var(--muted2);font-weight:800;}
 .match-footer{padding:8px 14px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;}
 .match-status{padding:3px 8px;border-radius:999px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;}
@@ -143,7 +143,7 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 .pred-row{padding:12px 14px;border-top:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
 .pred-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;flex-shrink:0;}
 .pred-inputs{display:flex;align-items:center;gap:8px;}
-.pred-input{width:44px;height:38px;background:var(--surface3);border:1px solid var(--border2);border-radius:8px;text-align:center;color:var(--text);font-size:18px;font-weight:900;transition:border-color .2s;}
+.pred-input{width:44px;height:38px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;text-align:center;color:var(--text);font-size:18px;font-weight:900;transition:border-color .2s;}
 .pred-input:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(245,200,66,.12);}
 .pred-input:disabled{opacity:.5;cursor:not-allowed;}
 .pred-sep{color:var(--muted2);font-weight:800;font-size:18px;}
@@ -156,7 +156,7 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 
 /* ── SCORE INPUT (admin) ── */
 .score-input-wrap{display:flex;align-items:center;gap:6px;}
-.score-input{width:42px;height:34px;background:var(--surface3);border:1px solid var(--border2);border-radius:7px;text-align:center;color:var(--text);font-size:16px;font-weight:900;}
+.score-input{width:42px;height:34px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;text-align:center;color:var(--text);font-size:16px;font-weight:900;}
 .score-input:focus{border-color:var(--green);}
 
 /* ── PHASE FILTER ── */
@@ -167,7 +167,7 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 
 /* ── STATS CARDS ── */
 .stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:20px;}
-.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:11px;padding:16px 18px;}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:11px;padding:16px 18px;box-shadow:0 1px 3px rgba(0,0,0,.04);}
 .stat-card .s-label{font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:8px;}
 .stat-card .s-val{font-family:var(--font-display);font-size:30px;line-height:1;letter-spacing:-.5px;}
 .stat-card .s-val.gold{color:var(--gold);}
@@ -175,9 +175,9 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 .stat-card .s-val.blue{color:var(--blue);}
 
 /* ── MODAL ── */
-.overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(4px);z-index:100;display:flex;align-items:center;justify-content:center;padding:16px;opacity:0;pointer-events:none;transition:opacity .2s;}
+.overlay{position:fixed;inset:0;background:rgba(15,23,41,.55);backdrop-filter:blur(4px);z-index:100;display:flex;align-items:center;justify-content:center;padding:16px;opacity:0;pointer-events:none;transition:opacity .2s;}
 .overlay.open{opacity:1;pointer-events:all;}
-.modal{background:var(--surface);border:1px solid var(--border2);border-radius:18px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;transform:translateY(16px);transition:transform .2s;box-shadow:0 24px 64px rgba(0,0,0,.6);}
+.modal{background:var(--surface);border:1px solid var(--border2);border-radius:18px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;transform:translateY(16px);transition:transform .2s;box-shadow:0 24px 64px rgba(0,0,0,.15);}
 .overlay.open .modal{transform:translateY(0);}
 .modal-head{padding:22px 24px 0;display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;}
 .modal-head h3{font-size:18px;font-weight:800;}
@@ -187,9 +187,9 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 .modal-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:20px;}
 
 /* ── CONFIRM ── */
-.confirm-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(4px);z-index:200;display:flex;align-items:center;justify-content:center;padding:16px;opacity:0;pointer-events:none;transition:opacity .2s;}
+.confirm-overlay{position:fixed;inset:0;background:rgba(15,23,41,.55);backdrop-filter:blur(4px);z-index:200;display:flex;align-items:center;justify-content:center;padding:16px;opacity:0;pointer-events:none;transition:opacity .2s;}
 .confirm-overlay.open{opacity:1;pointer-events:all;}
-.confirm-box{background:var(--surface);border:1px solid var(--border2);border-radius:16px;padding:28px;max-width:340px;width:100%;text-align:center;transform:scale(.95);transition:transform .2s;box-shadow:0 24px 64px rgba(0,0,0,.6);}
+.confirm-box{background:var(--surface);border:1px solid var(--border2);border-radius:16px;padding:28px;max-width:340px;width:100%;text-align:center;transform:scale(.95);transition:transform .2s;box-shadow:0 24px 64px rgba(0,0,0,.15);}
 .confirm-overlay.open .confirm-box{transform:scale(1);}
 
 /* ── TOAST ── */
@@ -202,13 +202,13 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 /* ── RULES EDITOR ── */
 .rules-section{margin-bottom:20px;}
 .rules-section h3{font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:12px;}
-.rules-row{display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--surface2);border-radius:9px;margin-bottom:7px;}
+.rules-row{display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:9px;margin-bottom:7px;}
 .rules-row label{flex:1;font-size:13px;color:var(--text);}
-.rules-row input{width:70px;background:var(--surface3);border:1px solid var(--border2);border-radius:7px;padding:6px 10px;color:var(--text);font-size:14px;font-weight:700;text-align:center;}
+.rules-row input{width:70px;background:var(--surface);border:1px solid var(--border2);border-radius:7px;padding:6px 10px;color:var(--text);font-size:14px;font-weight:700;text-align:center;}
 .rules-row input:focus{border-color:var(--gold);}
 
 /* ── PREDICTION HISTORY ── */
-.history-row{display:grid;grid-template-columns:100px 1fr 80px 100px;gap:8px;align-items:center;padding:9px 14px;border-bottom:1px solid var(--border);font-size:12px;}
+.history-row{display:grid;grid-template-columns:100px 1fr 80px 100px;gap:8px;align-items:center;padding:9px 14px;border-bottom:1px solid var(--border);font-size:12px;color:var(--text);}
 .history-row:last-child{border-bottom:0;}
 .hist-date{color:var(--muted);}
 .hist-score{font-weight:800;}
@@ -225,7 +225,7 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 .admin-table th{text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);padding:0 14px 10px;border-bottom:1px solid var(--border);}
 .admin-table td{padding:11px 14px;font-size:13px;border-bottom:1px solid rgba(30,45,69,.6);vertical-align:middle;}
 .admin-table tr:last-child td{border-bottom:0;}
-.admin-table tr:hover td{background:rgba(255,255,255,.018);}
+.admin-table tr:hover td{background:rgba(37,99,235,.04);}
 
 /* ── RESPONSIVE ── */
 @media(max-width:768px){
@@ -236,6 +236,11 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
   .stats-grid{grid-template-columns:1fr 1fr;}
   .rank-item{grid-template-columns:34px 1fr auto;}
 }
+
+  /* === TOOLTIPS === */
+  [title]{cursor:help;}
+  .tip-icon{width:16px;height:16px;border-radius:50%;background:var(--border2);color:var(--muted);font-size:10px;font-weight:900;display:inline-flex;align-items:center;justify-content:center;cursor:help;flex-shrink:0;margin-left:5px;transition:background .15s;}
+  .tip-icon:hover{background:var(--blue);color:#fff;}
 </style>
 </head>
 <body>
@@ -289,13 +294,7 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
     <!-- HOME -->
     <div class="view active" id="view-home">
       <div class="stats-grid" id="homeStats"></div>
-      <div class="panel">
-        <div class="panel-head">
-          <div><h2>Próximos jogos</h2><p>Seus palpites em aberto</p></div>
-          <button class="btn btn-ghost btn-sm" onclick="goView('matches',document.querySelector('[data-view=matches]'))">Ver todos</button>
-        </div>
-        <div id="homeMatches"></div>
-      </div>
+      <div id="homeMatches"></div>
     </div>
 
     <!-- MATCHES -->
@@ -627,26 +626,81 @@ function renderHome(){
   const total = state.participants.filter(p=>p.role!=='admin'||p.alsoPlayer).length;
   const openM = state.matches.filter(m=>isPredOpen(m)).length;
   const myPts = getTotalPoints(currentUser.id);
-  const myRank = [...state.participants]
+  const ranked = [...state.participants]
     .filter(p=>p.role!=='admin'||p.alsoPlayer)
-    .sort((a,b)=>getTotalPoints(b.id)-getTotalPoints(a.id))
-    .findIndex(p=>p.id===currentUser.id)+1;
+    .sort((a,b)=>getTotalPoints(b.id)-getTotalPoints(a.id));
+  const myRank = ranked.findIndex(p=>p.id===currentUser.id)+1;
+  const leader = ranked[0];
 
+  // Stats
   document.getElementById('homeStats').innerHTML = `
     <div class="stat-card"><div class="s-label">Meus pontos</div><div class="s-val gold">${myPts}</div></div>
     <div class="stat-card"><div class="s-label">Minha posição</div><div class="s-val blue">${myRank>0?myRank+'º':'--'}</div></div>
     <div class="stat-card"><div class="s-label">Jogos abertos</div><div class="s-val green">${openM}</div></div>
-    <div class="stat-card"><div class="s-label">Participantes</div><div class="s-val">${total}</div></div>
+    <div class="stat-card"><div class="s-label">Lider</div><div class="s-val gold" style="font-size:18px">${leader?leader.name.split(' ')[0]:'--'}</div></div>
   `;
 
-  // show open matches
-  const openMatches = state.matches.filter(m=>isPredOpen(m)).slice(0,5);
-  const el = document.getElementById('homeMatches');
+  // Zone 1: pending predictions
+  const openMatches = state.matches.filter(m=>isPredOpen(m));
+  const pendingMatches = openMatches.filter(m=>!getMyPred(m.id));
+  const savedMatches   = openMatches.filter(m=>!!getMyPred(m.id));
+
+  let zone1HTML = '';
   if(!openMatches.length){
-    el.innerHTML = `<div class="empty"><div class="icon">⚽</div><p>Nenhum jogo aberto para palpites no momento.</p></div>`;
-    return;
+    zone1HTML = `<div class="empty"><div class="icon">✅</div><p>Nenhum jogo aberto para palpites no momento.</p></div>`;
+  } else {
+    if(pendingMatches.length){
+      zone1HTML += `<div style="font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--red);font-weight:800;padding:12px 16px 4px;display:flex;align-items:center;gap:6px">⚠️ Palpites pendentes (${pendingMatches.length})</div>`;
+      zone1HTML += pendingMatches.slice(0,4).map(m=>matchCardHTML(m,true)).join('');
+    }
+    if(savedMatches.length){
+      zone1HTML += `<div style="font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--green);font-weight:800;padding:12px 16px 4px;display:flex;align-items:center;gap:6px">✓ Palpites salvos (${savedMatches.length})</div>`;
+      zone1HTML += savedMatches.slice(0,3).map(m=>matchCardHTML(m,true)).join('');
+    }
   }
-  el.innerHTML = openMatches.map(m=>matchCardHTML(m,true)).join('');
+
+  // Zone 2: recent results
+  const recentFinished = state.matches
+    .filter(m=>m.status==='finished' && m.result && m.result.home!==null)
+    .sort((a,b)=>(b.datetime||'').localeCompare(a.datetime||''))
+    .slice(0,5);
+
+  let zone2HTML = '';
+  if(!recentFinished.length){
+    zone2HTML = `<div class="empty" style="padding:24px"><div class="icon">🎯</div><p>Nenhum resultado lançado ainda.</p></div>`;
+  } else {
+    zone2HTML = recentFinished.map(m=>{
+      const myPred = getMyPred(m.id);
+      const pts = myPred?.points;
+      return `<div style="display:grid;grid-template-columns:1fr auto 1fr auto auto;gap:10px;align-items:center;padding:12px 16px;border-bottom:1px solid var(--border)">
+        <div style="text-align:right;font-size:13px;font-weight:700">${flag(m.home)} ${m.home}</div>
+        <div style="font-family:var(--font-display);font-size:22px;color:var(--gold);text-align:center;min-width:60px">${m.result.home} - ${m.result.away}</div>
+        <div style="font-size:13px;font-weight:700">${flag(m.away)} ${m.away}</div>
+        <div style="font-size:12px;color:var(--muted);text-align:right">
+          ${myPred ? `Palpite: ${myPred.home}-${myPred.away}` : 'Sem palpite'}
+        </div>
+        <div style="min-width:60px;text-align:right">
+          ${pts!==null&&pts!==undefined ? `<span style="font-weight:900;color:${pts>0?'var(--green)':'var(--muted)'}">+${pts} pts</span>` : '<span style="color:var(--muted2)">--</span>'}
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  document.getElementById('homeMatches').innerHTML = `
+    <div class="panel" style="margin-bottom:16px">
+      <div class="panel-head">
+        <div><h2>🎯 Meus palpites pendentes</h2><p>Jogos abertos onde você ainda não palpitou aparecem primeiro</p></div>
+        <button class="btn btn-ghost btn-sm" onclick="goView('matches',document.querySelector('[data-view=matches]'))">Ver todos os jogos</button>
+      </div>
+      <div>${zone1HTML}</div>
+    </div>
+    <div class="panel">
+      <div class="panel-head">
+        <div><h2>📋 Últimos resultados</h2><p>Seu palpite e pontos ganhos</p></div>
+      </div>
+      <div>${zone2HTML}</div>
+    </div>`;
+
   bindPredInputs();
 }
 
@@ -687,8 +741,8 @@ function renderMatches(){
 
 function matchCardHTML(match, showPred=false){
   const statusLabel = {
-    scheduled:'Agendado', open:'Palpites abertos', closed:'Palpites encerrados',
-    live:'Ao vivo', finished:'Encerrado'
+    scheduled:'Agendado', open:'Aberto para palpites', closed:'Palpites encerrados',
+    live:'🔴 Ao vivo', finished:'Encerrado'
   };
   const statusClass = {
     scheduled:'status-scheduled', open:'status-open', closed:'status-closed',
@@ -844,40 +898,78 @@ function renderRules(){
   const r = state.rules;
   const el = document.getElementById('rulesContent');
   el.innerHTML = `
-    <div style="display:grid;gap:10px;max-width:560px">
-      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px 18px">
-        <div style="font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:12px">Pontuação</div>
-        <div style="display:grid;gap:8px">
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
-            <span style="font-size:14px">🎯 Placar exato</span>
-            <span style="font-family:var(--font-display);font-size:22px;color:var(--gold)">${r.exactScore||10} pts</span>
+    <div style="display:grid;gap:14px;max-width:640px">
+
+      <div style="background:linear-gradient(135deg,rgba(201,134,15,.08),rgba(201,134,15,.03));border:1px solid rgba(201,134,15,.25);border-radius:14px;padding:20px 22px">
+        <div style="font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;color:var(--gold);margin-bottom:16px">🏆 Sistema de Pontuação</div>
+        <div style="display:grid;gap:10px">
+          <div style="display:flex;align-items:center;gap:14px;padding:12px 14px;background:var(--surface);border:1px solid var(--border);border-radius:10px">
+            <div style="font-size:28px">🎯</div>
+            <div style="flex:1">
+              <div style="font-size:14px;font-weight:800">Placar exato</div>
+              <div style="font-size:12px;color:var(--muted);margin-top:2px">Acertou o placar perfeito dos dois times</div>
+            </div>
+            <div style="font-family:var(--font-display);font-size:28px;color:var(--gold)">${r.exactScore||10} pts</div>
           </div>
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
-            <span style="font-size:14px">✅ Resultado certo (placar errado)</span>
-            <span style="font-family:var(--font-display);font-size:22px;color:var(--gold)">${r.correctResult||3} pts</span>
+          <div style="display:flex;align-items:center;gap:14px;padding:12px 14px;background:var(--surface);border:1px solid var(--border);border-radius:10px">
+            <div style="font-size:28px">✅</div>
+            <div style="flex:1">
+              <div style="font-size:14px;font-weight:800">Resultado certo</div>
+              <div style="font-size:12px;color:var(--muted);margin-top:2px">Acertou quem ganhou (ou empate) mas errou o placar</div>
+            </div>
+            <div style="font-family:var(--font-display);font-size:28px;color:var(--gold)">${r.correctResult||3} pts</div>
           </div>
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0">
-            <span style="font-size:14px">⚡ Gols de um time certo</span>
-            <span style="font-family:var(--font-display);font-size:22px;color:var(--gold)">${r.oneTeamScore||1} pt</span>
+          <div style="display:flex;align-items:center;gap:14px;padding:12px 14px;background:var(--surface);border:1px solid var(--border);border-radius:10px">
+            <div style="font-size:28px">⚡</div>
+            <div style="flex:1">
+              <div style="font-size:14px;font-weight:800">Gols de um time certo</div>
+              <div style="font-size:12px;color:var(--muted);margin-top:2px">Acertou os gols de pelo menos um dos times, mesmo errando o resultado</div>
+            </div>
+            <div style="font-family:var(--font-display);font-size:28px;color:var(--gold)">${r.oneTeamScore||1} pt</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:14px;padding:12px 14px;background:var(--surface);border:1px solid var(--border);border-radius:10px">
+            <div style="font-size:28px">❌</div>
+            <div style="flex:1">
+              <div style="font-size:14px;font-weight:800">Errou tudo</div>
+              <div style="font-size:12px;color:var(--muted);margin-top:2px">Resultado e placares errados</div>
+            </div>
+            <div style="font-family:var(--font-display);font-size:28px;color:var(--muted2)">0 pts</div>
           </div>
         </div>
       </div>
+
       ${r.turbo && r.turbo.length ? `
-      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px 18px">
-        <div style="font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:12px">Regras Turbo</div>
-        ${r.turbo.map(t=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
-          <span style="font-size:14px">${t.emoji||'⭐'} ${t.name}</span>
-          <span style="font-size:12px;color:var(--muted)">${t.description||''}</span>
-        </div>`).join('')}
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:14px;padding:20px 22px">
+        <div style="font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:14px">⭐ Regras Especiais</div>
+        <div style="display:grid;gap:8px">
+          ${r.turbo.map(t=>`
+          <div style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:9px">
+            <div style="font-size:22px">${t.emoji||'⭐'}</div>
+            <div style="flex:1">
+              <div style="font-size:13px;font-weight:700">${t.name}</div>
+              ${t.description?`<div style="font-size:12px;color:var(--muted);margin-top:2px">${t.description}</div>`:''}
+            </div>
+          </div>`).join('')}
+        </div>
       </div>` : ''}
-      ${r.customText ? `
-      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px 18px">
-        <div style="font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:10px">Regras Adicionais</div>
-        <div style="font-size:13px;color:var(--text);line-height:1.6;white-space:pre-wrap">${r.customText}</div>
-      </div>` : ''}
-      <div style="background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.2);border-radius:10px;padding:14px 16px;font-size:12px;color:var(--muted);line-height:1.55">
-        Você pode criar, alterar ou remover seus palpites até o horário limite de cada partida. Após esse prazo, os palpites são bloqueados automaticamente.
+
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:14px;padding:20px 22px">
+        <div style="font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:14px">📋 Regras dos Palpites</div>
+        <div style="display:grid;gap:8px;font-size:13px;color:var(--text);line-height:1.6">
+          <div style="display:flex;gap:10px"><span style="color:var(--green);font-weight:700">✓</span><span>Você pode registrar e alterar seus palpites até o horário limite de cada partida</span></div>
+          <div style="display:flex;gap:10px"><span style="color:var(--green);font-weight:700">✓</span><span>Após o prazo, os palpites são bloqueados automaticamente — nenhuma alteração é possível</span></div>
+          <div style="display:flex;gap:10px"><span style="color:var(--green);font-weight:700">✓</span><span>Os palpites dos outros participantes ficam ocultos até o prazo encerrar (modo cego)</span></div>
+          <div style="display:flex;gap:10px"><span style="color:var(--red);font-weight:700">✗</span><span>Não é possível palpitar ou alterar após o prazo — nem por pedido informal</span></div>
+          <div style="display:flex;gap:10px"><span style="color:var(--red);font-weight:700">✗</span><span>Correções administrativas só ocorrem em casos excepcionais com registro de auditoria</span></div>
+        </div>
       </div>
+
+      ${r.customText ? `
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:14px;padding:20px 22px">
+        <div style="font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:12px">📌 Regras Adicionais</div>
+        <div style="font-size:13px;color:var(--text);line-height:1.7;white-space:pre-wrap">${r.customText}</div>
+      </div>` : ''}
+
     </div>`;
 }
 
@@ -1097,16 +1189,15 @@ function adminSettingsHTML(){
           <label class="label">Competição</label>
           <input class="input" id="sComp" value="${state.pool.competition||'Copa do Mundo FIFA 2026'}">
         </div>
-        <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--surface2);border-radius:9px;border:1px solid var(--border)">
+        <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--surface2);border-radius:9px;border:1px solid var(--border)" title="Controla se os participantes podem registrar e editar palpites nos jogos com status Aberto">
           <div style="flex:1">
             <div style="font-size:14px;font-weight:700">Palpites abertos</div>
-            <div style="font-size:12px;color:var(--muted);margin-top:2px">Quando ativo, participantes podem palpitar nos jogos com status "aberto"</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:2px">Quando ativo, participantes podem palpitar · Atualmente: <strong style="color:${state.pool.predictionsOpen?'var(--green)':'var(--red)'}">${state.pool.predictionsOpen?'ABERTO':'FECHADO'}</strong></div>
           </div>
-          <label style="position:relative;display:inline-block;width:44px;height:24px;flex-shrink:0">
-            <input type="checkbox" id="sPredOpen" ${state.pool.predictionsOpen?'checked':''} style="opacity:0;width:0;height:0">
-            <span onclick="document.getElementById('sPredOpen').click()" style="position:absolute;inset:0;background:${state.pool.predictionsOpen?'var(--green)':'var(--surface3)'};border-radius:999px;cursor:pointer;transition:background .2s"></span>
-            <span style="position:absolute;top:3px;left:${state.pool.predictionsOpen?'23':'3'}px;width:18px;height:18px;background:#fff;border-radius:50%;transition:left .2s;pointer-events:none"></span>
-          </label>
+          <div onclick="togglePredOpen()" id="predToggle" style="position:relative;display:inline-block;width:44px;height:24px;flex-shrink:0;cursor:pointer">
+            <div id="predToggleBg" style="position:absolute;inset:0;background:${state.pool.predictionsOpen?'var(--green)':'var(--border2)'};border-radius:999px;transition:background .2s"></div>
+            <div id="predToggleDot" style="position:absolute;top:3px;left:${state.pool.predictionsOpen?'23':'3'}px;width:18px;height:18px;background:#fff;border-radius:50%;transition:left .2s;box-shadow:0 1px 4px rgba(0,0,0,.2)"></div>
+          </div>
         </div>
         <button class="btn btn-primary" onclick="saveSettings()">Salvar configurações</button>
       </div>
@@ -1121,10 +1212,25 @@ function adminSettingsHTML(){
   </div>`;
 }
 
+function togglePredOpen(){
+  const bg  = document.getElementById('predToggleBg');
+  const dot = document.getElementById('predToggleDot');
+  const cur = bg.style.background.includes('green') || bg.style.background.includes('var(--green)');
+  const next = !cur;
+  bg.style.background  = next ? 'var(--green)' : 'var(--border2)';
+  dot.style.left       = next ? '23px' : '3px';
+  // store in a data attr for saveSettings to read
+  document.getElementById('predToggle').dataset.value = next ? 'true' : 'false';
+}
+
 async function saveSettings(){
   state.pool.name = document.getElementById('sName').value.trim() || state.pool.name;
   state.pool.competition = document.getElementById('sComp').value.trim() || state.pool.competition;
-  state.pool.predictionsOpen = document.getElementById('sPredOpen').checked;
+  const toggleEl = document.getElementById('predToggle');
+  // read current toggle state — if data-value set use it, else keep existing
+  if(toggleEl && toggleEl.dataset.value !== undefined){
+    state.pool.predictionsOpen = toggleEl.dataset.value === 'true';
+  }
   await saveState();
   document.getElementById('headerPoolName').textContent = state.pool.name;
   document.getElementById('loginPoolName').textContent  = state.pool.name;

@@ -512,7 +512,7 @@ const COPA2026_MATCHES = [
     "away": "Turkey",
     "datetime": "2026-06-13T19:00:00-03:00",
     "deadline": "2026-06-13T18:00:00-03:00",
-    "venue": "Estádio Levi's, São Francisco",
+    "venue": "Estádio Levis, São Francisco",
     "status": "scheduled",
     "result": {
       "home": null,
@@ -896,7 +896,7 @@ const COPA2026_MATCHES = [
     "away": "Australia",
     "datetime": "2026-06-20T19:00:00-03:00",
     "deadline": "2026-06-20T18:00:00-03:00",
-    "venue": "Estádio Levi's, São Francisco",
+    "venue": "Estádio Levis, São Francisco",
     "status": "scheduled",
     "result": {
       "home": null,
@@ -1264,7 +1264,7 @@ const COPA2026_MATCHES = [
     "away": "USA",
     "datetime": "2026-06-27T20:00:00-03:00",
     "deadline": "2026-06-27T19:00:00-03:00",
-    "venue": "Estádio Levi's, São Francisco",
+    "venue": "Estádio Levis, São Francisco",
     "status": "scheduled",
     "result": {
       "home": null,
@@ -2060,7 +2060,7 @@ const COPA2026_MATCHES = [
 
 const COPA2026_FLAGS = {"Mexico": "🇲🇽", "South Africa": "🇿🇦", "South Korea": "🇰🇷", "Czech Republic": "🇨🇿", "Canada": "🇨🇦", "Bosnia-Herzegovina": "🇧🇦", "Qatar": "🇶🇦", "Switzerland": "🇨🇭", "Brazil": "🇧🇷", "Morocco": "🇲🇦", "Haiti": "🇭🇹", "Scotland": "🏴󠁧󠁢󠁳󠁣󠁴󠁿", "USA": "🇺🇸", "Paraguay": "🇵🇾", "Australia": "🇦🇺", "Turkey": "🇹🇷", "Germany": "🇩🇪", "Curacao": "🇨🇼", "Ivory Coast": "🇨🇮", "Ecuador": "🇪🇨", "Netherlands": "🇳🇱", "Japan": "🇯🇵", "Sweden": "🇸🇪", "Tunisia": "🇹🇳", "Belgium": "🇧🇪", "Egypt": "🇪🇬", "Iran": "🇮🇷", "New Zealand": "🇳🇿", "Spain": "🇪🇸", "Cape Verde": "🇨🇻", "Saudi Arabia": "🇸🇦", "Uruguay": "🇺🇾", "France": "🇫🇷", "Senegal": "🇸🇳", "Iraq": "🇮🇶", "Norway": "🇳🇴", "Argentina": "🇦🇷", "Algeria": "🇩🇿", "Austria": "🇦🇹", "Jordan": "🇯🇴", "Portugal": "🇵🇹", "DR Congo": "🇨🇩", "Uzbekistan": "🇺🇿", "Colombia": "🇨🇴", "England": "🏴󠁧󠁢󠁥󠁮󠁧󠁿", "Croatia": "🇭🇷", "Ghana": "🇬🇭", "Panama": "🇵🇦"};
 
-function flag(name){ return FLAGS[name] || '🏳️'; }
+function flag(name){ return COPA2026_FLAGS[name] || '🏳️'; }
 
 // ═══════════════════════════════════════════
 // STATE
@@ -2634,8 +2634,10 @@ function adminTab(tab){
   currentAdminTab = tab;
   document.querySelectorAll('#adminTabs .btn').forEach(b=>{
     b.className = 'btn btn-ghost btn-sm';
+    if(b.getAttribute('onclick') && b.getAttribute('onclick').includes(`'${tab}'`)){
+      b.className = 'btn btn-primary btn-sm';
+    }
   });
-  event.target.className = 'btn btn-primary btn-sm';
   renderAdmin(tab);
 }
 

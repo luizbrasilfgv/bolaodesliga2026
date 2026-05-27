@@ -117,20 +117,21 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 .rank-detail{font-size:10px;color:var(--muted);text-align:right;}
 
 /* ── MATCHES ── */
-.matches-grid{padding:14px;display:grid;gap:10px;}
-.match-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;transition:border-color .2s,box-shadow .2s;box-shadow:0 1px 4px rgba(0,0,0,.05);}
-.match-card:hover{border-color:var(--border2);box-shadow:0 4px 14px rgba(0,0,0,.08);}
-.match-header{padding:8px 14px;background:var(--surface2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;font-size:11px;color:var(--muted);}
-.match-header .phase-badge{padding:2px 7px;border-radius:4px;background:rgba(59,130,246,.15);color:var(--blue);font-weight:700;font-size:10px;}
-.match-body{padding:14px;display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:center;}
-.match-team{display:flex;flex-direction:column;align-items:center;gap:5px;text-align:center;}
-.match-flag{font-size:28px;line-height:1;}
-.match-team-name{font-size:13px;font-weight:700;}
-.match-vs{font-family:var(--font-display);font-size:20px;color:var(--muted2);text-align:center;}
+.matches-grid{padding:10px;display:grid;gap:6px;grid-template-columns:repeat(auto-fill,minmax(380px,1fr));}
+.match-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;transition:border-color .2s,box-shadow .2s;box-shadow:0 1px 3px rgba(0,0,0,.04);}
+.match-card:hover{border-color:var(--border2);box-shadow:0 3px 10px rgba(0,0,0,.07);}
+.match-header{padding:5px 12px;background:var(--surface2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;font-size:10px;color:var(--muted);}
+.match-header .phase-badge{padding:1px 6px;border-radius:4px;background:rgba(59,130,246,.15);color:var(--blue);font-weight:700;font-size:10px;}
+.match-body{padding:8px 12px;display:grid;grid-template-columns:1fr 90px 1fr;gap:8px;align-items:center;}
+.match-team{display:flex;flex-direction:row;align-items:center;gap:6px;}
+.match-team.away{flex-direction:row-reverse;justify-content:flex-start;}
+.match-flag{font-size:18px;line-height:1;flex-shrink:0;}
+.match-team-name{font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.match-score-center{display:flex;align-items:center;justify-content:center;gap:4px;}
 .match-score{display:flex;align-items:center;gap:6px;}
-.score-box{width:36px;height:36px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:var(--text);}
+.score-box{width:30px;height:30px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:900;color:var(--text);}
 .score-sep{color:var(--muted2);font-weight:800;}
-.match-footer{padding:8px 14px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;}
+.match-footer{padding:5px 12px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap;}
 .match-status{padding:3px 8px;border-radius:999px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;}
 .status-scheduled{background:rgba(107,127,163,.15);color:var(--muted);}
 .status-open{background:rgba(0,208,132,.15);color:var(--green);border:1px solid rgba(0,208,132,.3);}
@@ -140,10 +141,10 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 @keyframes pulse{from{opacity:.7}to{opacity:1}}
 
 /* ── PREDICTION INPUT ── */
-.pred-row{padding:12px 14px;border-top:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.pred-row{padding:7px 12px;border-top:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
 .pred-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;flex-shrink:0;}
 .pred-inputs{display:flex;align-items:center;gap:8px;}
-.pred-input{width:44px;height:38px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;text-align:center;color:var(--text);font-size:18px;font-weight:900;transition:border-color .2s;}
+.pred-input{width:38px;height:32px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;text-align:center;color:var(--text);font-size:15px;font-weight:900;transition:border-color .2s;}
 .pred-input:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(245,200,66,.12);}
 .pred-input:disabled{opacity:.5;cursor:not-allowed;}
 .pred-sep{color:var(--muted2);font-weight:800;font-size:18px;}
@@ -223,7 +224,7 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 /* ── ADMIN TABLE ── */
 .admin-table{width:100%;border-collapse:collapse;}
 .admin-table th{text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);padding:0 14px 10px;border-bottom:1px solid var(--border);}
-.admin-table td{padding:11px 14px;font-size:13px;border-bottom:1px solid rgba(30,45,69,.6);vertical-align:middle;}
+.admin-table td{padding:8px 10px;font-size:12px;border-bottom:1px solid var(--border);vertical-align:middle;}
 .admin-table tr:last-child td{border-bottom:0;}
 .admin-table tr:hover td{background:rgba(37,99,235,.04);}
 
@@ -2414,9 +2415,9 @@ function matchCardHTML(match, showPred=false){
 
   let scoreHTML = '';
   if(match.result && match.result.home !== null && match.result.home !== ''){
-    scoreHTML = `<div class="match-score"><div class="score-box">${match.result.home}</div><div class="score-sep">-</div><div class="score-box">${match.result.away}</div></div>`;
+    scoreHTML = `<div class="score-box">${match.result.home}</div><div class="score-sep" style="font-weight:900;color:var(--muted2)">-</div><div class="score-box">${match.result.away}</div>`;
   } else {
-    scoreHTML = `<div style="font-size:12px;color:var(--muted2);text-align:center">x</div>`;
+    scoreHTML = `<span style="font-size:13px;color:var(--muted2);font-weight:700">vs</span>`;
   }
 
   let predHTML = '';
@@ -2455,23 +2456,20 @@ function matchCardHTML(match, showPred=false){
   return `<div class="match-card" id="mc-${match.id}">
     <div class="match-header">
       <span class="phase-badge">${match.phase||'Fase de Grupos'}</span>
-      <span>${match.group ? 'Grupo '+match.group+' · ' : ''}${match.venue||''}</span>
-      <span style="margin-left:auto">${match.datetime ? fmtDate(match.datetime) : '--'}</span>
+      ${match.group ? `<span>Gr. ${match.group}</span>` : ''}
+      <span class="match-status ${statusClass[match.status]||'status-scheduled'}" style="padding:1px 6px">${statusLabel[match.status]||match.status}</span>
+      <span style="margin-left:auto;font-size:10px">${match.datetime ? fmtDate(match.datetime) : '--'}</span>
     </div>
     <div class="match-body">
       <div class="match-team">
-        <div class="match-flag">${flag(match.home)}</div>
-        <div class="match-team-name">${match.home||'?'}</div>
+        <span class="match-flag">${flag(match.home)}</span>
+        <span class="match-team-name">${match.home||'?'}</span>
       </div>
-      ${scoreHTML}
-      <div class="match-team">
-        <div class="match-flag">${flag(match.away)}</div>
-        <div class="match-team-name">${match.away||'?'}</div>
+      <div style="display:flex;align-items:center;justify-content:center;gap:4px">${scoreHTML}</div>
+      <div class="match-team away">
+        <span class="match-flag">${flag(match.away)}</span>
+        <span class="match-team-name">${match.away||'?'}</span>
       </div>
-    </div>
-    <div class="match-footer">
-      <span class="match-status ${statusClass[match.status]||'status-scheduled'}">${statusLabel[match.status]||match.status}</span>
-      ${match.deadline ? `<span style="font-size:11px;color:var(--muted)">⏰ Prazo: ${fmtDate(match.deadline)}</span>` : ''}
     </div>
     ${predHTML}
   </div>`;
@@ -2659,39 +2657,51 @@ function renderAdmin(tab){
 
 // ── ADMIN MATCHES ──
 function adminMatchesHTML(){
-  const rows = state.matches.map(m=>`
-    <tr>
-      <td>${m.phase||'-'}</td>
-      <td>${m.group||'-'}</td>
-      <td>${flag(m.home)} ${m.home||'?'}</td>
-      <td>${flag(m.away)} ${m.away||'?'}</td>
-      <td>${m.datetime ? fmtDate(m.datetime) : '--'}</td>
-      <td><span class="match-status status-${m.status||'scheduled'}">${m.status||'scheduled'}</span></td>
-      <td>
-        <div style="display:flex;gap:5px">
-          <button class="btn btn-ghost btn-xs" onclick="openEditMatch('${m.id}')">✏️ Editar</button>
-          <button class="btn btn-danger btn-xs" onclick="deleteMatch('${m.id}')">✕</button>
-        </div>
-      </td>
-    </tr>`).join('');
+  // Group matches by phase
+  const phases = [...new Set(state.matches.map(m=>m.phase))];
+
+  const phaseRows = phases.map(phase => {
+    const ms = state.matches.filter(m=>m.phase===phase);
+    const rows = ms.map(m=>`
+      <tr>
+        <td>${m.group||'-'}</td>
+        <td>${flag(m.home)} ${m.home||'?'}</td>
+        <td style="text-align:center">${m.result?.home!==null&&m.result?.home!==undefined?`<strong>${m.result.home}-${m.result.away}</strong>`:'vs'}</td>
+        <td>${flag(m.away)} ${m.away||'?'}</td>
+        <td>${m.datetime ? fmtDate(m.datetime) : '--'}</td>
+        <td><span class="match-status status-${m.status||'scheduled'}" style="font-size:10px;padding:2px 6px">${{scheduled:'Agendado',open:'Aberto',closed:'Encerrado',live:'Ao vivo',finished:'Finalizado'}[m.status]||m.status}</span></td>
+        <td>
+          <div style="display:flex;gap:4px">
+            <button class="btn btn-ghost btn-xs" onclick="openEditMatch('${m.id}')">✏️</button>
+            <button class="btn btn-danger btn-xs" onclick="deleteMatch('${m.id}')">✕</button>
+          </div>
+        </td>
+      </tr>`).join('');
+    return `<details style="margin-bottom:8px" open="${phase==='Fase de Grupos'?'':''}">
+      <summary style="padding:10px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:9px;cursor:pointer;font-size:13px;font-weight:700;list-style:none;display:flex;align-items:center;justify-content:space-between">
+        <span>${phase}</span>
+        <span style="font-size:11px;color:var(--muted);font-weight:400">${ms.length} jogo(s) · ${ms.filter(m=>m.status==='finished').length} encerrado(s)</span>
+      </summary>
+      <div style="overflow-x:auto;border:1px solid var(--border);border-top:0;border-radius:0 0 9px 9px">
+        <table class="admin-table" style="width:100%">
+          <thead><tr><th>Gr.</th><th>Mandante</th><th style="text-align:center">Placar</th><th>Visitante</th><th>Data/Hora</th><th>Status</th><th>Ações</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    </details>`;
+  }).join('');
 
   return `<div class="panel">
     <div class="panel-head">
-      <div><h2>Partidas</h2><p>${state.matches.length} jogo(s) cadastrado(s)</p></div>
+      <div><h2>Partidas</h2><p>${state.matches.length} jogo(s) · ${phases.length} fase(s)</p></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn btn-ghost btn-sm" onclick="openGenerateMatches()">🔄 Gerar fase de grupos</button>
+        <button class="btn btn-ghost btn-sm" onclick="openGenerateMatches()">📥 Importar jogos Copa 2026</button>
         <button class="btn btn-primary btn-sm" onclick="openAddMatch()">+ Nova partida</button>
       </div>
     </div>
-    ${state.matches.length ? `
-    <div style="overflow-x:auto;padding:14px">
-      <table class="admin-table">
-        <thead><tr>
-          <th>Fase</th><th>Grupo</th><th>Mandante</th><th>Visitante</th><th>Data/Hora</th><th>Status</th><th>Ações</th>
-        </tr></thead>
-        <tbody>${rows}</tbody>
-      </table>
-    </div>` : `<div class="empty"><div class="icon">⚽</div><p>Nenhuma partida. Use "Gerar fase de grupos" ou cadastre manualmente.</p></div>`}
+    <div style="padding:14px">
+      ${state.matches.length ? phaseRows : '<div class="empty"><div class="icon">⚽</div><p>Nenhuma partida. Use "Importar jogos Copa 2026" ou cadastre manualmente.</p></div>'}
+    </div>
   </div>`;
 }
 

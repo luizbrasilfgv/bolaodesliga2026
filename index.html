@@ -2325,9 +2325,9 @@ const COPA2026_MATCHES = (function(){
   const m = [];
   const mk = (id, phase, group, home, away, datetime, venue, knockoutLabel) => {
     const dt = new Date(datetime);
-    // D-1: prazo às 23:59 do dia anterior à partida
+    // D-2: prazo às 23:59 dois dias antes da partida
     const prev = new Date(dt);
-    prev.setDate(prev.getDate() - 1);
+    prev.setDate(prev.getDate() - 2);
     prev.setHours(23, 59, 0, 0);
     const deadline = prev;
     m.push({
@@ -2528,9 +2528,13 @@ let state = {
     exactScore: 10,
     correctResult: 3,
     oneTeamScore: 1,
+    champion: 15,
+    runnerUp: 10,
+    thirdPlace: 5,
     turbo: [],
     customText: ''
   },
+  specialPredictions: [],  // {id, participantId, champion, runnerUp, thirdPlace, lockedAt}
   meta: {}
 };
 
@@ -2609,9 +2613,46 @@ function calcPoints(pred, match){
 }
 
 function getTotalPoints(participantId){
-  return state.predictions
+  const matchPts = state.predictions
     .filter(p => p.participantId === participantId && p.points !== null && p.points !== undefined)
     .reduce((s,p) => s + (p.points||0), 0);
+  const specialPts = calcSpecialPoints(participantId);
+  return matchPts + specialPts;
+}
+
+function getMySpecialPred(){
+  return (state.specialPredictions||[]).find(p => p.participantId === currentUser?.id);
+}
+
+function calcSpecialPoints(participantId){
+  const sp = (state.specialPredictions||[]).find(p => p.participantId === participantId);
+  if(!sp) return 0;
+  let pts = 0;
+  // Get actual results from Final and 3rd place matches
+  const finalMatch    = state.matches.find(m => m.phase === 'Final' && m.status === 'finished');
+  const thirdMatch    = state.matches.find(m => m.phase === 'Terceiro Lugar' && m.status === 'finished');
+
+  if(finalMatch && finalMatch.result?.home !== null){
+    const rh = parseInt(finalMatch.result.home), ra = parseInt(finalMatch.result.away);
+    const champion  = rh > ra ? finalMatch.home : ra > rh ? finalMatch.away : null;
+    const runnerUp  = rh > ra ? finalMatch.away : ra > rh ? finalMatch.home : null;
+    if(champion && sp.champion === champion)   pts += (state.rules.champion  || 15);
+    if(runnerUp && sp.runnerUp === runnerUp)   pts += (state.rules.runnerUp  || 10);
+  }
+
+  if(thirdMatch && thirdMatch.result?.home !== null){
+    const rh = parseInt(thirdMatch.result.home), ra = parseInt(thirdMatch.result.away);
+    const third = rh > ra ? thirdMatch.home : ra > rh ? thirdMatch.away : null;
+    if(third && sp.thirdPlace === third)       pts += (state.rules.thirdPlace || 5);
+  }
+
+  return pts;
+}
+
+// Deadline for special predictions: before first match (2026-06-11 16:00 BRT)
+const SPECIAL_PRED_DEADLINE = new Date('2026-06-11T16:00:00-03:00');
+function isSpecialPredOpen(){
+  return new Date() < SPECIAL_PRED_DEADLINE && state.pool.predictionsOpen;
 }
 
 function getParticipantStats(participantId){
@@ -2892,6 +2933,111 @@ function renderTweaks(){
       </div>
     </div>
   `;
+}
+
+// ═══════════════════════════════════════════
+// PALPITE ESPECIAL — Campeão / Vice / 3º Lugar
+// ═══════════════════════════════════════════
+function openSpecialPredModal(){
+  const mySpecial = getMySpecialPred();
+  const isEdit    = !!mySpecial;
+  const allTeams  = Object.values(COPA_GROUPS).flat()
+    .sort((a,b) => teamName(a).localeCompare(teamName(b)));
+
+  const teamOpts = allTeams.map(t =>
+    `<option value="${t}">${teamName(t)}</option>`
+  ).join('');
+
+  const disclaimer = isEdit
+    ? `<div style="background:rgba(255,182,39,.08);border:1px solid rgba(255,182,39,.3);border-radius:10px;padding:12px 14px;margin-bottom:18px;font-size:12px;color:var(--muted);line-height:1.6">
+        ⚠️ <strong>Atenção:</strong> você já fez este palpite. Ao salvar novamente ele será substituído — mas somente enquanto o prazo estiver aberto (antes de 11/06 às 16h). Após o início do torneio, este palpite fica bloqueado permanentemente.
+      </div>`
+    : `<div style="background:rgba(255,71,87,.08);border:1px solid rgba(255,71,87,.3);border-radius:10px;padding:12px 14px;margin-bottom:18px;font-size:12px;line-height:1.6">
+        🔒 <strong style="color:var(--red)">ATENÇÃO — LEIA ANTES DE SALVAR:</strong><br>
+        Este palpite <strong>não poderá ser alterado após o início do torneio</strong> (11/06/2026 às 16h00). Você pode alterar quantas vezes quiser até esse momento. Após isso, fica bloqueado para sempre. Certifique-se de suas escolhas antes de confirmar.
+      </div>`;
+
+  const body = `
+    ${disclaimer}
+    <div style="display:grid;gap:14px;margin-bottom:20px">
+      <div>
+        <label class="label">🥇 Campeão <span style="color:var(--gold-2);font-size:11px">+${state.rules.champion||15} pts</span></label>
+        <select class="input" id="spChampion">${teamOpts}</select>
+      </div>
+      <div>
+        <label class="label">🥈 Vice-campeão <span style="color:var(--gold-2);font-size:11px">+${state.rules.runnerUp||10} pts</span></label>
+        <select class="input" id="spRunnerUp">${teamOpts}</select>
+      </div>
+      <div>
+        <label class="label">🥉 Terceiro lugar <span style="color:var(--gold-2);font-size:11px">+${state.rules.thirdPlace||5} pts</span></label>
+        <select class="input" id="spThirdPlace">${teamOpts}</select>
+      </div>
+    </div>
+    <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:9px;padding:10px 14px;font-size:12px;color:var(--muted);margin-bottom:16px">
+      💡 A pontuação especial é somada independentemente aos pontos dos jogos. Se acertar o campeão <strong>E</strong> o vice, você recebe +${(state.rules.champion||15)+(state.rules.runnerUp||10)} pts.
+    </div>
+    <div style="display:flex;justify-content:flex-end;gap:8px">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveSpecialPred()">
+        ${isEdit ? '💾 Atualizar palpite' : '🔒 Confirmar palpite'}
+      </button>
+    </div>`;
+
+  openModal('🏆 Palpite Especial — Copa 2026', body);
+
+  // pre-fill if editing
+  if(mySpecial){
+    setTimeout(() => {
+      const c = document.getElementById('spChampion');
+      const r = document.getElementById('spRunnerUp');
+      const t = document.getElementById('spThirdPlace');
+      if(c) c.value = mySpecial.champion  || '';
+      if(r) r.value = mySpecial.runnerUp  || '';
+      if(t) t.value = mySpecial.thirdPlace|| '';
+    }, 50);
+  }
+}
+
+async function saveSpecialPred(){
+  const champion   = document.getElementById('spChampion')?.value;
+  const runnerUp   = document.getElementById('spRunnerUp')?.value;
+  const thirdPlace = document.getElementById('spThirdPlace')?.value;
+
+  if(!champion || !runnerUp || !thirdPlace){
+    toast('Selecione os três times', 'err'); return;
+  }
+  const vals = [champion, runnerUp, thirdPlace];
+  if(new Set(vals).size !== 3){
+    toast('Os três times precisam ser diferentes', 'err'); return;
+  }
+
+  if(!isSpecialPredOpen()){
+    toast('Prazo encerrado — palpite especial bloqueado', 'err');
+    closeModal(); return;
+  }
+
+  const existing = getMySpecialPred();
+  if(existing){
+    existing.champion   = champion;
+    existing.runnerUp   = runnerUp;
+    existing.thirdPlace = thirdPlace;
+    existing.updatedAt  = new Date().toISOString();
+  } else {
+    state.specialPredictions = state.specialPredictions || [];
+    state.specialPredictions.push({
+      id:            uid(),
+      participantId: currentUser.id,
+      champion, runnerUp, thirdPlace,
+      lockedAt:  null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    });
+  }
+
+  await saveState();
+  closeModal();
+  toast(`Palpite especial salvo! ${teamName(champion)} 🥇 ${teamName(runnerUp)} 🥈 ${teamName(thirdPlace)} 🥉`, 'ok');
+  renderHome();
 }
 
 // ═══════════════════════════════════════════
@@ -3197,7 +3343,65 @@ function renderHome(){
       </div>`;
   }
 
-  document.getElementById('view-home').innerHTML = heroHTML + pendencyHTML + statsHTML + quickHTML + recentHTML;
+  // — SPECIAL PREDICTION CARD —
+  const mySpecial = getMySpecialPred();
+  const specOpen  = isSpecialPredOpen();
+  let specialHTML = '';
+
+  if(specOpen && !mySpecial){
+    specialHTML = `
+      <div class="panel special-pred-panel" style="margin-bottom:20px;border:2px solid var(--gold);background:linear-gradient(135deg,rgba(255,182,39,.06),var(--surface))">
+        <div style="padding:16px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+          <div>
+            <div style="font-size:12px;text-transform:uppercase;letter-spacing:1.5px;color:var(--gold-2);font-weight:800;margin-bottom:4px">🏆 Palpite especial</div>
+            <div style="font-size:16px;font-weight:800">Quem vai ganhar a Copa?</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:3px">Prazo: antes do 1º jogo · 11/06 às 16:00 · <strong style="color:var(--red)">Não pode ser alterado após salvar!</strong></div>
+          </div>
+          <button class="btn btn-primary" onclick="openSpecialPredModal()">Fazer palpite especial →</button>
+        </div>
+      </div>`;
+  } else if(mySpecial){
+    const finalMatch  = state.matches.find(m => m.phase==='Final' && m.status==='finished');
+    const thirdMatch  = state.matches.find(m => m.phase==='Terceiro Lugar' && m.status==='finished');
+    const specPts     = calcSpecialPoints(currentUser.id);
+    specialHTML = `
+      <div class="panel" style="margin-bottom:20px;border:1px solid rgba(255,182,39,.3)">
+        <div style="padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+          <div style="font-size:13px;font-weight:800;color:var(--gold-2)">🏆 Palpite Especial ${specPts>0?`<span style="color:var(--green-2);margin-left:8px">+${specPts} pts</span>`:'<span style="color:var(--muted);margin-left:8px">Aguardando...</span>'}</div>
+          ${specOpen?`<button class="btn btn-ghost btn-sm" onclick="openSpecialPredModal()">✏️ Alterar</button>`:'<span style="font-size:11px;color:var(--muted)">🔒 Bloqueado</span>'}
+        </div>
+        <div style="padding:14px 20px;display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+          ${[
+            {label:'🥇 Campeão',val:mySpecial.champion,pts:state.rules.champion||15,real:(() => {
+              if(!finalMatch||finalMatch.result?.home===null) return null;
+              const rh=parseInt(finalMatch.result.home),ra=parseInt(finalMatch.result.away);
+              return rh>ra?finalMatch.home:ra>rh?finalMatch.away:null;
+            })()},
+            {label:'🥈 Vice',val:mySpecial.runnerUp,pts:state.rules.runnerUp||10,real:(() => {
+              if(!finalMatch||finalMatch.result?.home===null) return null;
+              const rh=parseInt(finalMatch.result.home),ra=parseInt(finalMatch.result.away);
+              return rh>ra?finalMatch.away:ra>rh?finalMatch.home:null;
+            })()},
+            {label:'🥉 Terceiro',val:mySpecial.thirdPlace,pts:state.rules.thirdPlace||5,real:(() => {
+              if(!thirdMatch||thirdMatch.result?.home===null) return null;
+              const rh=parseInt(thirdMatch.result.home),ra=parseInt(thirdMatch.result.away);
+              return rh>ra?thirdMatch.home:ra>rh?thirdMatch.away:null;
+            })()},
+          ].map(({label,val,pts,real}) => {
+            const hit = real && val === real;
+            const miss = real && val !== real;
+            return `<div style="background:var(--surface-2);border-radius:10px;padding:12px;text-align:center;border:1px solid ${hit?'var(--green-2)':miss?'rgba(255,71,87,.3)':'var(--border)'}">
+              <div style="font-size:11px;color:var(--muted);font-weight:700;margin-bottom:6px">${label} · +${pts} pts</div>
+              <div style="margin-bottom:4px">${flag(val,'md')}</div>
+              <div style="font-size:13px;font-weight:800">${teamName(val)}</div>
+              ${real ? `<div style="font-size:11px;margin-top:4px;color:${hit?'var(--green-2)':'var(--red)'}">${hit?'✓ Acertou!':'✕ '+teamName(real)}</div>` : '<div style="font-size:10px;color:var(--muted);margin-top:4px">Aguardando</div>'}
+            </div>`;
+          }).join('')}
+        </div>
+      </div>`;
+  }
+
+  document.getElementById('view-home').innerHTML = heroHTML + pendencyHTML + statsHTML + specialHTML + quickHTML + recentHTML;
 }
 
 // ───────────────────────────────────────────
@@ -3611,7 +3815,7 @@ function renderRules(){
     <div style="display:grid;gap:14px;max-width:760px">
 
       <div class="panel">
-        <div class="panel-head"><div><h2>🏆 Sistema de Pontuação</h2></div></div>
+        <div class="panel-head"><div><h2>⚽ Pontuação por Jogo</h2><p>Não acumulativa — vale sempre a melhor pontuação atingida</p></div></div>
         <div style="padding:14px;display:grid;gap:8px">
           <div class="rule-card">
             <div class="r-emoji">🎯</div>
@@ -3645,6 +3849,41 @@ function renderRules(){
             </div>
             <div class="r-points" style="color:var(--muted-2)">0</div>
           </div>
+        </div>
+      </div>
+
+      <div class="panel" style="border-color:rgba(255,182,39,.3)">
+        <div class="panel-head" style="background:linear-gradient(90deg,rgba(255,182,39,.06),transparent)">
+          <div><h2>🏆 Palpite Especial</h2><p>Feito uma única vez antes do torneio · somado independentemente aos pontos dos jogos</p></div>
+        </div>
+        <div style="padding:14px;display:grid;gap:8px">
+          <div class="rule-card" style="border-color:rgba(255,182,39,.25)">
+            <div class="r-emoji">🥇</div>
+            <div class="r-text">
+              <div class="r-title">Acertar o Campeão</div>
+              <div class="r-desc">Indicou corretamente o time que venceu a Copa</div>
+            </div>
+            <div class="r-points" style="color:var(--gold-2)">${r.champion||15}</div>
+          </div>
+          <div class="rule-card" style="border-color:rgba(255,182,39,.15)">
+            <div class="r-emoji">🥈</div>
+            <div class="r-text">
+              <div class="r-title">Acertar o Vice-campeão</div>
+              <div class="r-desc">Indicou corretamente o time que ficou em segundo lugar</div>
+            </div>
+            <div class="r-points" style="color:var(--gold-2)">${r.runnerUp||10}</div>
+          </div>
+          <div class="rule-card" style="border-color:rgba(255,182,39,.1)">
+            <div class="r-emoji">🥉</div>
+            <div class="r-text">
+              <div class="r-title">Acertar o Terceiro lugar</div>
+              <div class="r-desc">Indicou corretamente o time que venceu a disputa de terceiro</div>
+            </div>
+            <div class="r-points" style="color:var(--gold-2)">${r.thirdPlace||5}</div>
+          </div>
+        </div>
+        <div style="padding:10px 14px;border-top:1px solid var(--border);font-size:12px;color:var(--muted);line-height:1.6">
+          ⏰ Prazo para o palpite especial: <strong>11/06/2026 às 16:00</strong> (antes do primeiro jogo). Após esse horário, o palpite é bloqueado permanentemente e não pode mais ser alterado.
         </div>
       </div>
 
@@ -5007,6 +5246,26 @@ function adminRulesHTML(){
         </div>
 
         <div>
+          <div style="font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--gold-2);font-weight:800;margin-bottom:10px">🏆 Palpite especial — Campeão / Vice / 3º lugar</div>
+          <div style="display:grid;gap:8px">
+            ${[
+              ['rChampion',  '🥇 Campeão',       r.champion  ||15],
+              ['rRunnerUp',  '🥈 Vice-campeão',   r.runnerUp  ||10],
+              ['rThirdPlace','🥉 Terceiro lugar', r.thirdPlace|| 5]
+            ].map(([id,label,val]) => `
+              <div style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:rgba(255,182,39,.05);border:1px solid rgba(255,182,39,.2);border-radius:9px">
+                <label style="flex:1;font-size:13.5px;font-weight:600">${label}</label>
+                <input class="input" type="number" id="${id}" value="${val}" min="0" max="999" style="width:80px;text-align:center;font-family:var(--font-numeric);font-weight:700">
+                <span style="font-size:11px;color:var(--muted)">pts</span>
+              </div>
+            `).join('')}
+          </div>
+          <div style="font-size:11px;color:var(--muted);margin-top:8px;padding:8px 12px;background:var(--surface-2);border-radius:8px">
+            Estes pontos são somados independentemente aos pontos dos jogos. Prazo para o palpite especial: 11/06/2026 às 16h00.
+          </div>
+        </div>
+
+        <div>
           <div style="font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);font-weight:800;margin-bottom:10px">Regras especiais (opcionais)</div>
           <div id="turboList">${turboList || '<div style="font-size:13px;color:var(--muted);padding:8px 0">Nenhuma regra especial configurada.</div>'}</div>
           <button class="btn btn-ghost btn-sm" onclick="addTurboRule()" style="margin-top:8px">+ Adicionar regra especial</button>
@@ -5040,6 +5299,9 @@ async function saveRules(){
   state.rules.exactScore    = parseInt(document.getElementById('rExact').value)||10;
   state.rules.correctResult = parseInt(document.getElementById('rResult').value)||3;
   state.rules.oneTeamScore  = parseInt(document.getElementById('rOne').value)||1;
+  state.rules.champion      = parseInt(document.getElementById('rChampion').value)||15;
+  state.rules.runnerUp      = parseInt(document.getElementById('rRunnerUp').value)||10;
+  state.rules.thirdPlace    = parseInt(document.getElementById('rThirdPlace').value)||5;
   state.rules.customText    = document.getElementById('rCustom').value;
   (state.rules.turbo||[]).forEach((_,i) => {
     state.rules.turbo[i].emoji       = document.getElementById('te-'+i)?.value || '⭐';

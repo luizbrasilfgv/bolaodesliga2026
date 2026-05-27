@@ -238,7 +238,16 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
   .rank-item{grid-template-columns:34px 1fr auto;}
 }
 
-  /* === TOOLTIPS === */
+  /* === GLOBAL FILTER === */
+  .global-filter-bar{background:var(--surface);border-bottom:1px solid var(--border);padding:8px 24px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .gf-label{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);font-weight:700;white-space:nowrap;}
+  .gf-select{background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:5px 10px;font-size:12px;font-weight:600;color:var(--text);cursor:pointer;appearance:none;padding-right:24px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%235a6a85' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;}
+  .gf-select:focus{border-color:var(--gold);outline:none;}
+  .gf-active{background:rgba(201,134,15,.1);border-color:rgba(201,134,15,.4);color:var(--gold);}
+  .gf-clear{font-size:11px;color:var(--muted);padding:4px 8px;border:1px solid var(--border);border-radius:6px;cursor:pointer;background:none;transition:color .15s;}
+  .gf-clear:hover{color:var(--red);}
+
+
   [title]{cursor:help;}
   .tip-icon{width:16px;height:16px;border-radius:50%;background:var(--border2);color:var(--muted);font-size:10px;font-weight:900;display:inline-flex;align-items:center;justify-content:center;cursor:help;flex-shrink:0;margin-left:5px;transition:background .15s;}
   .tip-icon:hover{background:var(--blue);color:#fff;}
@@ -289,6 +298,25 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
     <button class="nav-btn" data-view="rules" onclick="goView('rules',this)">📋 Regras</button>
     <button class="nav-btn admin-only" data-view="admin" onclick="goView('admin',this)" style="display:none">⚙️ Admin</button>
   </nav>
+
+  <!-- GLOBAL FILTER -->
+  <div class="global-filter-bar" id="globalFilterBar">
+    <span class="gf-label">Filtrar:</span>
+    <select class="gf-select" id="gfGroupSel" onchange="applyGlobalFilter('group',this.value)">
+      <option value="all">Todos os grupos</option>
+      <option value="A">Grupo A</option><option value="B">Grupo B</option>
+      <option value="C">Grupo C</option><option value="D">Grupo D</option>
+      <option value="E">Grupo E</option><option value="F">Grupo F</option>
+      <option value="G">Grupo G</option><option value="H">Grupo H</option>
+      <option value="I">Grupo I</option><option value="J">Grupo J</option>
+      <option value="K">Grupo K</option><option value="L">Grupo L</option>
+    </select>
+    <select class="gf-select" id="gfTeamSel" onchange="applyGlobalFilter('team',this.value)">
+      <option value="all">Todos os times</option>
+    </select>
+    <button class="gf-clear" id="gfClear" onclick="clearGlobalFilter()" style="display:none">✕ Limpar</button>
+    <span id="gfStatus" style="font-size:11px;color:var(--gold);font-weight:700;margin-left:4px"></span>
+  </div>
 
   <main>
 
@@ -407,7 +435,7 @@ const COPA2026_MATCHES = [
     "away": "South Africa",
     "datetime": "2026-06-11T16:00:00-03:00",
     "deadline": "2026-06-11T15:00:00-03:00",
-    "venue": "Estádio Azteca, Cidade do México",
+    "venue": "Cidade do México",
     "status": "scheduled",
     "result": {
       "home": null,
@@ -423,7 +451,7 @@ const COPA2026_MATCHES = [
     "away": "Czech Republic",
     "datetime": "2026-06-11T23:00:00-03:00",
     "deadline": "2026-06-11T22:00:00-03:00",
-    "venue": "Estadio Akron, Guadalajara",
+    "venue": "Guadalajara",
     "status": "scheduled",
     "result": {
       "home": null,
@@ -436,10 +464,10 @@ const COPA2026_MATCHES = [
     "phase": "Fase de Grupos",
     "group": "B",
     "home": "Canada",
-    "away": "Bosnia-Herzegovina",
-    "datetime": "2026-06-12T20:00:00-03:00",
-    "deadline": "2026-06-12T19:00:00-03:00",
-    "venue": "Estádio BC Place, Vancouver",
+    "away": "Italy",
+    "datetime": "2026-06-12T16:00:00-03:00",
+    "deadline": "2026-06-12T15:00:00-03:00",
+    "venue": "Toronto",
     "status": "scheduled",
     "result": {
       "home": null,
@@ -450,12 +478,12 @@ const COPA2026_MATCHES = [
   {
     "id": "m004",
     "phase": "Fase de Grupos",
-    "group": "B",
-    "home": "Qatar",
-    "away": "Switzerland",
-    "datetime": "2026-06-12T23:00:00-03:00",
-    "deadline": "2026-06-12T22:00:00-03:00",
-    "venue": "Estádio Lincoln Financial Field, Filadélfia",
+    "group": "D",
+    "home": "USA",
+    "away": "Paraguay",
+    "datetime": "2026-06-12T22:00:00-03:00",
+    "deadline": "2026-06-12T21:00:00-03:00",
+    "venue": "Los Angeles",
     "status": "scheduled",
     "result": {
       "home": null,
@@ -466,12 +494,12 @@ const COPA2026_MATCHES = [
   {
     "id": "m005",
     "phase": "Fase de Grupos",
-    "group": "C",
-    "home": "Brazil",
-    "away": "Morocco",
-    "datetime": "2026-06-12T20:00:00-03:00",
-    "deadline": "2026-06-12T19:00:00-03:00",
-    "venue": "Estádio SoFi, Los Angeles",
+    "group": "D",
+    "home": "Australia",
+    "away": "Turkey",
+    "datetime": "2026-06-13T01:00:00-03:00",
+    "deadline": "2026-06-13T00:00:00-03:00",
+    "venue": "Vancouver",
     "status": "scheduled",
     "result": {
       "home": null,
@@ -482,12 +510,12 @@ const COPA2026_MATCHES = [
   {
     "id": "m006",
     "phase": "Fase de Grupos",
-    "group": "C",
-    "home": "Haiti",
-    "away": "Scotland",
-    "datetime": "2026-06-12T17:00:00-03:00",
-    "deadline": "2026-06-12T16:00:00-03:00",
-    "venue": "Estádio AT&T, Dallas",
+    "group": "B",
+    "home": "Qatar",
+    "away": "Switzerland",
+    "datetime": "2026-06-13T16:00:00-03:00",
+    "deadline": "2026-06-13T15:00:00-03:00",
+    "venue": "San Francisco",
     "status": "scheduled",
     "result": {
       "home": null,
@@ -498,12 +526,12 @@ const COPA2026_MATCHES = [
   {
     "id": "m007",
     "phase": "Fase de Grupos",
-    "group": "D",
-    "home": "USA",
-    "away": "Paraguay",
-    "datetime": "2026-06-13T22:00:00-03:00",
-    "deadline": "2026-06-13T21:00:00-03:00",
-    "venue": "Estádio MetLife, Nova York/Nova Jersey",
+    "group": "C",
+    "home": "Brazil",
+    "away": "Morocco",
+    "datetime": "2026-06-13T19:00:00-03:00",
+    "deadline": "2026-06-13T18:00:00-03:00",
+    "venue": "Nova York/Nova Jersey",
     "status": "scheduled",
     "result": {
       "home": null,
@@ -514,12 +542,12 @@ const COPA2026_MATCHES = [
   {
     "id": "m008",
     "phase": "Fase de Grupos",
-    "group": "D",
-    "home": "Australia",
-    "away": "Turkey",
-    "datetime": "2026-06-13T19:00:00-03:00",
-    "deadline": "2026-06-13T18:00:00-03:00",
-    "venue": "Estádio Levis, São Francisco",
+    "group": "C",
+    "home": "Haiti",
+    "away": "Scotland",
+    "datetime": "2026-06-13T22:00:00-03:00",
+    "deadline": "2026-06-13T21:00:00-03:00",
+    "venue": "Boston",
     "status": "scheduled",
     "result": {
       "home": null,
@@ -533,9 +561,9 @@ const COPA2026_MATCHES = [
     "group": "E",
     "home": "Germany",
     "away": "Curacao",
-    "datetime": "2026-06-13T16:00:00-03:00",
-    "deadline": "2026-06-13T15:00:00-03:00",
-    "venue": "Estádio Arrowhead, Kansas City",
+    "datetime": "2026-06-14T14:00:00-03:00",
+    "deadline": "2026-06-14T13:00:00-03:00",
+    "venue": "Houston",
     "status": "scheduled",
     "result": {
       "home": null,
@@ -546,12 +574,12 @@ const COPA2026_MATCHES = [
   {
     "id": "m010",
     "phase": "Fase de Grupos",
-    "group": "E",
-    "home": "Ivory Coast",
-    "away": "Ecuador",
-    "datetime": "2026-06-13T23:00:00-03:00",
-    "deadline": "2026-06-13T22:00:00-03:00",
-    "venue": "Estádio NRG, Houston",
+    "group": "F",
+    "home": "Netherlands",
+    "away": "Japan",
+    "datetime": "2026-06-14T17:00:00-03:00",
+    "deadline": "2026-06-14T16:00:00-03:00",
+    "venue": "Dallas",
     "status": "scheduled",
     "result": {
       "home": null,
@@ -562,12 +590,12 @@ const COPA2026_MATCHES = [
   {
     "id": "m011",
     "phase": "Fase de Grupos",
-    "group": "F",
-    "home": "Netherlands",
-    "away": "Japan",
-    "datetime": "2026-06-14T16:00:00-03:00",
-    "deadline": "2026-06-14T15:00:00-03:00",
-    "venue": "Estádio Allegiant, Las Vegas",
+    "group": "E",
+    "home": "Ivory Coast",
+    "away": "Ecuador",
+    "datetime": "2026-06-14T20:00:00-03:00",
+    "deadline": "2026-06-14T19:00:00-03:00",
+    "venue": "Filadélfia",
     "status": "scheduled",
     "result": {
       "home": null,
@@ -581,9 +609,9 @@ const COPA2026_MATCHES = [
     "group": "F",
     "home": "Sweden",
     "away": "Tunisia",
-    "datetime": "2026-06-14T19:00:00-03:00",
-    "deadline": "2026-06-14T18:00:00-03:00",
-    "venue": "Estádio Mercedes-Benz, Atlanta",
+    "datetime": "2026-06-14T23:00:00-03:00",
+    "deadline": "2026-06-14T22:00:00-03:00",
+    "venue": "Monterrey",
     "status": "scheduled",
     "result": {
       "home": null,
@@ -594,12 +622,12 @@ const COPA2026_MATCHES = [
   {
     "id": "m013",
     "phase": "Fase de Grupos",
-    "group": "G",
-    "home": "Belgium",
-    "away": "Egypt",
-    "datetime": "2026-06-14T22:00:00-03:00",
-    "deadline": "2026-06-14T21:00:00-03:00",
-    "venue": "Estádio Hard Rock, Miami",
+    "group": "H",
+    "home": "Spain",
+    "away": "Cape Verde",
+    "datetime": "2026-06-15T13:00:00-03:00",
+    "deadline": "2026-06-15T12:00:00-03:00",
+    "venue": "Atlanta",
     "status": "scheduled",
     "result": {
       "home": null,
@@ -611,11 +639,11 @@ const COPA2026_MATCHES = [
     "id": "m014",
     "phase": "Fase de Grupos",
     "group": "G",
-    "home": "Iran",
-    "away": "New Zealand",
-    "datetime": "2026-06-14T22:00:00-03:00",
-    "deadline": "2026-06-14T21:00:00-03:00",
-    "venue": "Estádio Camping World, Orlando",
+    "home": "Belgium",
+    "away": "Egypt",
+    "datetime": "2026-06-15T16:00:00-03:00",
+    "deadline": "2026-06-15T15:00:00-03:00",
+    "venue": "Seattle",
     "status": "scheduled",
     "result": {
       "home": null,
@@ -627,11 +655,11 @@ const COPA2026_MATCHES = [
     "id": "m015",
     "phase": "Fase de Grupos",
     "group": "H",
-    "home": "Spain",
-    "away": "Cape Verde",
-    "datetime": "2026-06-15T16:00:00-03:00",
-    "deadline": "2026-06-15T15:00:00-03:00",
-    "venue": "Estádio Gillette, Boston",
+    "home": "Saudi Arabia",
+    "away": "Uruguay",
+    "datetime": "2026-06-15T19:00:00-03:00",
+    "deadline": "2026-06-15T18:00:00-03:00",
+    "venue": "Miami",
     "status": "scheduled",
     "result": {
       "home": null,
@@ -642,12 +670,12 @@ const COPA2026_MATCHES = [
   {
     "id": "m016",
     "phase": "Fase de Grupos",
-    "group": "H",
-    "home": "Saudi Arabia",
-    "away": "Uruguay",
-    "datetime": "2026-06-15T19:00:00-03:00",
-    "deadline": "2026-06-15T18:00:00-03:00",
-    "venue": "Estádio Estadio BBVA, Monterrey",
+    "group": "G",
+    "home": "Iran",
+    "away": "New Zealand",
+    "datetime": "2026-06-15T22:00:00-03:00",
+    "deadline": "2026-06-15T21:00:00-03:00",
+    "venue": "Los Angeles",
     "status": "scheduled",
     "result": {
       "home": null,
@@ -658,12 +686,12 @@ const COPA2026_MATCHES = [
   {
     "id": "m017",
     "phase": "Fase de Grupos",
-    "group": "I",
-    "home": "France",
-    "away": "Senegal",
-    "datetime": "2026-06-15T22:00:00-03:00",
-    "deadline": "2026-06-15T21:00:00-03:00",
-    "venue": "Estádio MetLife, Nova York/Nova Jersey",
+    "group": "J",
+    "home": "Argentina",
+    "away": "Algeria",
+    "datetime": "2026-06-16T14:00:00-03:00",
+    "deadline": "2026-06-16T13:00:00-03:00",
+    "venue": "Kansas City",
     "status": "scheduled",
     "result": {
       "home": null,
@@ -675,11 +703,11 @@ const COPA2026_MATCHES = [
     "id": "m018",
     "phase": "Fase de Grupos",
     "group": "I",
-    "home": "Iraq",
-    "away": "Norway",
-    "datetime": "2026-06-15T22:00:00-03:00",
-    "deadline": "2026-06-15T21:00:00-03:00",
-    "venue": "Estádio Azteca, Cidade do México",
+    "home": "France",
+    "away": "Senegal",
+    "datetime": "2026-06-16T16:00:00-03:00",
+    "deadline": "2026-06-16T15:00:00-03:00",
+    "venue": "Nova York/Nova Jersey",
     "status": "scheduled",
     "result": {
       "home": null,
@@ -690,12 +718,12 @@ const COPA2026_MATCHES = [
   {
     "id": "m019",
     "phase": "Fase de Grupos",
-    "group": "J",
-    "home": "Argentina",
-    "away": "Algeria",
-    "datetime": "2026-06-16T16:00:00-03:00",
-    "deadline": "2026-06-16T15:00:00-03:00",
-    "venue": "Estádio AT&T, Dallas",
+    "group": "I",
+    "home": "Iraq",
+    "away": "Norway",
+    "datetime": "2026-06-16T19:00:00-03:00",
+    "deadline": "2026-06-16T18:00:00-03:00",
+    "venue": "Boston",
     "status": "scheduled",
     "result": {
       "home": null,
@@ -709,9 +737,9 @@ const COPA2026_MATCHES = [
     "group": "J",
     "home": "Austria",
     "away": "Jordan",
-    "datetime": "2026-06-16T19:00:00-03:00",
-    "deadline": "2026-06-16T18:00:00-03:00",
-    "venue": "Estádio Rose Bowl, Los Angeles",
+    "datetime": "2026-06-17T01:00:00-03:00",
+    "deadline": "2026-06-17T00:00:00-03:00",
+    "venue": "San Francisco",
     "status": "scheduled",
     "result": {
       "home": null,
@@ -725,9 +753,9 @@ const COPA2026_MATCHES = [
     "group": "K",
     "home": "Portugal",
     "away": "DR Congo",
-    "datetime": "2026-06-16T22:00:00-03:00",
-    "deadline": "2026-06-16T21:00:00-03:00",
-    "venue": "Estádio Estadio BBVA, Monterrey",
+    "datetime": "2026-06-17T14:00:00-03:00",
+    "deadline": "2026-06-17T13:00:00-03:00",
+    "venue": "Houston",
     "status": "scheduled",
     "result": {
       "home": null,
@@ -738,12 +766,12 @@ const COPA2026_MATCHES = [
   {
     "id": "m022",
     "phase": "Fase de Grupos",
-    "group": "K",
-    "home": "Uzbekistan",
-    "away": "Colombia",
-    "datetime": "2026-06-16T22:00:00-03:00",
-    "deadline": "2026-06-16T21:00:00-03:00",
-    "venue": "Estádio SoFi, Los Angeles",
+    "group": "L",
+    "home": "England",
+    "away": "Croatia",
+    "datetime": "2026-06-17T17:00:00-03:00",
+    "deadline": "2026-06-17T16:00:00-03:00",
+    "venue": "Dallas",
     "status": "scheduled",
     "result": {
       "home": null,
@@ -755,11 +783,11 @@ const COPA2026_MATCHES = [
     "id": "m023",
     "phase": "Fase de Grupos",
     "group": "L",
-    "home": "England",
-    "away": "Croatia",
-    "datetime": "2026-06-17T19:00:00-03:00",
-    "deadline": "2026-06-17T18:00:00-03:00",
-    "venue": "Estádio Arrowhead, Kansas City",
+    "home": "Ghana",
+    "away": "Panama",
+    "datetime": "2026-06-17T20:00:00-03:00",
+    "deadline": "2026-06-17T19:00:00-03:00",
+    "venue": "Toronto",
     "status": "scheduled",
     "result": {
       "home": null,
@@ -770,12 +798,12 @@ const COPA2026_MATCHES = [
   {
     "id": "m024",
     "phase": "Fase de Grupos",
-    "group": "L",
-    "home": "Ghana",
-    "away": "Panama",
-    "datetime": "2026-06-17T16:00:00-03:00",
-    "deadline": "2026-06-17T15:00:00-03:00",
-    "venue": "Estádio Hard Rock, Miami",
+    "group": "K",
+    "home": "Uzbekistan",
+    "away": "Colombia",
+    "datetime": "2026-06-17T23:00:00-03:00",
+    "deadline": "2026-06-17T22:00:00-03:00",
+    "venue": "Cidade do México",
     "status": "scheduled",
     "result": {
       "home": null,
@@ -789,9 +817,9 @@ const COPA2026_MATCHES = [
     "group": "A",
     "home": "Czech Republic",
     "away": "South Africa",
-    "datetime": "2026-06-18T15:00:00-03:00",
-    "deadline": "2026-06-18T14:00:00-03:00",
-    "venue": "Estádio Mercedes-Benz, Atlanta",
+    "datetime": "2026-06-18T13:00:00-03:00",
+    "deadline": "2026-06-18T12:00:00-03:00",
+    "venue": "Atlanta",
     "status": "scheduled",
     "result": {
       "home": null,
@@ -802,12 +830,12 @@ const COPA2026_MATCHES = [
   {
     "id": "m026",
     "phase": "Fase de Grupos",
-    "group": "A",
-    "home": "Mexico",
-    "away": "South Korea",
-    "datetime": "2026-06-18T22:00:00-03:00",
-    "deadline": "2026-06-18T21:00:00-03:00",
-    "venue": "Estadio Akron, Guadalajara",
+    "group": "B",
+    "home": "Switzerland",
+    "away": "Italy",
+    "datetime": "2026-06-18T16:00:00-03:00",
+    "deadline": "2026-06-18T15:00:00-03:00",
+    "venue": "Los Angeles",
     "status": "scheduled",
     "result": {
       "home": null,
@@ -819,11 +847,11 @@ const COPA2026_MATCHES = [
     "id": "m027",
     "phase": "Fase de Grupos",
     "group": "B",
-    "home": "Bosnia-Herzegovina",
+    "home": "Canada",
     "away": "Qatar",
-    "datetime": "2026-06-19T15:00:00-03:00",
-    "deadline": "2026-06-19T14:00:00-03:00",
-    "venue": "Estádio Lincoln Financial Field, Filadélfia",
+    "datetime": "2026-06-18T19:00:00-03:00",
+    "deadline": "2026-06-18T18:00:00-03:00",
+    "venue": "Vancouver",
     "status": "scheduled",
     "result": {
       "home": null,
@@ -834,12 +862,12 @@ const COPA2026_MATCHES = [
   {
     "id": "m028",
     "phase": "Fase de Grupos",
-    "group": "B",
-    "home": "Canada",
-    "away": "Switzerland",
-    "datetime": "2026-06-19T22:00:00-03:00",
-    "deadline": "2026-06-19T21:00:00-03:00",
-    "venue": "Estádio BC Place, Vancouver",
+    "group": "A",
+    "home": "Mexico",
+    "away": "South Korea",
+    "datetime": "2026-06-18T22:00:00-03:00",
+    "deadline": "2026-06-18T21:00:00-03:00",
+    "venue": "Guadalajara",
     "status": "scheduled",
     "result": {
       "home": null,
@@ -850,12 +878,12 @@ const COPA2026_MATCHES = [
   {
     "id": "m029",
     "phase": "Fase de Grupos",
-    "group": "C",
-    "home": "Morocco",
-    "away": "Haiti",
-    "datetime": "2026-06-19T15:00:00-03:00",
-    "deadline": "2026-06-19T14:00:00-03:00",
-    "venue": "Estádio AT&T, Dallas",
+    "group": "D",
+    "home": "Turkey",
+    "away": "Paraguay",
+    "datetime": "2026-06-19T01:00:00-03:00",
+    "deadline": "2026-06-19T00:00:00-03:00",
+    "venue": "San Francisco",
     "status": "scheduled",
     "result": {
       "home": null,
@@ -866,12 +894,12 @@ const COPA2026_MATCHES = [
   {
     "id": "m030",
     "phase": "Fase de Grupos",
-    "group": "C",
-    "home": "Brazil",
-    "away": "Scotland",
-    "datetime": "2026-06-19T22:00:00-03:00",
-    "deadline": "2026-06-19T21:00:00-03:00",
-    "venue": "Estádio SoFi, Los Angeles",
+    "group": "D",
+    "home": "USA",
+    "away": "Australia",
+    "datetime": "2026-06-19T16:00:00-03:00",
+    "deadline": "2026-06-19T15:00:00-03:00",
+    "venue": "Seattle",
     "status": "scheduled",
     "result": {
       "home": null,
@@ -882,12 +910,12 @@ const COPA2026_MATCHES = [
   {
     "id": "m031",
     "phase": "Fase de Grupos",
-    "group": "D",
-    "home": "Turkey",
-    "away": "USA",
-    "datetime": "2026-06-20T22:00:00-03:00",
-    "deadline": "2026-06-20T21:00:00-03:00",
-    "venue": "Estádio Allegiant, Las Vegas",
+    "group": "C",
+    "home": "Scotland",
+    "away": "Morocco",
+    "datetime": "2026-06-19T19:00:00-03:00",
+    "deadline": "2026-06-19T18:00:00-03:00",
+    "venue": "Boston",
     "status": "scheduled",
     "result": {
       "home": null,
@@ -898,12 +926,12 @@ const COPA2026_MATCHES = [
   {
     "id": "m032",
     "phase": "Fase de Grupos",
-    "group": "D",
-    "home": "Paraguay",
-    "away": "Australia",
-    "datetime": "2026-06-20T19:00:00-03:00",
-    "deadline": "2026-06-20T18:00:00-03:00",
-    "venue": "Estádio Levis, São Francisco",
+    "group": "C",
+    "home": "Brazil",
+    "away": "Haiti",
+    "datetime": "2026-06-19T22:00:00-03:00",
+    "deadline": "2026-06-19T21:00:00-03:00",
+    "venue": "Filadélfia",
     "status": "scheduled",
     "result": {
       "home": null,
@@ -914,12 +942,12 @@ const COPA2026_MATCHES = [
   {
     "id": "m033",
     "phase": "Fase de Grupos",
-    "group": "E",
-    "home": "Curacao",
-    "away": "Ivory Coast",
-    "datetime": "2026-06-20T15:00:00-03:00",
-    "deadline": "2026-06-20T14:00:00-03:00",
-    "venue": "Estádio NRG, Houston",
+    "group": "F",
+    "home": "Netherlands",
+    "away": "Sweden",
+    "datetime": "2026-06-20T14:00:00-03:00",
+    "deadline": "2026-06-20T13:00:00-03:00",
+    "venue": "Houston",
     "status": "scheduled",
     "result": {
       "home": null,
@@ -932,10 +960,10 @@ const COPA2026_MATCHES = [
     "phase": "Fase de Grupos",
     "group": "E",
     "home": "Germany",
-    "away": "Ecuador",
-    "datetime": "2026-06-20T22:00:00-03:00",
-    "deadline": "2026-06-20T21:00:00-03:00",
-    "venue": "Estádio Arrowhead, Kansas City",
+    "away": "Ivory Coast",
+    "datetime": "2026-06-20T17:00:00-03:00",
+    "deadline": "2026-06-20T16:00:00-03:00",
+    "venue": "Toronto",
     "status": "scheduled",
     "result": {
       "home": null,
@@ -946,12 +974,12 @@ const COPA2026_MATCHES = [
   {
     "id": "m035",
     "phase": "Fase de Grupos",
-    "group": "F",
-    "home": "Tunisia",
-    "away": "Netherlands",
-    "datetime": "2026-06-21T22:00:00-03:00",
-    "deadline": "2026-06-21T21:00:00-03:00",
-    "venue": "Estádio Hard Rock, Miami",
+    "group": "E",
+    "home": "Ecuador",
+    "away": "Curacao",
+    "datetime": "2026-06-20T21:00:00-03:00",
+    "deadline": "2026-06-20T20:00:00-03:00",
+    "venue": "Kansas City",
     "status": "scheduled",
     "result": {
       "home": null,
@@ -963,11 +991,11 @@ const COPA2026_MATCHES = [
     "id": "m036",
     "phase": "Fase de Grupos",
     "group": "F",
-    "home": "Japan",
-    "away": "Sweden",
-    "datetime": "2026-06-21T19:00:00-03:00",
-    "deadline": "2026-06-21T18:00:00-03:00",
-    "venue": "Estádio Camping World, Orlando",
+    "home": "Tunisia",
+    "away": "Japan",
+    "datetime": "2026-06-21T01:00:00-03:00",
+    "deadline": "2026-06-21T00:00:00-03:00",
+    "venue": "Monterrey",
     "status": "scheduled",
     "result": {
       "home": null,
@@ -978,12 +1006,12 @@ const COPA2026_MATCHES = [
   {
     "id": "m037",
     "phase": "Fase de Grupos",
-    "group": "G",
-    "home": "New Zealand",
-    "away": "Belgium",
-    "datetime": "2026-06-21T15:00:00-03:00",
-    "deadline": "2026-06-21T14:00:00-03:00",
-    "venue": "Estádio Estadio BBVA, Monterrey",
+    "group": "H",
+    "home": "Spain",
+    "away": "Saudi Arabia",
+    "datetime": "2026-06-21T13:00:00-03:00",
+    "deadline": "2026-06-21T12:00:00-03:00",
+    "venue": "Atlanta",
     "status": "scheduled",
     "result": {
       "home": null,
@@ -995,11 +1023,11 @@ const COPA2026_MATCHES = [
     "id": "m038",
     "phase": "Fase de Grupos",
     "group": "G",
-    "home": "Egypt",
+    "home": "Belgium",
     "away": "Iran",
-    "datetime": "2026-06-21T22:00:00-03:00",
-    "deadline": "2026-06-21T21:00:00-03:00",
-    "venue": "Estádio Rose Bowl, Los Angeles",
+    "datetime": "2026-06-21T16:00:00-03:00",
+    "deadline": "2026-06-21T15:00:00-03:00",
+    "venue": "Los Angeles",
     "status": "scheduled",
     "result": {
       "home": null,
@@ -1011,11 +1039,11 @@ const COPA2026_MATCHES = [
     "id": "m039",
     "phase": "Fase de Grupos",
     "group": "H",
-    "home": "Cape Verde",
-    "away": "Saudi Arabia",
-    "datetime": "2026-06-22T19:00:00-03:00",
-    "deadline": "2026-06-22T18:00:00-03:00",
-    "venue": "Estádio Azteca, Cidade do México",
+    "home": "Uruguay",
+    "away": "Cape Verde",
+    "datetime": "2026-06-21T19:00:00-03:00",
+    "deadline": "2026-06-21T18:00:00-03:00",
+    "venue": "Miami",
     "status": "scheduled",
     "result": {
       "home": null,
@@ -1026,12 +1054,12 @@ const COPA2026_MATCHES = [
   {
     "id": "m040",
     "phase": "Fase de Grupos",
-    "group": "H",
-    "home": "Spain",
-    "away": "Uruguay",
-    "datetime": "2026-06-22T22:00:00-03:00",
-    "deadline": "2026-06-22T21:00:00-03:00",
-    "venue": "Estádio Gillette, Boston",
+    "group": "G",
+    "home": "New Zealand",
+    "away": "Egypt",
+    "datetime": "2026-06-21T22:00:00-03:00",
+    "deadline": "2026-06-21T21:00:00-03:00",
+    "venue": "Vancouver",
     "status": "scheduled",
     "result": {
       "home": null,
@@ -1042,12 +1070,12 @@ const COPA2026_MATCHES = [
   {
     "id": "m041",
     "phase": "Fase de Grupos",
-    "group": "I",
-    "home": "Senegal",
-    "away": "Iraq",
-    "datetime": "2026-06-22T19:00:00-03:00",
-    "deadline": "2026-06-22T18:00:00-03:00",
-    "venue": "Estádio MetLife, Nova York/Nova Jersey",
+    "group": "J",
+    "home": "Argentina",
+    "away": "Austria",
+    "datetime": "2026-06-22T14:00:00-03:00",
+    "deadline": "2026-06-22T13:00:00-03:00",
+    "venue": "Dallas",
     "status": "scheduled",
     "result": {
       "home": null,
@@ -1060,10 +1088,10 @@ const COPA2026_MATCHES = [
     "phase": "Fase de Grupos",
     "group": "I",
     "home": "France",
-    "away": "Norway",
-    "datetime": "2026-06-22T22:00:00-03:00",
-    "deadline": "2026-06-22T21:00:00-03:00",
-    "venue": "Estádio SoFi, Los Angeles",
+    "away": "Iraq",
+    "datetime": "2026-06-22T18:00:00-03:00",
+    "deadline": "2026-06-22T17:00:00-03:00",
+    "venue": "Filadélfia",
     "status": "scheduled",
     "result": {
       "home": null,
@@ -1074,12 +1102,12 @@ const COPA2026_MATCHES = [
   {
     "id": "m043",
     "phase": "Fase de Grupos",
-    "group": "J",
-    "home": "Algeria",
-    "away": "Austria",
-    "datetime": "2026-06-23T19:00:00-03:00",
-    "deadline": "2026-06-23T18:00:00-03:00",
-    "venue": "Estádio AT&T, Dallas",
+    "group": "I",
+    "home": "Norway",
+    "away": "Senegal",
+    "datetime": "2026-06-22T21:00:00-03:00",
+    "deadline": "2026-06-22T20:00:00-03:00",
+    "venue": "Nova York/Nova Jersey",
     "status": "scheduled",
     "result": {
       "home": null,
@@ -1091,11 +1119,11 @@ const COPA2026_MATCHES = [
     "id": "m044",
     "phase": "Fase de Grupos",
     "group": "J",
-    "home": "Argentina",
-    "away": "Jordan",
-    "datetime": "2026-06-23T22:00:00-03:00",
-    "deadline": "2026-06-23T21:00:00-03:00",
-    "venue": "Estádio MetLife, Nova York/Nova Jersey",
+    "home": "Jordan",
+    "away": "Algeria",
+    "datetime": "2026-06-23T00:00:00-03:00",
+    "deadline": "2026-06-23T23:00:00-03:00",
+    "venue": "San Francisco",
     "status": "scheduled",
     "result": {
       "home": null,
@@ -1106,12 +1134,12 @@ const COPA2026_MATCHES = [
   {
     "id": "m045",
     "phase": "Fase de Grupos",
-    "group": "K",
-    "home": "Colombia",
-    "away": "Portugal",
-    "datetime": "2026-06-23T19:00:00-03:00",
-    "deadline": "2026-06-23T18:00:00-03:00",
-    "venue": "Estádio Hard Rock, Miami",
+    "group": "L",
+    "home": "England",
+    "away": "Ghana",
+    "datetime": "2026-06-23T17:00:00-03:00",
+    "deadline": "2026-06-23T16:00:00-03:00",
+    "venue": "Boston",
     "status": "scheduled",
     "result": {
       "home": null,
@@ -1123,11 +1151,11 @@ const COPA2026_MATCHES = [
     "id": "m046",
     "phase": "Fase de Grupos",
     "group": "K",
-    "home": "DR Congo",
+    "home": "Portugal",
     "away": "Uzbekistan",
-    "datetime": "2026-06-23T22:00:00-03:00",
-    "deadline": "2026-06-23T21:00:00-03:00",
-    "venue": "Estádio NRG, Houston",
+    "datetime": "2026-06-23T14:00:00-03:00",
+    "deadline": "2026-06-23T13:00:00-03:00",
+    "venue": "Houston",
     "status": "scheduled",
     "result": {
       "home": null,
@@ -1140,10 +1168,10 @@ const COPA2026_MATCHES = [
     "phase": "Fase de Grupos",
     "group": "L",
     "home": "Panama",
-    "away": "England",
-    "datetime": "2026-06-24T22:00:00-03:00",
-    "deadline": "2026-06-24T21:00:00-03:00",
-    "venue": "Estádio Mercedes-Benz, Atlanta",
+    "away": "Croatia",
+    "datetime": "2026-06-23T20:00:00-03:00",
+    "deadline": "2026-06-23T19:00:00-03:00",
+    "venue": "Toronto",
     "status": "scheduled",
     "result": {
       "home": null,
@@ -1154,12 +1182,12 @@ const COPA2026_MATCHES = [
   {
     "id": "m048",
     "phase": "Fase de Grupos",
-    "group": "L",
-    "home": "Croatia",
-    "away": "Ghana",
-    "datetime": "2026-06-24T19:00:00-03:00",
-    "deadline": "2026-06-24T18:00:00-03:00",
-    "venue": "Estádio Arrowhead, Kansas City",
+    "group": "K",
+    "home": "Colombia",
+    "away": "DR Congo",
+    "datetime": "2026-06-23T23:00:00-03:00",
+    "deadline": "2026-06-23T22:00:00-03:00",
+    "venue": "Guadalajara",
     "status": "scheduled",
     "result": {
       "home": null,
@@ -1170,12 +1198,12 @@ const COPA2026_MATCHES = [
   {
     "id": "m049",
     "phase": "Fase de Grupos",
-    "group": "A",
-    "home": "South Africa",
-    "away": "South Korea",
-    "datetime": "2026-06-25T20:00:00-03:00",
-    "deadline": "2026-06-25T19:00:00-03:00",
-    "venue": "Estadio Akron, Guadalajara",
+    "group": "B",
+    "home": "Switzerland",
+    "away": "Canada",
+    "datetime": "2026-06-24T16:00:00-03:00",
+    "deadline": "2026-06-24T15:00:00-03:00",
+    "venue": "Vancouver",
     "status": "scheduled",
     "result": {
       "home": null,
@@ -1186,12 +1214,12 @@ const COPA2026_MATCHES = [
   {
     "id": "m050",
     "phase": "Fase de Grupos",
-    "group": "A",
-    "home": "Czech Republic",
-    "away": "Mexico",
-    "datetime": "2026-06-25T20:00:00-03:00",
-    "deadline": "2026-06-25T19:00:00-03:00",
-    "venue": "Estádio Azteca, Cidade do México",
+    "group": "B",
+    "home": "Italy",
+    "away": "Qatar",
+    "datetime": "2026-06-24T16:00:00-03:00",
+    "deadline": "2026-06-24T15:00:00-03:00",
+    "venue": "Seattle",
     "status": "scheduled",
     "result": {
       "home": null,
@@ -1202,12 +1230,12 @@ const COPA2026_MATCHES = [
   {
     "id": "m051",
     "phase": "Fase de Grupos",
-    "group": "B",
-    "home": "Switzerland",
-    "away": "Bosnia-Herzegovina",
-    "datetime": "2026-06-26T20:00:00-03:00",
-    "deadline": "2026-06-26T19:00:00-03:00",
-    "venue": "Estádio BC Place, Vancouver",
+    "group": "C",
+    "home": "Scotland",
+    "away": "Brazil",
+    "datetime": "2026-06-24T19:00:00-03:00",
+    "deadline": "2026-06-24T18:00:00-03:00",
+    "venue": "Miami",
     "status": "scheduled",
     "result": {
       "home": null,
@@ -1218,12 +1246,12 @@ const COPA2026_MATCHES = [
   {
     "id": "m052",
     "phase": "Fase de Grupos",
-    "group": "B",
-    "home": "Qatar",
-    "away": "Canada",
-    "datetime": "2026-06-26T20:00:00-03:00",
-    "deadline": "2026-06-26T19:00:00-03:00",
-    "venue": "Estádio Lincoln Financial Field, Filadélfia",
+    "group": "C",
+    "home": "Morocco",
+    "away": "Haiti",
+    "datetime": "2026-06-24T19:00:00-03:00",
+    "deadline": "2026-06-24T18:00:00-03:00",
+    "venue": "Atlanta",
     "status": "scheduled",
     "result": {
       "home": null,
@@ -1234,12 +1262,12 @@ const COPA2026_MATCHES = [
   {
     "id": "m053",
     "phase": "Fase de Grupos",
-    "group": "C",
-    "home": "Scotland",
-    "away": "Morocco",
-    "datetime": "2026-06-26T20:00:00-03:00",
-    "deadline": "2026-06-26T19:00:00-03:00",
-    "venue": "Estádio AT&T, Dallas",
+    "group": "A",
+    "home": "Czech Republic",
+    "away": "Mexico",
+    "datetime": "2026-06-24T22:00:00-03:00",
+    "deadline": "2026-06-24T21:00:00-03:00",
+    "venue": "Cidade do México",
     "status": "scheduled",
     "result": {
       "home": null,
@@ -1250,12 +1278,12 @@ const COPA2026_MATCHES = [
   {
     "id": "m054",
     "phase": "Fase de Grupos",
-    "group": "C",
-    "home": "Haiti",
-    "away": "Brazil",
-    "datetime": "2026-06-26T20:00:00-03:00",
-    "deadline": "2026-06-26T19:00:00-03:00",
-    "venue": "Estádio SoFi, Los Angeles",
+    "group": "A",
+    "home": "South Africa",
+    "away": "South Korea",
+    "datetime": "2026-06-24T22:00:00-03:00",
+    "deadline": "2026-06-24T21:00:00-03:00",
+    "venue": "Monterrey",
     "status": "scheduled",
     "result": {
       "home": null,
@@ -1266,12 +1294,12 @@ const COPA2026_MATCHES = [
   {
     "id": "m055",
     "phase": "Fase de Grupos",
-    "group": "D",
-    "home": "Australia",
-    "away": "USA",
-    "datetime": "2026-06-27T20:00:00-03:00",
-    "deadline": "2026-06-27T19:00:00-03:00",
-    "venue": "Estádio Levis, São Francisco",
+    "group": "E",
+    "home": "Ecuador",
+    "away": "Germany",
+    "datetime": "2026-06-25T17:00:00-03:00",
+    "deadline": "2026-06-25T16:00:00-03:00",
+    "venue": "Nova York/Nova Jersey",
     "status": "scheduled",
     "result": {
       "home": null,
@@ -1282,12 +1310,12 @@ const COPA2026_MATCHES = [
   {
     "id": "m056",
     "phase": "Fase de Grupos",
-    "group": "D",
-    "home": "Turkey",
-    "away": "Paraguay",
-    "datetime": "2026-06-27T20:00:00-03:00",
-    "deadline": "2026-06-27T19:00:00-03:00",
-    "venue": "Estádio Allegiant, Las Vegas",
+    "group": "E",
+    "home": "Curacao",
+    "away": "Ivory Coast",
+    "datetime": "2026-06-25T17:00:00-03:00",
+    "deadline": "2026-06-25T16:00:00-03:00",
+    "venue": "Filadélfia",
     "status": "scheduled",
     "result": {
       "home": null,
@@ -1298,12 +1326,12 @@ const COPA2026_MATCHES = [
   {
     "id": "m057",
     "phase": "Fase de Grupos",
-    "group": "E",
-    "home": "Ecuador",
-    "away": "Curacao",
-    "datetime": "2026-06-27T20:00:00-03:00",
-    "deadline": "2026-06-27T19:00:00-03:00",
-    "venue": "Estádio NRG, Houston",
+    "group": "F",
+    "home": "Japan",
+    "away": "Sweden",
+    "datetime": "2026-06-25T20:00:00-03:00",
+    "deadline": "2026-06-25T19:00:00-03:00",
+    "venue": "Dallas",
     "status": "scheduled",
     "result": {
       "home": null,
@@ -1314,12 +1342,12 @@ const COPA2026_MATCHES = [
   {
     "id": "m058",
     "phase": "Fase de Grupos",
-    "group": "E",
-    "home": "Ivory Coast",
-    "away": "Germany",
-    "datetime": "2026-06-27T20:00:00-03:00",
-    "deadline": "2026-06-27T19:00:00-03:00",
-    "venue": "Estádio Arrowhead, Kansas City",
+    "group": "F",
+    "home": "Tunisia",
+    "away": "Netherlands",
+    "datetime": "2026-06-25T20:00:00-03:00",
+    "deadline": "2026-06-25T19:00:00-03:00",
+    "venue": "Kansas City",
     "status": "scheduled",
     "result": {
       "home": null,
@@ -1330,12 +1358,12 @@ const COPA2026_MATCHES = [
   {
     "id": "m059",
     "phase": "Fase de Grupos",
-    "group": "F",
-    "home": "Japan",
-    "away": "Tunisia",
-    "datetime": "2026-06-28T20:00:00-03:00",
-    "deadline": "2026-06-28T19:00:00-03:00",
-    "venue": "Estádio Hard Rock, Miami",
+    "group": "D",
+    "home": "Turkey",
+    "away": "USA",
+    "datetime": "2026-06-25T23:00:00-03:00",
+    "deadline": "2026-06-25T22:00:00-03:00",
+    "venue": "Los Angeles",
     "status": "scheduled",
     "result": {
       "home": null,
@@ -1346,12 +1374,12 @@ const COPA2026_MATCHES = [
   {
     "id": "m060",
     "phase": "Fase de Grupos",
-    "group": "F",
-    "home": "Netherlands",
-    "away": "Sweden",
-    "datetime": "2026-06-28T20:00:00-03:00",
-    "deadline": "2026-06-28T19:00:00-03:00",
-    "venue": "Estádio Camping World, Orlando",
+    "group": "D",
+    "home": "Paraguay",
+    "away": "Australia",
+    "datetime": "2026-06-25T23:00:00-03:00",
+    "deadline": "2026-06-25T22:00:00-03:00",
+    "venue": "San Francisco",
     "status": "scheduled",
     "result": {
       "home": null,
@@ -1362,12 +1390,12 @@ const COPA2026_MATCHES = [
   {
     "id": "m061",
     "phase": "Fase de Grupos",
-    "group": "G",
-    "home": "New Zealand",
-    "away": "Egypt",
-    "datetime": "2026-06-28T20:00:00-03:00",
-    "deadline": "2026-06-28T19:00:00-03:00",
-    "venue": "Estádio Rose Bowl, Los Angeles",
+    "group": "I",
+    "home": "Norway",
+    "away": "France",
+    "datetime": "2026-06-26T16:00:00-03:00",
+    "deadline": "2026-06-26T15:00:00-03:00",
+    "venue": "Boston",
     "status": "scheduled",
     "result": {
       "home": null,
@@ -1378,12 +1406,12 @@ const COPA2026_MATCHES = [
   {
     "id": "m062",
     "phase": "Fase de Grupos",
-    "group": "G",
-    "home": "Belgium",
-    "away": "Iran",
-    "datetime": "2026-06-28T20:00:00-03:00",
-    "deadline": "2026-06-28T19:00:00-03:00",
-    "venue": "Estádio Estadio BBVA, Monterrey",
+    "group": "I",
+    "home": "Senegal",
+    "away": "Iraq",
+    "datetime": "2026-06-26T16:00:00-03:00",
+    "deadline": "2026-06-26T15:00:00-03:00",
+    "venue": "Toronto",
     "status": "scheduled",
     "result": {
       "home": null,
@@ -1395,11 +1423,11 @@ const COPA2026_MATCHES = [
     "id": "m063",
     "phase": "Fase de Grupos",
     "group": "H",
-    "home": "Uruguay",
-    "away": "Cape Verde",
-    "datetime": "2026-06-29T20:00:00-03:00",
-    "deadline": "2026-06-29T19:00:00-03:00",
-    "venue": "Estádio Gillette, Boston",
+    "home": "Cape Verde",
+    "away": "Saudi Arabia",
+    "datetime": "2026-06-26T21:00:00-03:00",
+    "deadline": "2026-06-26T20:00:00-03:00",
+    "venue": "Houston",
     "status": "scheduled",
     "result": {
       "home": null,
@@ -1411,11 +1439,11 @@ const COPA2026_MATCHES = [
     "id": "m064",
     "phase": "Fase de Grupos",
     "group": "H",
-    "home": "Saudi Arabia",
+    "home": "Uruguay",
     "away": "Spain",
-    "datetime": "2026-06-29T20:00:00-03:00",
-    "deadline": "2026-06-29T19:00:00-03:00",
-    "venue": "Estádio Azteca, Cidade do México",
+    "datetime": "2026-06-26T21:00:00-03:00",
+    "deadline": "2026-06-26T20:00:00-03:00",
+    "venue": "Guadalajara",
     "status": "scheduled",
     "result": {
       "home": null,
@@ -1426,12 +1454,12 @@ const COPA2026_MATCHES = [
   {
     "id": "m065",
     "phase": "Fase de Grupos",
-    "group": "I",
-    "home": "Norway",
-    "away": "Senegal",
-    "datetime": "2026-06-29T20:00:00-03:00",
-    "deadline": "2026-06-29T19:00:00-03:00",
-    "venue": "Estádio MetLife, Nova York/Nova Jersey",
+    "group": "G",
+    "home": "Egypt",
+    "away": "Iran",
+    "datetime": "2026-06-27T00:00:00-03:00",
+    "deadline": "2026-06-27T23:00:00-03:00",
+    "venue": "Seattle",
     "status": "scheduled",
     "result": {
       "home": null,
@@ -1442,12 +1470,12 @@ const COPA2026_MATCHES = [
   {
     "id": "m066",
     "phase": "Fase de Grupos",
-    "group": "I",
-    "home": "Iraq",
-    "away": "France",
-    "datetime": "2026-06-29T20:00:00-03:00",
-    "deadline": "2026-06-29T19:00:00-03:00",
-    "venue": "Estádio SoFi, Los Angeles",
+    "group": "G",
+    "home": "New Zealand",
+    "away": "Belgium",
+    "datetime": "2026-06-27T00:00:00-03:00",
+    "deadline": "2026-06-27T23:00:00-03:00",
+    "venue": "Vancouver",
     "status": "scheduled",
     "result": {
       "home": null,
@@ -1458,12 +1486,12 @@ const COPA2026_MATCHES = [
   {
     "id": "m067",
     "phase": "Fase de Grupos",
-    "group": "J",
-    "home": "Jordan",
-    "away": "Algeria",
-    "datetime": "2026-06-30T20:00:00-03:00",
-    "deadline": "2026-06-30T19:00:00-03:00",
-    "venue": "Estádio AT&T, Dallas",
+    "group": "L",
+    "home": "Panama",
+    "away": "England",
+    "datetime": "2026-06-27T18:00:00-03:00",
+    "deadline": "2026-06-27T17:00:00-03:00",
+    "venue": "Nova York/Nova Jersey",
     "status": "scheduled",
     "result": {
       "home": null,
@@ -1474,12 +1502,12 @@ const COPA2026_MATCHES = [
   {
     "id": "m068",
     "phase": "Fase de Grupos",
-    "group": "J",
-    "home": "Austria",
-    "away": "Argentina",
-    "datetime": "2026-06-30T20:00:00-03:00",
-    "deadline": "2026-06-30T19:00:00-03:00",
-    "venue": "Estádio Rose Bowl, Los Angeles",
+    "group": "L",
+    "home": "Croatia",
+    "away": "Ghana",
+    "datetime": "2026-06-27T18:00:00-03:00",
+    "deadline": "2026-06-27T17:00:00-03:00",
+    "venue": "Filadélfia",
     "status": "scheduled",
     "result": {
       "home": null,
@@ -1492,10 +1520,10 @@ const COPA2026_MATCHES = [
     "phase": "Fase de Grupos",
     "group": "K",
     "home": "Colombia",
-    "away": "DR Congo",
-    "datetime": "2026-06-30T20:00:00-03:00",
-    "deadline": "2026-06-30T19:00:00-03:00",
-    "venue": "Estádio Hard Rock, Miami",
+    "away": "Portugal",
+    "datetime": "2026-06-27T20:30:00-03:00",
+    "deadline": "2026-06-27T19:30:00-03:00",
+    "venue": "Miami",
     "status": "scheduled",
     "result": {
       "home": null,
@@ -1507,11 +1535,11 @@ const COPA2026_MATCHES = [
     "id": "m070",
     "phase": "Fase de Grupos",
     "group": "K",
-    "home": "Uzbekistan",
-    "away": "Portugal",
-    "datetime": "2026-06-30T20:00:00-03:00",
-    "deadline": "2026-06-30T19:00:00-03:00",
-    "venue": "Estádio NRG, Houston",
+    "home": "DR Congo",
+    "away": "Uzbekistan",
+    "datetime": "2026-06-27T20:30:00-03:00",
+    "deadline": "2026-06-27T19:30:00-03:00",
+    "venue": "Atlanta",
     "status": "scheduled",
     "result": {
       "home": null,
@@ -1522,12 +1550,12 @@ const COPA2026_MATCHES = [
   {
     "id": "m071",
     "phase": "Fase de Grupos",
-    "group": "L",
-    "home": "Ghana",
-    "away": "England",
-    "datetime": "2026-06-30T20:00:00-03:00",
-    "deadline": "2026-06-30T19:00:00-03:00",
-    "venue": "Estádio Mercedes-Benz, Atlanta",
+    "group": "J",
+    "home": "Algeria",
+    "away": "Austria",
+    "datetime": "2026-06-27T23:00:00-03:00",
+    "deadline": "2026-06-27T22:00:00-03:00",
+    "venue": "Kansas City",
     "status": "scheduled",
     "result": {
       "home": null,
@@ -1538,12 +1566,12 @@ const COPA2026_MATCHES = [
   {
     "id": "m072",
     "phase": "Fase de Grupos",
-    "group": "L",
-    "home": "Panama",
-    "away": "Croatia",
-    "datetime": "2026-06-30T20:00:00-03:00",
-    "deadline": "2026-06-30T19:00:00-03:00",
-    "venue": "Estádio Arrowhead, Kansas City",
+    "group": "J",
+    "home": "Jordan",
+    "away": "Argentina",
+    "datetime": "2026-06-27T23:00:00-03:00",
+    "deadline": "2026-06-27T22:00:00-03:00",
+    "venue": "Dallas",
     "status": "scheduled",
     "result": {
       "home": null,
@@ -1557,8 +1585,8 @@ const COPA2026_MATCHES = [
     "group": "",
     "home": "1A",
     "away": "2B",
-    "datetime": "2026-07-03T17:00:00-03:00",
-    "deadline": "2026-07-03T16:00:00-03:00",
+    "datetime": "2026-07-01T17:00:00-03:00",
+    "deadline": "2026-07-01T16:00:00-03:00",
     "venue": "A definir",
     "status": "scheduled",
     "result": {
@@ -1573,8 +1601,8 @@ const COPA2026_MATCHES = [
     "group": "",
     "home": "1C",
     "away": "2D",
-    "datetime": "2026-07-03T21:00:00-03:00",
-    "deadline": "2026-07-03T20:00:00-03:00",
+    "datetime": "2026-07-01T21:00:00-03:00",
+    "deadline": "2026-07-01T20:00:00-03:00",
     "venue": "A definir",
     "status": "scheduled",
     "result": {
@@ -1589,8 +1617,8 @@ const COPA2026_MATCHES = [
     "group": "",
     "home": "1E",
     "away": "2F",
-    "datetime": "2026-07-04T17:00:00-03:00",
-    "deadline": "2026-07-04T16:00:00-03:00",
+    "datetime": "2026-07-02T17:00:00-03:00",
+    "deadline": "2026-07-02T16:00:00-03:00",
     "venue": "A definir",
     "status": "scheduled",
     "result": {
@@ -1605,8 +1633,8 @@ const COPA2026_MATCHES = [
     "group": "",
     "home": "1G",
     "away": "2H",
-    "datetime": "2026-07-04T21:00:00-03:00",
-    "deadline": "2026-07-04T20:00:00-03:00",
+    "datetime": "2026-07-02T21:00:00-03:00",
+    "deadline": "2026-07-02T20:00:00-03:00",
     "venue": "A definir",
     "status": "scheduled",
     "result": {
@@ -1621,8 +1649,8 @@ const COPA2026_MATCHES = [
     "group": "",
     "home": "1I",
     "away": "2J",
-    "datetime": "2026-07-05T17:00:00-03:00",
-    "deadline": "2026-07-05T16:00:00-03:00",
+    "datetime": "2026-07-03T17:00:00-03:00",
+    "deadline": "2026-07-03T16:00:00-03:00",
     "venue": "A definir",
     "status": "scheduled",
     "result": {
@@ -1637,8 +1665,8 @@ const COPA2026_MATCHES = [
     "group": "",
     "home": "1K",
     "away": "2L",
-    "datetime": "2026-07-05T21:00:00-03:00",
-    "deadline": "2026-07-05T20:00:00-03:00",
+    "datetime": "2026-07-03T21:00:00-03:00",
+    "deadline": "2026-07-03T20:00:00-03:00",
     "venue": "A definir",
     "status": "scheduled",
     "result": {
@@ -1653,8 +1681,8 @@ const COPA2026_MATCHES = [
     "group": "",
     "home": "1B",
     "away": "2A",
-    "datetime": "2026-07-06T17:00:00-03:00",
-    "deadline": "2026-07-06T16:00:00-03:00",
+    "datetime": "2026-07-04T17:00:00-03:00",
+    "deadline": "2026-07-04T16:00:00-03:00",
     "venue": "A definir",
     "status": "scheduled",
     "result": {
@@ -1669,8 +1697,8 @@ const COPA2026_MATCHES = [
     "group": "",
     "home": "1D",
     "away": "2C",
-    "datetime": "2026-07-06T21:00:00-03:00",
-    "deadline": "2026-07-06T20:00:00-03:00",
+    "datetime": "2026-07-04T21:00:00-03:00",
+    "deadline": "2026-07-04T20:00:00-03:00",
     "venue": "A definir",
     "status": "scheduled",
     "result": {
@@ -1685,8 +1713,8 @@ const COPA2026_MATCHES = [
     "group": "",
     "home": "3A/B/C/D",
     "away": "3E/F/G/H",
-    "datetime": "2026-07-07T17:00:00-03:00",
-    "deadline": "2026-07-07T16:00:00-03:00",
+    "datetime": "2026-07-05T17:00:00-03:00",
+    "deadline": "2026-07-05T16:00:00-03:00",
     "venue": "A definir",
     "status": "scheduled",
     "result": {
@@ -1701,8 +1729,8 @@ const COPA2026_MATCHES = [
     "group": "",
     "home": "3I/J/K/L",
     "away": "1F",
-    "datetime": "2026-07-07T21:00:00-03:00",
-    "deadline": "2026-07-07T20:00:00-03:00",
+    "datetime": "2026-07-05T21:00:00-03:00",
+    "deadline": "2026-07-05T20:00:00-03:00",
     "venue": "A definir",
     "status": "scheduled",
     "result": {
@@ -1717,8 +1745,8 @@ const COPA2026_MATCHES = [
     "group": "",
     "home": "1H",
     "away": "3A/B/E/I",
-    "datetime": "2026-07-08T17:00:00-03:00",
-    "deadline": "2026-07-08T16:00:00-03:00",
+    "datetime": "2026-07-06T17:00:00-03:00",
+    "deadline": "2026-07-06T16:00:00-03:00",
     "venue": "A definir",
     "status": "scheduled",
     "result": {
@@ -1733,8 +1761,8 @@ const COPA2026_MATCHES = [
     "group": "",
     "home": "1J",
     "away": "3C/D/F/G",
-    "datetime": "2026-07-08T21:00:00-03:00",
-    "deadline": "2026-07-08T20:00:00-03:00",
+    "datetime": "2026-07-06T21:00:00-03:00",
+    "deadline": "2026-07-06T20:00:00-03:00",
     "venue": "A definir",
     "status": "scheduled",
     "result": {
@@ -1749,8 +1777,8 @@ const COPA2026_MATCHES = [
     "group": "",
     "home": "1L",
     "away": "2K",
-    "datetime": "2026-07-09T17:00:00-03:00",
-    "deadline": "2026-07-09T16:00:00-03:00",
+    "datetime": "2026-07-07T17:00:00-03:00",
+    "deadline": "2026-07-07T16:00:00-03:00",
     "venue": "A definir",
     "status": "scheduled",
     "result": {
@@ -1765,8 +1793,8 @@ const COPA2026_MATCHES = [
     "group": "",
     "home": "2E",
     "away": "2G",
-    "datetime": "2026-07-09T21:00:00-03:00",
-    "deadline": "2026-07-09T20:00:00-03:00",
+    "datetime": "2026-07-07T21:00:00-03:00",
+    "deadline": "2026-07-07T20:00:00-03:00",
     "venue": "A definir",
     "status": "scheduled",
     "result": {
@@ -1781,8 +1809,8 @@ const COPA2026_MATCHES = [
     "group": "",
     "home": "2I",
     "away": "2L",
-    "datetime": "2026-07-10T17:00:00-03:00",
-    "deadline": "2026-07-10T16:00:00-03:00",
+    "datetime": "2026-07-08T17:00:00-03:00",
+    "deadline": "2026-07-08T16:00:00-03:00",
     "venue": "A definir",
     "status": "scheduled",
     "result": {
@@ -1795,10 +1823,10 @@ const COPA2026_MATCHES = [
     "id": "m088",
     "phase": "Oitavas (R32)",
     "group": "",
-    "home": "1F_alt",
+    "home": "1F",
     "away": "3rem",
-    "datetime": "2026-07-10T21:00:00-03:00",
-    "deadline": "2026-07-10T20:00:00-03:00",
+    "datetime": "2026-07-08T21:00:00-03:00",
+    "deadline": "2026-07-08T20:00:00-03:00",
     "venue": "A definir",
     "status": "scheduled",
     "result": {
@@ -1813,8 +1841,8 @@ const COPA2026_MATCHES = [
     "group": "",
     "home": "Venc. R32-1",
     "away": "Venc. R32-2",
-    "datetime": "2026-07-13T21:00:00-03:00",
-    "deadline": "2026-07-13T20:00:00-03:00",
+    "datetime": "2026-07-11T17:00:00-03:00",
+    "deadline": "2026-07-11T16:00:00-03:00",
     "venue": "A definir",
     "status": "scheduled",
     "result": {
@@ -1829,8 +1857,8 @@ const COPA2026_MATCHES = [
     "group": "",
     "home": "Venc. R32-3",
     "away": "Venc. R32-4",
-    "datetime": "2026-07-14T17:00:00-03:00",
-    "deadline": "2026-07-14T16:00:00-03:00",
+    "datetime": "2026-07-11T21:00:00-03:00",
+    "deadline": "2026-07-11T20:00:00-03:00",
     "venue": "A definir",
     "status": "scheduled",
     "result": {
@@ -1845,8 +1873,8 @@ const COPA2026_MATCHES = [
     "group": "",
     "home": "Venc. R32-5",
     "away": "Venc. R32-6",
-    "datetime": "2026-07-14T21:00:00-03:00",
-    "deadline": "2026-07-14T20:00:00-03:00",
+    "datetime": "2026-07-12T17:00:00-03:00",
+    "deadline": "2026-07-12T16:00:00-03:00",
     "venue": "A definir",
     "status": "scheduled",
     "result": {
@@ -1861,8 +1889,8 @@ const COPA2026_MATCHES = [
     "group": "",
     "home": "Venc. R32-7",
     "away": "Venc. R32-8",
-    "datetime": "2026-07-15T17:00:00-03:00",
-    "deadline": "2026-07-15T16:00:00-03:00",
+    "datetime": "2026-07-12T21:00:00-03:00",
+    "deadline": "2026-07-12T20:00:00-03:00",
     "venue": "A definir",
     "status": "scheduled",
     "result": {
@@ -1877,8 +1905,8 @@ const COPA2026_MATCHES = [
     "group": "",
     "home": "Venc. R32-9",
     "away": "Venc. R32-10",
-    "datetime": "2026-07-15T21:00:00-03:00",
-    "deadline": "2026-07-15T20:00:00-03:00",
+    "datetime": "2026-07-13T17:00:00-03:00",
+    "deadline": "2026-07-13T16:00:00-03:00",
     "venue": "A definir",
     "status": "scheduled",
     "result": {
@@ -1893,8 +1921,8 @@ const COPA2026_MATCHES = [
     "group": "",
     "home": "Venc. R32-11",
     "away": "Venc. R32-12",
-    "datetime": "2026-07-16T17:00:00-03:00",
-    "deadline": "2026-07-16T16:00:00-03:00",
+    "datetime": "2026-07-13T21:00:00-03:00",
+    "deadline": "2026-07-13T20:00:00-03:00",
     "venue": "A definir",
     "status": "scheduled",
     "result": {
@@ -1909,8 +1937,8 @@ const COPA2026_MATCHES = [
     "group": "",
     "home": "Venc. R32-13",
     "away": "Venc. R32-14",
-    "datetime": "2026-07-16T21:00:00-03:00",
-    "deadline": "2026-07-16T20:00:00-03:00",
+    "datetime": "2026-07-14T17:00:00-03:00",
+    "deadline": "2026-07-14T16:00:00-03:00",
     "venue": "A definir",
     "status": "scheduled",
     "result": {
@@ -1925,8 +1953,8 @@ const COPA2026_MATCHES = [
     "group": "",
     "home": "Venc. R32-15",
     "away": "Venc. R32-16",
-    "datetime": "2026-07-17T17:00:00-03:00",
-    "deadline": "2026-07-17T16:00:00-03:00",
+    "datetime": "2026-07-14T21:00:00-03:00",
+    "deadline": "2026-07-14T20:00:00-03:00",
     "venue": "A definir",
     "status": "scheduled",
     "result": {
@@ -1941,8 +1969,8 @@ const COPA2026_MATCHES = [
     "group": "",
     "home": "Venc. R16-1",
     "away": "Venc. R16-2",
-    "datetime": "2026-07-19T17:00:00-03:00",
-    "deadline": "2026-07-19T16:00:00-03:00",
+    "datetime": "2026-07-17T17:00:00-03:00",
+    "deadline": "2026-07-17T16:00:00-03:00",
     "venue": "A definir",
     "status": "scheduled",
     "result": {
@@ -1957,8 +1985,8 @@ const COPA2026_MATCHES = [
     "group": "",
     "home": "Venc. R16-3",
     "away": "Venc. R16-4",
-    "datetime": "2026-07-19T21:00:00-03:00",
-    "deadline": "2026-07-19T20:00:00-03:00",
+    "datetime": "2026-07-17T21:00:00-03:00",
+    "deadline": "2026-07-17T20:00:00-03:00",
     "venue": "A definir",
     "status": "scheduled",
     "result": {
@@ -1973,8 +2001,8 @@ const COPA2026_MATCHES = [
     "group": "",
     "home": "Venc. R16-5",
     "away": "Venc. R16-6",
-    "datetime": "2026-07-20T17:00:00-03:00",
-    "deadline": "2026-07-20T16:00:00-03:00",
+    "datetime": "2026-07-18T17:00:00-03:00",
+    "deadline": "2026-07-18T16:00:00-03:00",
     "venue": "A definir",
     "status": "scheduled",
     "result": {
@@ -1989,8 +2017,8 @@ const COPA2026_MATCHES = [
     "group": "",
     "home": "Venc. R16-7",
     "away": "Venc. R16-8",
-    "datetime": "2026-07-20T21:00:00-03:00",
-    "deadline": "2026-07-20T20:00:00-03:00",
+    "datetime": "2026-07-18T21:00:00-03:00",
+    "deadline": "2026-07-18T20:00:00-03:00",
     "venue": "A definir",
     "status": "scheduled",
     "result": {
@@ -2039,7 +2067,7 @@ const COPA2026_MATCHES = [
     "away": "Perd. SF-2",
     "datetime": "2026-07-18T17:00:00-03:00",
     "deadline": "2026-07-18T16:00:00-03:00",
-    "venue": "Estádio Hard Rock, Miami",
+    "venue": "A definir",
     "status": "scheduled",
     "result": {
       "home": null,
@@ -2055,7 +2083,7 @@ const COPA2026_MATCHES = [
     "away": "Venc. SF-2",
     "datetime": "2026-07-19T17:00:00-03:00",
     "deadline": "2026-07-19T16:00:00-03:00",
-    "venue": "Estádio MetLife, Nova York/Nova Jersey",
+    "venue": "A definir",
     "status": "scheduled",
     "result": {
       "home": null,
@@ -2065,7 +2093,7 @@ const COPA2026_MATCHES = [
   }
 ];
 
-const COPA2026_FLAGS = {"Mexico": "🇲🇽", "South Africa": "🇿🇦", "South Korea": "🇰🇷", "Czech Republic": "🇨🇿", "Canada": "🇨🇦", "Bosnia-Herzegovina": "🇧🇦", "Qatar": "🇶🇦", "Switzerland": "🇨🇭", "Brazil": "🇧🇷", "Morocco": "🇲🇦", "Haiti": "🇭🇹", "Scotland": "🏴󠁧󠁢󠁳󠁣󠁴󠁿", "USA": "🇺🇸", "Paraguay": "🇵🇾", "Australia": "🇦🇺", "Turkey": "🇹🇷", "Germany": "🇩🇪", "Curacao": "🇨🇼", "Ivory Coast": "🇨🇮", "Ecuador": "🇪🇨", "Netherlands": "🇳🇱", "Japan": "🇯🇵", "Sweden": "🇸🇪", "Tunisia": "🇹🇳", "Belgium": "🇧🇪", "Egypt": "🇪🇬", "Iran": "🇮🇷", "New Zealand": "🇳🇿", "Spain": "🇪🇸", "Cape Verde": "🇨🇻", "Saudi Arabia": "🇸🇦", "Uruguay": "🇺🇾", "France": "🇫🇷", "Senegal": "🇸🇳", "Iraq": "🇮🇶", "Norway": "🇳🇴", "Argentina": "🇦🇷", "Algeria": "🇩🇿", "Austria": "🇦🇹", "Jordan": "🇯🇴", "Portugal": "🇵🇹", "DR Congo": "🇨🇩", "Uzbekistan": "🇺🇿", "Colombia": "🇨🇴", "England": "🏴󠁧󠁢󠁥󠁮󠁧󠁿", "Croatia": "🇭🇷", "Ghana": "🇬🇭", "Panama": "🇵🇦"};
+const COPA2026_FLAGS = {"Mexico": "🇲🇽", "South Africa": "🇿🇦", "South Korea": "🇰🇷", "Czech Republic": "🇨🇿", "Canada": "🇨🇦", "Italy": "🇮🇹", "Qatar": "🇶🇦", "Switzerland": "🇨🇭", "Brazil": "🇧🇷", "Morocco": "🇲🇦", "Haiti": "🇭🇹", "Scotland": "🏴󠁧󠁢󠁳󠁣󠁴󠁿", "USA": "🇺🇸", "Paraguay": "🇵🇾", "Australia": "🇦🇺", "Turkey": "🇹🇷", "Germany": "🇩🇪", "Curacao": "🇨🇼", "Ivory Coast": "🇨🇮", "Ecuador": "🇪🇨", "Netherlands": "🇳🇱", "Japan": "🇯🇵", "Sweden": "🇸🇪", "Tunisia": "🇹🇳", "Belgium": "🇧🇪", "Egypt": "🇪🇬", "Iran": "🇮🇷", "New Zealand": "🇳🇿", "Spain": "🇪🇸", "Cape Verde": "🇨🇻", "Saudi Arabia": "🇸🇦", "Uruguay": "🇺🇾", "France": "🇫🇷", "Senegal": "🇸🇳", "Iraq": "🇮🇶", "Norway": "🇳🇴", "Argentina": "🇦🇷", "Algeria": "🇩🇿", "Austria": "🇦🇹", "Jordan": "🇯🇴", "Portugal": "🇵🇹", "DR Congo": "🇨🇩", "Uzbekistan": "🇺🇿", "Colombia": "🇨🇴", "England": "🏴󠁧󠁢󠁥󠁮󠁧󠁿", "Croatia": "🇭🇷", "Ghana": "🇬🇭", "Panama": "🇵🇦"};
 
 function flag(name){ return COPA2026_FLAGS[name] || '🏳️'; }
 
@@ -2092,6 +2120,7 @@ let currentUser = null;
 let confirmCb   = null;
 let currentPhaseFilter = 'all';
 let currentAdminTab    = 'matches';
+let globalFilter = { type: 'all', value: 'all' }; // type: 'all'|'group'|'team'
 
 // ═══════════════════════════════════════════
 // UTILS
@@ -2261,6 +2290,7 @@ function showApp(){
   document.querySelectorAll('.admin-only').forEach(el => {
     el.style.display = isAdmin() ? '' : 'none';
   });
+  buildTeamSelect();
   renderHome();
   renderMatchPhaseFilter();
 }
@@ -2302,7 +2332,7 @@ function renderHome(){
   `;
 
   // Zone 1: pending predictions
-  const openMatches = state.matches.filter(m=>isPredOpen(m));
+  const openMatches = filterMatches(state.matches.filter(m=>isPredOpen(m)));
   const pendingMatches = openMatches.filter(m=>!getMyPred(m.id));
   const savedMatches   = openMatches.filter(m=>!!getMyPred(m.id));
 
@@ -2321,7 +2351,7 @@ function renderHome(){
   }
 
   // Zone 2: recent results
-  const recentFinished = state.matches
+  const recentFinished = filterMatches(state.matches)
     .filter(m=>m.status==='finished' && m.result && m.result.home!==null)
     .sort((a,b)=>(b.datetime||'').localeCompare(a.datetime||''))
     .slice(0,5);
@@ -2384,8 +2414,8 @@ function setPhaseFilter(phase){
 function renderMatches(){
   renderMatchPhaseFilter();
   const filtered = currentPhaseFilter==='all'
-    ? state.matches
-    : state.matches.filter(m=>m.phase===currentPhaseFilter);
+    ? filterMatches(state.matches)
+    : filterMatches(state.matches.filter(m=>m.phase===currentPhaseFilter));
 
   const el = document.getElementById('matchesList');
   const sub = document.getElementById('matchesSubtitle');
@@ -3265,6 +3295,67 @@ function toast(msg,type='ok'){
   el.innerHTML = `<span style="color:${type==='ok'?'var(--green)':'var(--red)'}">${type==='ok'?'✓':'✕'}</span> ${msg}`;
   document.getElementById('toastWrap').appendChild(el);
   setTimeout(()=>el.remove(),3200);
+}
+
+// ═══════════════════════════════════════════
+// GLOBAL FILTER
+// ═══════════════════════════════════════════
+function buildTeamSelect(){
+  const sel = document.getElementById('gfTeamSel');
+  if(!sel) return;
+  const teams = [...new Set(
+    state.matches.filter(m=>m.group)
+      .flatMap(m=>[m.home,m.away])
+      .filter(Boolean)
+  )].sort((a,b)=>a.localeCompare(b));
+  sel.innerHTML = `<option value="all">Todos os times</option>` +
+    teams.map(t=>`<option value="${t}">${COPA2026_FLAGS[t]||''} ${t}</option>`).join('');
+}
+
+function applyGlobalFilter(type, value){
+  if(value === 'all'){ clearGlobalFilter(); return; }
+  globalFilter = { type, value };
+  // reset the other select
+  if(type==='group') document.getElementById('gfTeamSel').value = 'all';
+  if(type==='team')  document.getElementById('gfGroupSel').value = 'all';
+  document.getElementById('gfClear').style.display = '';
+  const label = type==='group'
+    ? `Grupo ${value}`
+    : `${COPA2026_FLAGS[value]||''} ${value}`;
+  document.getElementById('gfStatus').textContent = `— ${label}`;
+  // add active class to selects
+  document.getElementById('gfGroupSel').className = 'gf-select' + (type==='group'?' gf-active':'');
+  document.getElementById('gfTeamSel').className  = 'gf-select' + (type==='team' ?' gf-active':'');
+  refreshFilteredViews();
+}
+
+function clearGlobalFilter(){
+  globalFilter = { type:'all', value:'all' };
+  document.getElementById('gfGroupSel').value = 'all';
+  document.getElementById('gfTeamSel').value  = 'all';
+  document.getElementById('gfClear').style.display = 'none';
+  document.getElementById('gfStatus').textContent = '';
+  document.getElementById('gfGroupSel').className = 'gf-select';
+  document.getElementById('gfTeamSel').className  = 'gf-select';
+  refreshFilteredViews();
+}
+
+function filterMatches(matches){
+  if(globalFilter.type === 'all') return matches;
+  if(globalFilter.type === 'group'){
+    return matches.filter(m => m.group === globalFilter.value);
+  }
+  if(globalFilter.type === 'team'){
+    const t = globalFilter.value;
+    return matches.filter(m => m.home === t || m.away === t);
+  }
+  return matches;
+}
+
+function refreshFilteredViews(){
+  const activeView = document.querySelector('.view.active')?.id;
+  if(activeView === 'view-home')    renderHome();
+  if(activeView === 'view-matches') renderMatches();
 }
 
 // ═══════════════════════════════════════════

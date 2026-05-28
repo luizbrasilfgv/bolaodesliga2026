@@ -3669,7 +3669,7 @@ function matchCardHTML(match, showPred){
             <span class="pred-sep">×</span>
             <input class="pred-input" type="number" min="0" max="30" placeholder="?" id="pa-${match.id}" data-mid="${match.id}" data-side="away" value="${pa}">
           </div>
-          <button class="btn btn-green btn-sm pred-save-btn" onclick="handleSavePred('${match.id}')">${myPred?'Atualizar':'Salvar'}</button>
+          <button class="btn btn-green btn-sm pred-save-btn" onclick="handleSavePredFromCard('${match.id}', this)">${myPred?'Atualizar':'Salvar'}</button>
           ${myPred ? `<span class="pred-result pred-saved">✓ Salvo${lastTs}</span>` : ''}
           ${serverWarn}
         </div>
@@ -3829,6 +3829,39 @@ function afterPredSave(){
 
 async function handleSavePred(matchId){
   const ok = await savePred(matchId);
+  if(ok !== false){
+    toast(_serverTimeWarning ? 'Palpite salvo (horário local)!' : 'Palpite salvo!', 'ok');
+    afterPredSave();
+  }
+}
+
+// Called from card button — walks up DOM to find inputs in the same card
+async function handleSavePredFromCard(matchId, btn){
+  // Find inputs inside the same pred-row as the button
+  const predRow = btn.closest('.pred-row');
+  const hEl = predRow ? predRow.querySelector('.pred-input[data-side="home"]') : null;
+  const aEl = predRow ? predRow.querySelector('.pred-input[data-side="away"]') : null;
+
+  if(!hEl || !aEl){
+    // fallback to global getElementById
+    return handleSavePred(matchId);
+  }
+
+  const h = parseInt(hEl.value);
+  const a = parseInt(aEl.value);
+
+  const match = state.matches.find(m => m.id === matchId);
+  if(!match){ toast('Jogo não encontrado','err'); return; }
+  if(!isPredOpen(match)){
+    toast(`Palpites encerrados para ${teamName(match.home)} × ${teamName(match.away)}`,'err');
+    return;
+  }
+  if(isNaN(h) || isNaN(a) || h < 0 || a < 0 || hEl.value.trim()==='' || aEl.value.trim()===''){
+    toast('Informe um placar válido para os dois times','err');
+    return;
+  }
+
+  const ok = await _doSavePred(matchId, h, a, 'manual');
   if(ok !== false){
     toast(_serverTimeWarning ? 'Palpite salvo (horário local)!' : 'Palpite salvo!', 'ok');
     afterPredSave();

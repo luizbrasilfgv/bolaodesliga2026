@@ -2587,12 +2587,67 @@ function initials(name){
 function isAdmin()    { return currentUser?.role === 'admin'; }
 function isOperator() { return currentUser?.role === 'operator' || currentUser?.role === 'admin'; }
 
+// ═══════════════════════════════════════════
+// SERVER TIME — fonte confiável de horário
+// ═══════════════════════════════════════════
+let _serverTimeOffset = 0;    // ms offset between server and local
+let _serverTimeFetched = false;
+let _serverTimeWarning = false;
+
+async function fetchServerTime(){
+  const apis = [
+    'https://worldtimeapi.org/api/timezone/America/Sao_Paulo',
+    'https://timeapi.io/api/time/current/zone?timeZone=America/Sao_Paulo'
+  ];
+  for(const url of apis){
+    try{
+      const t0 = Date.now();
+      const res = await fetch(url, { signal: AbortSignal.timeout(3000) });
+      if(!res.ok) continue;
+      const data = await res.json();
+      const serverMs = new Date(data.datetime || data.dateTime).getTime();
+      if(isNaN(serverMs)) continue;
+      const latency = (Date.now() - t0) / 2;
+      _serverTimeOffset = serverMs + latency - Date.now();
+      _serverTimeFetched = true;
+      _serverTimeWarning = false;
+      console.log(`Server time synced (offset: ${_serverTimeOffset}ms)`);
+      return;
+    } catch(e){ /* try next */ }
+  }
+  // fallback: use device time with warning
+  _serverTimeFetched = false;
+  _serverTimeWarning = true;
+  console.warn('Server time unavailable — using device time');
+}
+
+function nowReal(){
+  // returns current Date adjusted by server offset (or device time if unavailable)
+  return new Date(Date.now() + _serverTimeOffset);
+}
+
 function isPredOpen(match){
   if(!state.pool.predictionsOpen) return false;
   if(['finished','live','closed'].includes(match.status)) return false;
-  if(match.datetime && new Date() >= new Date(match.datetime)) return false;
-  if(match.deadline && new Date() > new Date(match.deadline)) return false;
+  const now = nowReal();
+  // block if match already started
+  if(match.datetime && now >= new Date(match.datetime)) return false;
+  // block if 2h before match (deadline = matchtime - 2h)
+  if(match.datetime){
+    const limit = new Date(new Date(match.datetime).getTime() - 2 * 3600 * 1000);
+    if(now >= limit) return false;
+  }
+  // also respect explicit deadline if set
+  if(match.deadline && now > new Date(match.deadline)) return false;
   return true;
+}
+
+function getDeadline(match){
+  if(match.datetime){
+    return new Date(new Date(match.datetime).getTime() - 2 * 3600 * 1000);
+  }
+  if(match.deadline) return new Date(match.deadline);
+  return null;
 }
 
 function getMyPred(matchId){
@@ -3159,6 +3214,8 @@ function startCountdown(targetIso){
 async function init(){
   applyTheme();
   renderTweaks();
+  // Fetch server time early — don't await so it doesn't block login render
+  fetchServerTime().catch(()=>{});
   await loadState();
 
   document.getElementById('loginUser').addEventListener('keydown',e=>{
@@ -3477,7 +3534,18 @@ function renderMatches(){
   // header (title + toolbar)
   const headerHTML = `
     <div class="section-title">⚽ Jogos da Copa</div>
-    <div class="section-sub">${counts.all} jogos · ${state.pool.predictionsOpen?'<strong style="color:var(--green-2)">Palpites abertos</strong>':'<strong style="color:var(--red)">Palpites fechados</strong>'}</div>
+    <div class="section-sub">${counts.all} jogos · ${state.pool.predictionsOpen?'<strong style="color:var(--green-2)">Palpites abertos</strong>':'<strong style="color:var(--red)">Palpites fechados</strong>'}
+      ${_serverTimeWarning ? '<span style="font-size:11px;color:var(--gold-2);margin-left:8px" title="Usando relógio do dispositivo para validar prazos">⚠️ horário local</span>' : ''}
+    </div>
+
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+      <button class="btn btn-ghost btn-sm" onclick="exportPredTemplate()" title="Baixar CSV com jogos abertos para preencher offline">📥 Exportar modelo</button>
+      <label class="btn btn-ghost btn-sm" style="cursor:pointer" title="Importar CSV com seus palpites preenchidos">
+        📤 Importar palpites
+        <input type="file" accept=".csv,.txt" style="display:none" onchange="importPreds(this.files[0]);this.value=''">
+      </label>
+      <button class="btn btn-ghost btn-sm" onclick="exportLog()" title="Exportar histórico completo de palpites em TXT">📋 Exportar log</button>
+    </div>
 
     <div class="match-toolbar">
       <div class="match-tabs">
@@ -3585,9 +3653,14 @@ function matchCardHTML(match, showPred){
   // pred section
   let predHTML = '';
   if(showPred){
+    const deadline = getDeadline(match);
+    const deadlineStr = deadline ? `⏰ Limite: ${fmtDate(deadline.toISOString(),'short')}` : '';
+    const serverWarn  = _serverTimeWarning ? `<span style="font-size:10px;color:var(--gold-2);margin-left:6px" title="Horário do servidor indisponível — usando relógio do dispositivo">⚠️ horário local</span>` : '';
+
     if(open){
       const ph = myPred?.home ?? '';
       const pa = myPred?.away ?? '';
+      const lastTs = myPred?.lastLogTs ? `<span style="font-size:10px;color:var(--muted);margin-left:6px">último: ${fmtDate(myPred.lastLogTs,'short')}</span>` : '';
       predHTML = `
         <div class="pred-row">
           <span class="pred-label">Seu palpite</span>
@@ -3596,11 +3669,14 @@ function matchCardHTML(match, showPred){
             <span class="pred-sep">×</span>
             <input class="pred-input" type="number" min="0" max="30" placeholder="?" data-mid="${match.id}" data-side="away" value="${pa}">
           </div>
-          <button class="btn btn-green btn-sm pred-save-btn" onclick="savePred('${match.id}')">${myPred?'Atualizar':'Salvar'}</button>
-          ${myPred ? `<span class="pred-result pred-saved">✓ Salvo</span>` : ''}
-        </div>`;
+          <button class="btn btn-green btn-sm pred-save-btn" onclick="handleSavePred('${match.id}')">${myPred?'Atualizar':'Salvar'}</button>
+          ${myPred ? `<span class="pred-result pred-saved">✓ Salvo${lastTs}</span>` : ''}
+          ${serverWarn}
+        </div>
+        ${deadlineStr ? `<div style="font-size:10px;color:var(--muted);padding:2px 14px 6px">${deadlineStr}${serverWarn}</div>` : ''}`;
     } else if(myPred){
       const pts = myPred.points;
+      const lastTs = myPred?.lastLogTs ? `<div style="font-size:10px;color:var(--muted);margin-top:2px">registrado: ${fmtDate(myPred.lastLogTs,'short')}</div>` : '';
       predHTML = `
         <div class="pred-row">
           <span class="pred-label">Seu palpite</span>
@@ -3609,7 +3685,10 @@ function matchCardHTML(match, showPred){
             <span class="pred-sep">×</span>
             <div class="score-box" style="opacity:.7">${myPred.away??'?'}</div>
           </div>
-          ${pts!==null&&pts!==undefined ? `<span class="pred-result pred-points">+${pts} pts</span>` : `<span class="pred-result pred-locked">🔒 Bloqueado</span>`}
+          <div>
+            ${pts!==null&&pts!==undefined ? `<span class="pred-result pred-points">+${pts} pts</span>` : `<span class="pred-result pred-locked">🔒 Bloqueado</span>`}
+            ${lastTs}
+          </div>
         </div>`;
     } else if(hasResult){
       predHTML = `<div class="pred-row"><span class="pred-result pred-locked">🔒 Sem palpite registrado</span></div>`;
@@ -3645,44 +3724,258 @@ function matchCardHTML(match, showPred){
   </div>`;
 }
 
-async function savePred(matchId){
+async function savePred(matchId, importMode = false, importSource = 'manual'){
   const match = state.matches.find(m=>m.id===matchId);
-  if(!match){ toast('Jogo não encontrado','err'); return; }
-  if(!isPredOpen(match)){ toast('Palpites encerrados para este jogo','err'); return; }
+  if(!match){ toast('Jogo não encontrado','err'); return false; }
+
+  // Re-check deadline with real time
+  if(!isPredOpen(match)){
+    toast(`Palpites encerrados para ${teamName(match.home)} × ${teamName(match.away)}`,'err');
+    return false;
+  }
 
   const hEl = document.querySelector(`.pred-input[data-mid="${matchId}"][data-side="home"]`);
   const aEl = document.querySelector(`.pred-input[data-mid="${matchId}"][data-side="away"]`);
-  if(!hEl||!aEl) return;
+  let h, a;
 
-  const h = parseInt(hEl.value), a = parseInt(aEl.value);
-  if(isNaN(h)||isNaN(a)||h<0||a<0){ toast('Informe um placar válido','err'); return; }
+  if(importMode){
+    // values passed differently — handled by caller
+    return false;
+  }
 
+  if(!hEl||!aEl) return false;
+  h = parseInt(hEl.value); a = parseInt(aEl.value);
+  if(isNaN(h)||isNaN(a)||h<0||a<0){ toast('Informe um placar válido','err'); return false; }
+
+  return await _doSavePred(matchId, h, a, importSource);
+}
+
+async function _doSavePred(matchId, h, a, source){
+  const match = state.matches.find(m=>m.id===matchId);
+  const now   = nowReal().toISOString();
   const existing = getMyPred(matchId);
+  const isAdmin_ = isAdmin();
+  let actionType;
+
   if(existing){
-    state.predictionHistory.push({
-      id: uid(), predictionId: existing.id,
-      participantId: currentUser.id, matchId,
+    actionType = source === 'import' ? 'Alteração via importação' : isAdmin_ ? 'Alteração pelo admin' : 'Alteração';
+    // log before changing
+    appendLog({
+      matchId, matchLabel: `${teamName(match.home)} × ${teamName(match.away)}`,
+      participantId: currentUser.id, participantName: currentUser.name,
+      home: h, away: a, action: actionType,
       prevHome: existing.home, prevAway: existing.away,
-      newHome: h, newAway: a,
-      changedAt: new Date().toISOString()
+      ts: now, byAdmin: isAdmin_, source
     });
     existing.home = h; existing.away = a;
-    existing.updatedAt = new Date().toISOString();
+    existing.updatedAt = now;
     existing.status = 'confirmed';
+    existing.lastLogTs = now;
   } else {
-    state.predictions.push({
+    actionType = source === 'import' ? 'Novo palpite via importação' : isAdmin_ ? 'Novo palpite pelo admin' : 'Novo palpite';
+    const newPred = {
       id: uid(), participantId: currentUser.id, matchId,
       home: h, away: a, status:'confirmed', points: null,
-      createdAt: new Date().toISOString(), updatedAt: new Date().toISOString()
+      createdAt: now, updatedAt: now, lastLogTs: now
+    };
+    state.predictions.push(newPred);
+    appendLog({
+      matchId, matchLabel: `${teamName(match.home)} × ${teamName(match.away)}`,
+      participantId: currentUser.id, participantName: currentUser.name,
+      home: h, away: a, action: actionType,
+      prevHome: null, prevAway: null,
+      ts: now, byAdmin: isAdmin_, source
     });
   }
 
+  if(_serverTimeWarning && !importMode){
+    toast(`Palpite salvo (horário do dispositivo — servidor indisponível)`, 'ok');
+  }
+
   await saveState();
-  toast('Palpite salvo!','ok');
-  // re-render current view
+  return true;
+}
+
+function appendLog(entry){
+  if(!state.predictionHistory) state.predictionHistory = [];
+  state.predictionHistory.push({
+    id:              uid(),
+    ts:              entry.ts,
+    participantId:   entry.participantId,
+    participantName: entry.participantName,
+    matchId:         entry.matchId,
+    matchLabel:      entry.matchLabel,
+    home:            entry.home,
+    away:            entry.away,
+    prevHome:        entry.prevHome,
+    prevAway:        entry.prevAway,
+    action:          entry.action,
+    byAdmin:         entry.byAdmin || false,
+    source:          entry.source  || 'manual'
+  });
+}
+
+    away:            entry.away,
+    prevHome:        entry.prevHome,
+    prevAway:        entry.prevAway,
+    action:          entry.action,
+    byAdmin:         entry.byAdmin || false,
+    source:          entry.source  || 'manual'
+  });
+}
+
+// helper called after any pred save to refresh UI
+function afterPredSave(){
   const active = document.querySelector('.view.active');
-  if(active.id==='view-home') renderHome();
-  else if(active.id==='view-matches') renderMatchesList();
+  if(active?.id==='view-home')    renderHome();
+  else if(active?.id==='view-matches') renderMatchesList();
+}
+
+async function handleSavePred(matchId){
+  const ok = await savePred(matchId);
+  if(ok !== false){
+    if(!_serverTimeWarning) toast('Palpite salvo!','ok');
+    afterPredSave();
+  }
+}
+
+// ═══════════════════════════════════════════
+// LOG EXPORT
+// ═══════════════════════════════════════════
+function exportLog(){
+  const log = state.predictionHistory || [];
+  if(!log.length){ toast('Nenhum registro no log ainda','err'); return; }
+
+  const pad = n => String(n).padStart(2,'0');
+  const fmtTs = iso => {
+    if(!iso) return '--';
+    const d = new Date(iso);
+    return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  };
+
+  const header = [
+    '═'.repeat(80),
+    `BOLÃO ${state.pool.name||'Copa 2026'} — LOG COMPLETO DE PALPITES`,
+    `Exportado em: ${fmtTs(new Date().toISOString())}`,
+    `Total de registros: ${log.length}`,
+    '═'.repeat(80),
+    ''
+  ].join('\n');
+
+  const lines = log.map(e => {
+    const pred = `${e.home??'?'} x ${e.away??'?'}`;
+    const prev = e.prevHome!==null&&e.prevHome!==undefined ? ` (anterior: ${e.prevHome} x ${e.prevAway})` : '';
+    return `${fmtTs(e.ts)} | ${e.participantName||'?'} | ${e.matchLabel||e.matchId} | ${pred}${prev} | ${e.action}`;
+  }).join('\n');
+
+  const footer = [
+    '',
+    '─'.repeat(80),
+    `Arquivo gerado pelo Bolão ${state.pool.name||'Copa 2026'}`,
+    '─'.repeat(80)
+  ].join('\n');
+
+  const blob = new Blob([header + lines + footer], { type: 'text/plain;charset=utf-8' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = `bolao-log-${new Date().toISOString().slice(0,10)}.txt`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('Log exportado!','ok');
+}
+
+// ═══════════════════════════════════════════
+// IMPORT / EXPORT PALPITES (CSV)
+// ═══════════════════════════════════════════
+function exportPredTemplate(){
+  const open = state.matches.filter(m => isPredOpen(m));
+  if(!open.length){ toast('Nenhum jogo aberto para exportar','err'); return; }
+
+  const pad = n => String(n).padStart(2,'0');
+  const fmtDt = iso => {
+    if(!iso) return '';
+    const d = new Date(iso);
+    return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  };
+
+  const header = 'ID_PARTIDA;DATA_HORA;FASE;GRUPO;TIME_MANDANTE;TIME_VISITANTE;PALPITE_MANDANTE;PALPITE_VISITANTE\n';
+  const rows = open.map(m => {
+    const pred = getMyPred(m.id);
+    return [
+      m.id,
+      fmtDt(m.datetime),
+      m.phase||'',
+      m.group||'',
+      m.home||'',
+      m.away||'',
+      pred?.home??'',
+      pred?.away??''
+    ].join(';');
+  }).join('\n');
+
+  const blob = new Blob([header + rows], { type: 'text/csv;charset=utf-8' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = `bolao-palpites-${currentUser.name.replace(/\s+/g,'-')}-${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('Modelo exportado! Preencha e importe de volta.','ok');
+}
+
+async function importPreds(file){
+  if(!file){ toast('Selecione um arquivo CSV','err'); return; }
+  const text = await file.text();
+  const lines = text.split('\n').map(l=>l.trim()).filter(Boolean);
+
+  // skip header
+  const rows = lines.slice(1);
+  let imported = 0, skipped = 0;
+  const errors = [];
+
+  for(const row of rows){
+    const cols = row.split(';');
+    const matchId = cols[0]?.trim();
+    const predH   = cols[6]?.trim();
+    const predA   = cols[7]?.trim();
+
+    if(!matchId){ errors.push(`Linha inválida: "${row}"`); skipped++; continue; }
+
+    const match = state.matches.find(m=>m.id===matchId);
+    if(!match){ errors.push(`Partida não encontrada: ${matchId}`); skipped++; continue; }
+
+    if(!isPredOpen(match)){
+      errors.push(`${teamName(match.home)} × ${teamName(match.away)}: prazo encerrado`);
+      skipped++; continue;
+    }
+
+    const h = parseInt(predH), a = parseInt(predA);
+    if(isNaN(h)||isNaN(a)||h<0||a<0||h>30||a>30){
+      errors.push(`${teamName(match.home)} × ${teamName(match.away)}: palpite inválido (${predH} x ${predA})`);
+      skipped++; continue;
+    }
+
+    await _doSavePred(matchId, h, a, 'import');
+    imported++;
+  }
+
+  await saveState();
+  afterPredSave();
+
+  // show summary
+  const summaryLines = [
+    `✅ ${imported} palpite(s) importado(s) com sucesso`,
+    skipped > 0 ? `❌ ${skipped} palpite(s) rejeitado(s)` : '',
+    ...(errors.length ? ['', 'Motivos:', ...errors.map(e=>'  • '+e)] : [])
+  ].filter(Boolean).join('\n');
+
+  openModal('📥 Resultado da importação',
+    `<pre style="font-size:12px;line-height:1.7;color:var(--text);white-space:pre-wrap">${summaryLines}</pre>
+     <div style="display:flex;justify-content:flex-end;margin-top:16px">
+       <button class="btn btn-primary" onclick="closeModal()">OK</button>
+     </div>`
+  );
 }
 
 // ───────────────────────────────────────────

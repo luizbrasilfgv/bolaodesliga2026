@@ -3665,9 +3665,9 @@ function matchCardHTML(match, showPred){
         <div class="pred-row">
           <span class="pred-label">Seu palpite</span>
           <div class="pred-inputs">
-            <input class="pred-input" type="number" min="0" max="30" placeholder="?" data-mid="${match.id}" data-side="home" value="${ph}">
+            <input class="pred-input" type="number" min="0" max="30" placeholder="?" id="ph-${match.id}" data-mid="${match.id}" data-side="home" value="${ph}">
             <span class="pred-sep">×</span>
-            <input class="pred-input" type="number" min="0" max="30" placeholder="?" data-mid="${match.id}" data-side="away" value="${pa}">
+            <input class="pred-input" type="number" min="0" max="30" placeholder="?" id="pa-${match.id}" data-mid="${match.id}" data-side="away" value="${pa}">
           </div>
           <button class="btn btn-green btn-sm pred-save-btn" onclick="handleSavePred('${match.id}')">${myPred?'Atualizar':'Salvar'}</button>
           ${myPred ? `<span class="pred-result pred-saved">✓ Salvo${lastTs}</span>` : ''}
@@ -3728,24 +3728,29 @@ async function savePred(matchId, importMode = false, importSource = 'manual'){
   const match = state.matches.find(m=>m.id===matchId);
   if(!match){ toast('Jogo não encontrado','err'); return false; }
 
-  // Re-check deadline with real time
   if(!isPredOpen(match)){
     toast(`Palpites encerrados para ${teamName(match.home)} × ${teamName(match.away)}`,'err');
     return false;
   }
 
-  const hEl = document.querySelector(`.pred-input[data-mid="${matchId}"][data-side="home"]`);
-  const aEl = document.querySelector(`.pred-input[data-mid="${matchId}"][data-side="away"]`);
-  let h, a;
+  if(importMode) return false;
 
-  if(importMode){
-    // values passed differently — handled by caller
+  // Use ID first (most reliable), fallback to data-attr selector
+  let hEl = document.getElementById(`ph-${matchId}`) ||
+            document.querySelector(`.pred-input[data-mid="${matchId}"][data-side="home"]`);
+  let aEl = document.getElementById(`pa-${matchId}`) ||
+            document.querySelector(`.pred-input[data-mid="${matchId}"][data-side="away"]`);
+  if(!hEl) hEl = document.getElementById(`op-h-${matchId}`);
+  if(!aEl) aEl = document.getElementById(`op-a-${matchId}`);
+
+  if(!hEl||!aEl){ toast('Campo de palpite não encontrado','err'); return false; }
+
+  const h = parseInt(hEl.value);
+  const a = parseInt(aEl.value);
+  if(isNaN(h)||isNaN(a)||h<0||a<0||hEl.value.trim()===''||aEl.value.trim()===''){
+    toast('Informe um placar válido para os dois times','err');
     return false;
   }
-
-  if(!hEl||!aEl) return false;
-  h = parseInt(hEl.value); a = parseInt(aEl.value);
-  if(isNaN(h)||isNaN(a)||h<0||a<0){ toast('Informe um placar válido','err'); return false; }
 
   return await _doSavePred(matchId, h, a, importSource);
 }
@@ -3825,7 +3830,7 @@ function afterPredSave(){
 async function handleSavePred(matchId){
   const ok = await savePred(matchId);
   if(ok !== false){
-    if(!_serverTimeWarning) toast('Palpite salvo!','ok');
+    toast(_serverTimeWarning ? 'Palpite salvo (horário local)!' : 'Palpite salvo!', 'ok');
     afterPredSave();
   }
 }

@@ -3815,15 +3815,6 @@ function appendLog(entry){
   });
 }
 
-    away:            entry.away,
-    prevHome:        entry.prevHome,
-    prevAway:        entry.prevAway,
-    action:          entry.action,
-    byAdmin:         entry.byAdmin || false,
-    source:          entry.source  || 'manual'
-  });
-}
-
 // helper called after any pred save to refresh UI
 function afterPredSave(){
   const active = document.querySelector('.view.active');

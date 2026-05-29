@@ -2131,6 +2131,7 @@ select.input {
     <button class="nav-btn" data-view="groups" onclick="goView('groups',this)"><span class="nav-ic">🌍</span> Grupos</button>
     <button class="nav-btn" data-view="bracket" onclick="goView('bracket',this)"><span class="nav-ic">🏟️</span> Chaveamento</button>
     <button class="nav-btn" data-view="ranking" onclick="goView('ranking',this)"><span class="nav-ic">🏆</span> Ranking</button>
+    <button class="nav-btn" data-view="historico" onclick="goView('historico',this)"><span class="nav-ic">📊</span> Histórico</button>
     <button class="nav-btn" data-view="rules" onclick="goView('rules',this)"><span class="nav-ic">📋</span> Regras</button>
     <button class="nav-btn operator-only" data-view="operator" onclick="goView('operator',this)" style="display:none"><span class="nav-ic">🎯</span> Resultados</button>
     <button class="nav-btn admin-only" data-view="admin" onclick="goView('admin',this)" style="display:none"><span class="nav-ic">⚙️</span> Admin</button>
@@ -2162,6 +2163,7 @@ select.input {
     <div class="view" id="view-groups"></div>
     <div class="view" id="view-bracket"></div>
     <div class="view" id="view-ranking"></div>
+    <div class="view" id="view-historico"></div>
     <div class="view" id="view-rules"></div>
     <div class="view" id="view-operator"></div>
     <div class="view" id="view-admin"></div>
@@ -2713,10 +2715,16 @@ function isSpecialPredOpen(){
 function getParticipantStats(participantId){
   const preds = state.predictions.filter(p => p.participantId === participantId);
   const scored = preds.filter(p => p.points !== null && p.points !== undefined);
-  const total  = scored.reduce((s,p)=> s + (p.points||0), 0);
+  const total  = scored.reduce((s,p)=> s + (p.points||0), 0) + calcSpecialPoints(participantId);
   const exact  = scored.filter(p => p.points >= (state.rules.exactScore||10)).length;
   const hits   = scored.filter(p => p.points > 0).length;
   const accuracy = scored.length > 0 ? Math.round((hits/scored.length)*100) : 0;
+
+  // category breakdown
+  const ec  = scored.filter(p => p.points >= (state.rules.exactScore||10)).length;   // placar exato
+  const res = scored.filter(p => p.points === (state.rules.correctResult||3)).length; // resultado certo
+  const one = scored.filter(p => p.points === (state.rules.oneTeamScore||1)).length;  // gols de um time
+  const zero= scored.filter(p => p.points === 0).length;                              // errou tudo
 
   // streak: consecutive scored preds with points > 0 from most recent
   const byDate = scored
@@ -2743,7 +2751,8 @@ function getParticipantStats(participantId){
     byPhase[ph] = (byPhase[ph]||0) + (p.points||0);
   });
 
-  return { total, exact, accuracy, hits, scored: scored.length, predTotal: preds.length, streak, form, byPhase };
+  return { total, exact, accuracy, hits, scored: scored.length, predTotal: preds.length,
+           streak, form, byPhase, ec, res, one, zero };
 }
 
 function hashPwd(pwd){
@@ -2907,6 +2916,7 @@ function goView(name, btn){
   if(name==='matches')  renderMatches();
   if(name==='groups')   renderGroups();
   if(name==='ranking')  renderRanking();
+  if(name==='historico') renderHistorico(null);
   if(name==='bracket')  renderBracket();
   if(name==='rules')    renderRules();
   if(name==='operator') renderOperator();
@@ -2988,6 +2998,116 @@ function renderTweaks(){
       </div>
     </div>
   `;
+}
+
+
+// ═══════════════════════════════════════════
+// HISTÓRICO — Matriz de palpites
+// ═══════════════════════════════════════════
+let historicoFilter = { participantId: null, phase: 'all' };
+
+function renderHistorico(participantId){
+  historicoFilter.participantId = participantId;
+  const view = document.getElementById('view-historico');
+  if(!view) return;
+
+  const allPlayers = state.participants
+    .filter(p => p.role!=='admin' || p.alsoPlayer)
+    .map(p => ({ p, stats: getParticipantStats(p.id) }))
+    .sort((a,b) => b.stats.total - a.stats.total);
+
+  const phases = ['all', ...new Set(state.matches.map(m=>m.phase).filter(Boolean))];
+  const filteredMatches = (historicoFilter.phase === 'all'
+    ? state.matches
+    : state.matches.filter(m => m.phase === historicoFilter.phase)
+  ).sort((a,b) => (a.datetime||'').localeCompare(b.datetime||''));
+
+  const matchesWithPreds = filteredMatches.filter(m =>
+    state.predictions.some(p => p.matchId === m.id)
+  );
+
+  function ptColor(pts){
+    if(pts === null || pts === undefined) return 'var(--border)';
+    if(pts >= (state.rules.exactScore||10)) return '#22c55e';
+    if(pts === (state.rules.correctResult||3)) return '#3b82f6';
+    if(pts === (state.rules.oneTeamScore||1)) return '#f59e0b';
+    if(pts === 0) return '#ef4444';
+    return 'var(--border)';
+  }
+
+  const phaseChips = phases.map(p =>
+    `<button onclick="historicoFilter.phase='${p}';renderHistorico(null)"
+      style="padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;border:1px solid ${historicoFilter.phase===p?'var(--gold)':'var(--border-2)'};background:${historicoFilter.phase===p?'var(--gold)':'var(--surface-2)'};color:${historicoFilter.phase===p?'#000':'var(--muted)'}">
+      ${p==='all'?'Todos':(PHASE_SHORT[p]||p)}
+    </button>`
+  ).join('');
+
+  if(!matchesWithPreds.length){
+    view.innerHTML = `
+      <div class="section-title">Historico de Palpites</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px">${phaseChips}</div>
+      <div class="panel"><div class="empty"><div class="icon">📊</div><div class="title">Nenhum palpite ainda</div><p>Os palpites aparecerão aqui após serem enviados.</p></div></div>`;
+    return;
+  }
+
+  const matrixRows = allPlayers.map(row => {
+    const cells = matchesWithPreds.map(m => {
+      const pred = state.predictions.find(p => p.participantId === row.p.id && p.matchId === m.id);
+      if(!pred) return '<td style="padding:3px 2px;text-align:center"><span style="font-size:10px;color:var(--muted)">—</span></td>';
+      const pts = pred.points;
+      const bg  = ptColor(pts);
+      const label = (pred.home !== null && pred.away !== null) ? pred.home+'×'+pred.away : '?×?';
+      const ptsLabel = (pts !== null && pts !== undefined) ? '+'+pts : '';
+      const cellBg = (pts === null || pts === undefined) ? 'var(--surface-2)' : bg+'22';
+      return '<td style="padding:3px 2px;text-align:center" title="'+row.p.name+': '+label+(ptsLabel?' ('+ptsLabel+' pts)':' (aguardando)')+'">'
+        +'<div style="min-width:36px;padding:2px 4px;border-radius:5px;background:'+cellBg+';border:1px solid '+bg+';display:inline-block">'
+        +'<div style="font-size:10px;font-weight:800;color:'+((pts===null||pts===undefined)?'var(--text)':bg)+'">'+label+'</div>'
+        +(ptsLabel ? '<div style="font-size:9px;color:'+bg+';font-weight:700">'+ptsLabel+'</div>' : '')
+        +'</div></td>';
+    }).join('');
+
+    const s = row.stats;
+    const isMe = row.p.id === currentUser?.id;
+    return '<tr style="'+(isMe?'background:rgba(46,123,255,.04)':'')+'">'
+      +'<td style="padding:6px 10px;white-space:nowrap;font-weight:700;font-size:12px;position:sticky;left:0;background:var(--surface);border-right:2px solid var(--border);z-index:1">'
+      +'<div>'+row.p.name+(isMe?' <span style="font-size:9px;color:var(--blue)">você</span>':'')+'</div>'
+      +'<div style="font-size:10px;color:var(--muted)">'+s.total+'pts · '+s.ec+'🎯 '+s.res+'✅ '+s.one+'⚡</div>'
+      +'</td>'+cells
+      +'<td style="padding:6px 8px;text-align:right;font-weight:900;font-size:14px;color:var(--gold-2);position:sticky;right:0;background:var(--surface);border-left:2px solid var(--border)">'+s.total+'</td>'
+      +'</tr>';
+  }).join('');
+
+  const colHeaders = matchesWithPreds.map(m => {
+    const dt = m.datetime ? new Date(m.datetime) : null;
+    const d  = dt ? (dt.getDate()+'').padStart(2,'0')+'/'+(dt.getMonth()+1+'').padStart(2,'0') : '--';
+    return '<th style="padding:4px 3px;min-width:42px;text-align:center;font-size:9px;font-weight:700;color:var(--muted);border-bottom:1px solid var(--border)">'
+      +'<div style="margin-bottom:2px">'+flag(m.home)+'<br>'+flag(m.away)+'</div>'
+      +'<div style="font-size:8px;color:var(--muted2)">'+d+'</div>'
+      +'</th>';
+  }).join('');
+
+  view.innerHTML =
+    '<div class="section-title">📊 Histórico de Palpites</div>'
+    +'<div class="section-sub">Matriz completa · '+allPlayers.length+' apostador(es) · '+matchesWithPreds.length+' jogo(s) com palpites</div>'
+    +'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px">'+phaseChips+'</div>'
+    +'<div style="background:var(--surface-2);border:1px solid var(--border);border-radius:9px;padding:8px 12px;margin-bottom:14px;font-size:11px;display:flex;gap:16px;flex-wrap:wrap">'
+    +'<span>🟢 <strong style="color:#22c55e">Placar exato</strong></span>'
+    +'<span>🔵 <strong style="color:#3b82f6">Resultado certo</strong></span>'
+    +'<span>🟡 <strong style="color:#f59e0b">Gols de um time</strong></span>'
+    +'<span>🔴 <strong style="color:#ef4444">Errou</strong></span>'
+    +'<span style="color:var(--muted)">— Sem palpite · sem cor = aguardando resultado</span>'
+    +'<button onclick="exportLog()" style="margin-left:auto;font-size:11px;color:var(--blue);background:none;border:none;cursor:pointer;font-weight:700">📋 Exportar log TXT</button>'
+    +'</div>'
+    +'<div class="panel" style="overflow:hidden">'
+    +'<div style="overflow-x:auto;overflow-y:auto;max-height:70vh">'
+    +'<table style="border-collapse:collapse;font-size:11px">'
+    +'<thead><tr>'
+    +'<th style="padding:8px 10px;text-align:left;position:sticky;left:0;background:var(--surface);border-right:2px solid var(--border);border-bottom:1px solid var(--border);font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);min-width:160px">Apostador</th>'
+    +colHeaders
+    +'<th style="padding:8px;text-align:right;position:sticky;right:0;background:var(--surface);border-left:2px solid var(--border);border-bottom:1px solid var(--border);font-size:10px;color:var(--gold-2)">PTS</th>'
+    +'</tr></thead>'
+    +'<tbody>'+matrixRows+'</tbody>'
+    +'</table></div></div>';
 }
 
 // ═══════════════════════════════════════════
@@ -4061,46 +4181,64 @@ function renderRanking(){
       </div>
     </div>`;
 
-  // full list (rest after podium)
-  const rest = ranked.slice(3);
-  const listHTML = ranked.map((row, i) => {
-    const s = row.stats;
-    const isMe = row.p.id === currentUser.id;
-    const gap = leader.stats.total - s.total;
-    const gapHTML = i === 0
-      ? `<div class="rank-gap leader">👑 LÍDER</div>`
-      : gap > 0
-        ? `<div class="rank-gap">-${gap} do líder</div>`
-        : '';
-    const formHTML = `<span class="rank-form">${s.form.map(f=>`<span class="form-dot fd-${f.toLowerCase()}" title="${f==='W'?'Placar exato':f==='P'?'Resultado certo':f==='L'?'Errou':'Sem palpite'}">${f==='N'?'·':f}</span>`).join('')}</span>`;
-    return `<div class="rank-item ${isMe?'me':''}">
-      <div class="rank-pos">${i+1}</div>
-      <div>
-        <div class="rank-name">
-          <span>${row.p.name}</span>
-          ${isMe?'<span style="font-size:10px;color:var(--blue);font-weight:800;background:rgba(46,123,255,.1);padding:2px 7px;border-radius:999px">VOCÊ</span>':''}
-          ${s.streak >= 3 ? `<span class="streak-badge">🔥 ${s.streak}</span>` : ''}
-        </div>
-        <div class="rank-stats">
-          <span title="Aproveitamento">🎯 ${s.accuracy}%</span>
-          <span title="Placares exatos">⭐ ${s.exact}</span>
-          <span title="Palpites pontuados">📊 ${s.scored}</span>
-          ${formHTML}
-        </div>
-      </div>
-      <div style="text-align:right">
-        <div class="rank-pts">${s.total}</div>
-        ${gapHTML}
-      </div>
+  // full list with category breakdown
+  const listHTML = `
+    <div style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead>
+          <tr style="border-bottom:2px solid var(--border)">
+            <th style="padding:8px 10px;text-align:left;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:1px">#</th>
+            <th style="padding:8px 10px;text-align:left;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:1px">Apostador</th>
+            <th style="padding:8px 10px;text-align:center;color:#22c55e;font-size:11px;font-weight:800" title="Placar exato — ${state.rules.exactScore||10} pts">🎯 EC</th>
+            <th style="padding:8px 10px;text-align:center;color:#3b82f6;font-size:11px;font-weight:800" title="Resultado certo — ${state.rules.correctResult||3} pts">✅ RC</th>
+            <th style="padding:8px 10px;text-align:center;color:#f59e0b;font-size:11px;font-weight:800" title="Gols de um time — ${state.rules.oneTeamScore||1} pt">⚡ GT</th>
+            <th style="padding:8px 10px;text-align:center;color:var(--muted);font-size:11px;font-weight:800" title="Errou tudo — 0 pts">❌ ER</th>
+            <th style="padding:8px 10px;text-align:center;color:var(--muted);font-size:11px;font-weight:800" title="Aproveitamento">%</th>
+            <th style="padding:8px 10px;text-align:center;color:var(--muted);font-size:11px;font-weight:800" title="Últimos 5 jogos">Forma</th>
+            <th style="padding:8px 10px;text-align:right;color:var(--gold-2);font-size:11px;font-weight:800">PTS</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${ranked.map((row, i) => {
+            const s = row.stats;
+            const isMe = row.p.id === currentUser.id;
+            const medals = ['🥇','🥈','🥉'];
+            const formHTML = s.form.map(f => {
+              const color = f==='W'?'#22c55e':f==='P'?'#3b82f6':f==='L'?'#ef4444':'#9ca3af';
+              return `<span style="width:14px;height:14px;border-radius:50%;background:${color};display:inline-flex;align-items:center;justify-content:center;font-size:8px;font-weight:900;color:#fff">${f==='N'?'·':f}</span>`;
+            }).join('');
+            return `<tr style="border-bottom:1px solid var(--border);${isMe?'background:rgba(46,123,255,.05);':''}" onclick="renderHistorico('${row.p.id}')" style="cursor:pointer">
+              <td style="padding:10px;font-weight:800;color:${i<3?'var(--gold-2)':'var(--muted)'}">${medals[i]||i+1}</td>
+              <td style="padding:10px">
+                <div style="font-weight:700">${row.p.name}${isMe?' <span style="font-size:10px;background:rgba(46,123,255,.15);color:var(--blue);padding:1px 6px;border-radius:999px">você</span>':''}</div>
+                ${s.streak>=3?`<div style="font-size:10px;color:var(--orange)">🔥 seq. ${s.streak}</div>`:''}
+              </td>
+              <td style="padding:10px;text-align:center;font-weight:800;color:#22c55e">${s.ec}</td>
+              <td style="padding:10px;text-align:center;font-weight:800;color:#3b82f6">${s.res}</td>
+              <td style="padding:10px;text-align:center;font-weight:800;color:#f59e0b">${s.one}</td>
+              <td style="padding:10px;text-align:center;color:var(--muted)">${s.zero}</td>
+              <td style="padding:10px;text-align:center;color:var(--muted)">${s.accuracy}%</td>
+              <td style="padding:10px;text-align:center"><div style="display:flex;gap:2px;justify-content:center">${formHTML}</div></td>
+              <td style="padding:10px;text-align:right;font-family:var(--font-numeric);font-size:16px;font-weight:900;color:var(--gold-2)">${s.total}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+    <div style="padding:8px 12px;font-size:10px;color:var(--muted);border-top:1px solid var(--border);display:flex;gap:16px;flex-wrap:wrap">
+      <span><strong style="color:#22c55e">EC</strong> Placar exato (${state.rules.exactScore||10}pts)</span>
+      <span><strong style="color:#3b82f6">RC</strong> Resultado certo (${state.rules.correctResult||3}pts)</span>
+      <span><strong style="color:#f59e0b">GT</strong> Gols de um time (${state.rules.oneTeamScore||1}pt)</span>
+      <span><strong style="color:var(--muted)">ER</strong> Errou tudo (0pts)</span>
+      <span style="margin-left:auto;cursor:pointer;color:var(--blue)" onclick="renderHistorico(null)">📊 Ver matriz completa →</span>
     </div>`;
-  }).join('');
 
   view.innerHTML = `
     <div class="section-title">🏆 Ranking</div>
-    <div class="section-sub">${ranked.length} participantes · classificação geral</div>
+    <div class="section-sub">${ranked.length} participantes · classificação geral · clique numa linha para ver palpites</div>
     <div class="panel">
       ${podiumHTML}
-      <div class="rank-list" style="padding:8px 12px 14px">${listHTML}</div>
+      <div>${listHTML}</div>
     </div>
     <div style="margin-top:14px;display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))">
       <div class="stat-card">

@@ -2787,29 +2787,35 @@ function saveLocal(){
 
 async function loadState(){
   // local first
+  let local = null;
   try{
     const raw = localStorage.getItem(STORAGE);
     if(raw){
       const parsed = JSON.parse(raw);
-      if(parsed && parsed.participants) state = parsed;
+      if(parsed && parsed.participants) local = parsed;
     }
   }catch(e){}
 
   // remote
+  let remote = null;
   try{
     const res = await fetch(URL_BIN+'/latest', {headers:{'X-Access-Key':API_KEY}});
     if(!res.ok) throw new Error('HTTP '+res.status);
     const json = await res.json();
-    const remote = json.record;
-    if(remote && remote.participants){
-      const localTs  = state?.meta?.updatedAt ? Date.parse(state.meta.updatedAt) : 0;
-      const remoteTs = remote?.meta?.updatedAt ? Date.parse(remote.meta.updatedAt) : 0;
-      if(remoteTs >= localTs){
-        state = remote;
-        saveLocal();
-      }
-    }
+    if(json.record && json.record.participants) remote = json.record;
   }catch(e){ console.warn('JSONBin load:',e); }
+
+  // merge: remote is base for structural data, merge predictions from both
+  if(remote && local){
+    state = remote;
+    mergeUserData(local);
+  } else if(remote){
+    state = remote;
+  } else if(local){
+    state = local;
+  }
+
+  saveLocal();
 
   // fallback: seed admin if no participants
   if(!state.participants.length){
@@ -2833,12 +2839,84 @@ async function loadState(){
   document.getElementById('loginPoolName').textContent = state.pool.name || 'Bolão Copa 2026';
 }
 
+// Merge predictions/history/specialPredictions from another state into current state.
+// For each prediction, keeps the one with the most recent updatedAt.
+// For history, unions all entries (append-only log — never lose an entry).
+function mergeUserData(other){
+  if(!other) return;
+
+  // — predictions: key = participantId|matchId, keep most recent —
+  const predMap = new Map();
+  (state.predictions || []).forEach(p => {
+    predMap.set(p.participantId + '|' + p.matchId, p);
+  });
+  (other.predictions || []).forEach(p => {
+    const key = p.participantId + '|' + p.matchId;
+    const existing = predMap.get(key);
+    if(!existing){
+      predMap.set(key, p);
+    } else {
+      const ets = existing.updatedAt || existing.createdAt || '';
+      const pts = p.updatedAt || p.createdAt || '';
+      if(pts > ets) predMap.set(key, p);
+    }
+  });
+  state.predictions = Array.from(predMap.values());
+
+  // — predictionHistory: union by id (never lose a log entry) —
+  const histIds = new Set((state.predictionHistory || []).map(h => h.id));
+  (other.predictionHistory || []).forEach(h => {
+    if(!histIds.has(h.id)){
+      state.predictionHistory.push(h);
+    }
+  });
+  state.predictionHistory.sort((a,b) => (a.ts||'').localeCompare(b.ts||''));
+
+  // — specialPredictions: key = participantId, keep most recent —
+  const specMap = new Map();
+  (state.specialPredictions || []).forEach(s => specMap.set(s.participantId, s));
+  (other.specialPredictions || []).forEach(s => {
+    const existing = specMap.get(s.participantId);
+    if(!existing){
+      specMap.set(s.participantId, s);
+    } else {
+      const ets = existing.updatedAt || existing.createdAt || '';
+      const sts = s.updatedAt || s.createdAt || '';
+      if(sts > ets) specMap.set(s.participantId, s);
+    }
+  });
+  state.specialPredictions = Array.from(specMap.values());
+}
+
 async function saveState(){
   state.meta = state.meta || {};
   state.meta.updatedAt = new Date().toISOString();
   state.meta.updatedBy = currentUser?.name || 'Sistema';
   saveLocal();
+
   try{
+    // Before writing, fetch latest remote and merge to avoid overwriting others' predictions
+    try{
+      const getRes = await fetch(URL_BIN+'/latest', {headers:{'X-Access-Key':API_KEY}});
+      if(getRes.ok){
+        const json = await getRes.json();
+        const remote = json.record;
+        if(remote && remote.predictions){
+          mergeUserData(remote);
+          // For non-admin users, also pull structural changes from remote
+          if(!isAdmin()){
+            if(remote.participants) state.participants = mergeParticipants(state.participants, remote.participants);
+            if(remote.rules) state.rules = remote.rules;
+            if(remote.pool)  state.pool  = remote.pool;
+          }
+          if(!isOperator()){
+            if(remote.matches) mergeMatchResults(remote.matches);
+          }
+          saveLocal();
+        }
+      }
+    }catch(e){ console.warn('Merge pre-save:',e); }
+
     const res = await fetch(URL_BIN, {
       method:'PUT',
       headers:{'Content-Type':'application/json','X-Access-Key':API_KEY},
@@ -2849,6 +2927,28 @@ async function saveState(){
     console.warn('JSONBin save:',e);
     toast('Salvo local — sem conexão com servidor','err');
   }
+}
+
+// Merge participants: keep all from remote, add any local-only ones
+function mergeParticipants(local, remote){
+  const map = new Map();
+  remote.forEach(p => map.set(p.id, p));
+  local.forEach(p => { if(!map.has(p.id)) map.set(p.id, p); });
+  return Array.from(map.values());
+}
+
+// Merge match results from remote (operator may have posted results while participant was offline)
+function mergeMatchResults(remoteMatches){
+  (remoteMatches || []).forEach(rm => {
+    const lm = state.matches.find(m => m.id === rm.id);
+    if(!lm) return;
+    if(rm.status === 'finished' && lm.status !== 'finished'){
+      lm.result = rm.result;
+      lm.status = rm.status;
+    }
+    if(rm.home !== lm.home && !isKnockoutPlaceholder(rm.home)) lm.home = rm.home;
+    if(rm.away !== lm.away && !isKnockoutPlaceholder(rm.away)) lm.away = rm.away;
+  });
 }
 
 // ═══════════════════════════════════════════
@@ -3356,6 +3456,29 @@ async function init(){
   // click overlay to close
   document.getElementById('modalOverlay').addEventListener('click', e=>{
     if(e.target.id === 'modalOverlay') closeModal();
+  });
+
+  // Auto-sync when user returns to the tab (picks up others' predictions)
+  document.addEventListener('visibilitychange', async ()=>{
+    if(document.visibilityState !== 'visible' || !currentUser) return;
+    try{
+      const res = await fetch(URL_BIN+'/latest', {headers:{'X-Access-Key':API_KEY}});
+      if(!res.ok) return;
+      const json = await res.json();
+      const remote = json.record;
+      if(remote && remote.predictions){
+        mergeUserData(remote);
+        if(!isAdmin()){
+          if(remote.participants) state.participants = mergeParticipants(state.participants, remote.participants);
+          if(remote.rules) state.rules = remote.rules;
+          if(remote.pool)  state.pool  = remote.pool;
+        }
+        if(!isOperator() && remote.matches) mergeMatchResults(remote.matches);
+        saveLocal();
+        const activeView = document.querySelector('.view.active')?.id?.replace('view-','');
+        if(activeView) goView(activeView);
+      }
+    }catch(e){}
   });
 }
 

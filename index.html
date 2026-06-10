@@ -2044,26 +2044,70 @@ select.input {
 
 /* ───────────── RESPONSIVE ───────────── */
 @media (max-width: 768px) {
-  main { padding: 14px; }
-  header { padding: 0 14px; gap: 10px; height: 56px; }
+  main { padding: 10px; }
+  header { padding: 0 10px; gap: 8px; height: 52px; }
+  .h-logo { font-size: 22px; }
   .h-pool { display: none; }
   .h-name { display: none; }
-  nav { padding: 0 14px; top: 56px; }
-  .nav-btn { padding: 12px 12px; font-size: 12px; }
+  .h-avatar { width: 28px; height: 28px; font-size: 10px; }
+  .h-badge { font-size: 9px; padding: 2px 7px; }
+  .btn-logout { font-size: 11px; padding: 5px 9px; }
+  nav { padding: 0 8px; top: 52px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .nav-btn { padding: 10px 10px; font-size: 11px; gap: 4px; }
+  .nav-ic { font-size: 14px; }
+  #globalFilterBar { padding: 6px 10px; top: 52px; gap: 6px; flex-wrap: wrap; }
+  #globalFilterBar select { font-size: 11px; padding: 4px 20px 4px 8px; max-width: 140px; }
   .form-grid { grid-template-columns: 1fr; }
   .matches-grid { grid-template-columns: 1fr; }
-  .stats-grid { grid-template-columns: 1fr 1fr; }
+  .match-body { padding: 10px; grid-template-columns: 1fr 70px 1fr; gap: 6px; }
+  .match-team-name { font-size: 11px; }
+  .match-team-flag .flag-img, .hero-match-flag .flag-img, .match-flag .flag-img, .flag-big .flag-img { width: 22px; height: 16px; }
+  .score-box { width: 30px; height: 30px; font-size: 15px; }
+  .match-header { padding: 6px 10px; font-size: 9px; }
+  .match-footer { padding: 6px 10px; font-size: 10px; gap: 6px; }
+  .pred-row { padding: 8px 10px; gap: 6px; }
+  .pred-input { width: 38px; height: 32px; font-size: 15px; }
+  .pred-label { font-size: 10px; }
+  .pred-save-btn { margin-left: auto; }
+  .btn-sm { padding: 5px 10px; font-size: 11px; }
+  .stats-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .stat-card { padding: 12px 14px; }
+  .stat-card .s-val { font-size: 24px; }
   .hero-row { grid-template-columns: 1fr; }
-  .hero-countdown { justify-content: flex-start; }
+  .hero-countdown { justify-content: flex-start; flex-wrap: wrap; }
   .cd-unit { padding: 6px 10px; min-width: 48px; }
   .cd-num { font-size: 20px; }
+  .home-hero { padding: 18px 16px; }
+  .hero-title { font-size: 26px; }
+  .pendency-alert { padding: 12px 14px; gap: 10px; flex-wrap: wrap; }
+  .pendency-icon { font-size: 24px; }
+  .pendency-title { font-size: 13px; }
+  .pendency-sub { font-size: 11px; }
+  .pendency-btn { font-size: 12px; padding: 7px 12px; }
   .podium { grid-template-columns: 1fr 1.2fr 1fr; gap: 6px; padding: 10px 6px 0; }
-  .podium-spot { padding: 12px 6px; }
-  .podium-pts { font-size: 22px; }
-  .rank-item { grid-template-columns: 36px 1fr auto; padding: 10px 12px; gap: 8px; }
+  .podium-spot { padding: 10px 6px; }
+  .podium-name { font-size: 12px; }
+  .podium-pts { font-size: 20px; }
+  .podium-medal { font-size: 26px; }
+  .rank-item { grid-template-columns: 32px 1fr auto; padding: 8px 10px; gap: 6px; }
+  .rank-pos { font-size: 15px; }
+  .rank-name { font-size: 13px; }
+  .rank-pts { font-size: 18px; }
+  .rank-stats { font-size: 10px; gap: 8px; }
+  .groups-grid { grid-template-columns: 1fr; }
+  .group-team-row { font-size: 11px; gap: 3px; grid-template-columns: 18px 20px 1fr 16px 16px 16px 16px 30px 20px; }
   .bracket-trophy .icon { font-size: 42px; }
-  .tweaks-panel { right: 10px; bottom: 10px; left: 10px; width: auto; }
-  .bracket-col { min-width: 170px; }
+  .tweaks-panel { right: 8px; bottom: 8px; left: 8px; width: auto; }
+  .bracket-col { min-width: 160px; }
+  .modal { max-width: 100%; border-radius: var(--r); }
+  .modal-head { padding: 16px 16px 0; }
+  .modal-body { padding: 0 16px 16px; }
+  .panel-head { padding: 12px 14px; flex-direction: column; align-items: flex-start; gap: 8px; }
+  .section-title { font-size: 22px; }
+  .admin-table { font-size: 12px; }
+  .admin-table th, .admin-table td { padding: 8px 6px; }
+  .login-box { padding: 24px 20px; }
+  .login-logo { font-size: 56px; }
 }
 
 /* utility */
@@ -2121,6 +2165,7 @@ select.input {
         <span class="h-name" id="hName"></span>
         <span class="h-badge" id="hBadge"></span>
       </div>
+      <button class="btn-logout" onclick="openChangeMyPwd()" title="Alterar senha" style="border-color:var(--gold);color:var(--gold-2)">🔑</button>
       <button class="btn-logout" onclick="doLogout()" title="Sair">Sair</button>
     </div>
   </header>
@@ -2141,7 +2186,7 @@ select.input {
   <!-- FILTRO GLOBAL — afeta Início e Jogos -->
   <div id="globalFilterBar" style="background:var(--surface);border-bottom:1px solid var(--border);padding:7px 20px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;position:sticky;top:58px;z-index:40;">
     <span style="font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);font-weight:800;flex-shrink:0">Filtrar:</span>
-    <select id="gfGroupSel" onchange="applyGlobalFilter('group',this.value)" style="background:var(--surface-2);border:1px solid var(--border-2);border-radius:8px;padding:5px 24px 5px 10px;font-size:12px;font-weight:600;color:var(--text);cursor:pointer;appearance:none;background-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2210%22 height=%226%22%3E%3Cpath d=%22M1 1l4 4 4-4%22 stroke=%22%236b7a95%22 stroke-width=%221.5%22 fill=%22none%22 stroke-linecap=%22round%22/%3E%3C/svg%3E');background-repeat:no-repeat;background-position:right 8px center;outline:none;" id="gfGroupSel">
+    <select id="gfGroupSel" onchange="applyGlobalFilter('group',this.value)" style="background:var(--surface-2);border:1px solid var(--border-2);border-radius:8px;padding:5px 24px 5px 10px;font-size:12px;font-weight:600;color:var(--text);cursor:pointer;appearance:none;background-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2210%22 height=%226%22%3E%3Cpath d=%22M1 1l4 4 4-4%22 stroke=%22%236b7a95%22 stroke-width=%221.5%22 fill=%22none%22 stroke-linecap=%22round%22/%3E%3C/svg%3E');background-repeat:no-repeat;background-position:right 8px center;outline:none;">
       <option value="all">Todos os grupos</option>
       <option value="A">Grupo A</option><option value="B">Grupo B</option>
       <option value="C">Grupo C</option><option value="D">Grupo D</option>
@@ -2208,7 +2253,7 @@ select.input {
 
 const COPA_GROUPS = {
   A:['Mexico','South Africa','South Korea','Czech Republic'],
-  B:['Canada','Italy','Qatar','Switzerland'],
+  B:['Canada','Bosnia and Herzegovina','Qatar','Switzerland'],
   C:['Brazil','Morocco','Haiti','Scotland'],
   D:['USA','Paraguay','Australia','Turkey'],
   E:['Germany','Curacao','Ivory Coast','Ecuador'],
@@ -2226,7 +2271,7 @@ const COPA_GROUPS = {
 const COPA2026_FLAG_CODES = {
   // Originais Copa 2026 — inglês
   "Mexico":"mx","South Africa":"za","South Korea":"kr","Czech Republic":"cz",
-  "Canada":"ca","Italy":"it","Qatar":"qa","Switzerland":"ch",
+  "Canada":"ca","Bosnia and Herzegovina":"ba","Qatar":"qa","Switzerland":"ch",
   "Brazil":"br","Morocco":"ma","Haiti":"ht","Scotland":"gb-sct",
   "USA":"us","Paraguay":"py","Australia":"au","Turkey":"tr",
   "Germany":"de","Curacao":"cw","Ivory Coast":"ci","Ecuador":"ec",
@@ -2241,7 +2286,7 @@ const COPA2026_FLAG_CODES = {
   // Português + nomes alternativos
   "México":"mx","Africa do Sul":"za","África do Sul":"za","Coreia do Sul":"kr",
   "República Tcheca":"cz","Rep. Tcheca":"cz","Tchéquia":"cz","Chéquia":"cz",
-  "Canadá":"ca","Itália":"it","Catar":"qa","Suíça":"ch",
+  "Canadá":"ca","Bósnia e Herzegovina":"ba","Catar":"qa","Suíça":"ch",
   "Brasil":"br","Marrocos":"ma","Escócia":"gb-sct",
   "Estados Unidos":"us","EUA":"us","Paraguai":"py","Austrália":"au","Turquia":"tr",
   "Alemanha":"de","Curaçao":"cw","Costa do Marfim":"ci","Equador":"ec",
@@ -2296,7 +2341,7 @@ const COPA2026_FLAGS = COPA2026_FLAG_CODES;
 // Nomes em português para times
 const COPA2026_NAMES_PT = {
   "Mexico":"México","South Africa":"África do Sul","South Korea":"Coreia do Sul","Czech Republic":"Rep. Tcheca",
-  "Canada":"Canadá","Italy":"Itália","Qatar":"Catar","Switzerland":"Suíça",
+  "Canada":"Canadá","Bosnia and Herzegovina":"Bósnia e Herzegovina","Qatar":"Catar","Switzerland":"Suíça",
   "Brazil":"Brasil","Morocco":"Marrocos","Haiti":"Haiti","Scotland":"Escócia",
   "USA":"EUA","Paraguay":"Paraguai","Australia":"Austrália","Turkey":"Turquia",
   "Germany":"Alemanha","Curacao":"Curaçao","Ivory Coast":"Costa do Marfim","Ecuador":"Equador",
@@ -2327,11 +2372,8 @@ const COPA2026_MATCHES = (function(){
   const m = [];
   const mk = (id, phase, group, home, away, datetime, venue, knockoutLabel) => {
     const dt = new Date(datetime);
-    // D-2: prazo às 23:59 dois dias antes da partida
-    const prev = new Date(dt);
-    prev.setDate(prev.getDate() - 2);
-    prev.setHours(23, 59, 0, 0);
-    const deadline = prev;
+    // prazo: 1h antes do jogo
+    const deadline = new Date(dt.getTime() - 1 * 3600 * 1000);
     m.push({
       id, phase, group: group||'',
       home, away,
@@ -2347,7 +2389,7 @@ const COPA2026_MATCHES = (function(){
   const groupMatches = [
     ['A','Mexico','South Africa','2026-06-11T16:00','Cidade do México'],
     ['A','South Korea','Czech Republic','2026-06-11T23:00','Guadalajara'],
-    ['B','Canada','Italy','2026-06-12T16:00','Toronto'],
+    ['B','Canada','Bosnia and Herzegovina','2026-06-12T16:00','Toronto'],
     ['D','USA','Paraguay','2026-06-12T22:00','Los Angeles'],
     ['D','Australia','Turkey','2026-06-13T01:00','Vancouver'],
     ['B','Qatar','Switzerland','2026-06-13T16:00','San Francisco'],
@@ -2371,7 +2413,7 @@ const COPA2026_MATCHES = (function(){
     ['K','Uzbekistan','Colombia','2026-06-17T23:00','Cidade do México'],
     // Rodada 2
     ['A','Czech Republic','South Africa','2026-06-18T13:00','Atlanta'],
-    ['B','Switzerland','Italy','2026-06-18T16:00','Los Angeles'],
+    ['B','Switzerland','Bosnia and Herzegovina','2026-06-18T16:00','Los Angeles'],
     ['B','Canada','Qatar','2026-06-18T19:00','Vancouver'],
     ['A','Mexico','South Korea','2026-06-18T22:00','Guadalajara'],
     ['D','Turkey','Paraguay','2026-06-19T01:00','San Francisco'],
@@ -2396,7 +2438,7 @@ const COPA2026_MATCHES = (function(){
     ['K','Colombia','DR Congo','2026-06-23T23:00','Guadalajara'],
     // Rodada 3
     ['B','Switzerland','Canada','2026-06-24T16:00','Vancouver'],
-    ['B','Italy','Qatar','2026-06-24T16:00','Seattle'],
+    ['B','Bosnia and Herzegovina','Qatar','2026-06-24T16:00','Seattle'],
     ['C','Scotland','Brazil','2026-06-24T19:00','Miami'],
     ['C','Morocco','Haiti','2026-06-24T19:00','Atlanta'],
     ['A','Czech Republic','Mexico','2026-06-24T22:00','Cidade do México'],
@@ -2460,11 +2502,11 @@ const COPA2026_MATCHES = (function(){
   }
 
   // ── Semifinais ──
-  mk('m101','Semifinal','','Venc. QF-1','Venc. QF-2','2026-07-21T21:00:00-03:00','A definir','SF-1');
-  mk('m102','Semifinal','','Venc. QF-3','Venc. QF-4','2026-07-22T21:00:00-03:00','A definir','SF-2');
+  mk('m101','Semifinal','','Venc. QF-1','Venc. QF-2','2026-07-14T21:00:00-03:00','A definir','SF-1');
+  mk('m102','Semifinal','','Venc. QF-3','Venc. QF-4','2026-07-15T21:00:00-03:00','A definir','SF-2');
 
   // ── 3º lugar ──
-  mk('m103','Terceiro Lugar','','Perd. SF-1','Perd. SF-2','2026-07-25T17:00:00-03:00','A definir','3P');
+  mk('m103','Terceiro Lugar','','Perd. SF-1','Perd. SF-2','2026-07-18T17:00:00-03:00','A definir','3P');
 
   // ── Final ──
   mk('m104','Final','','Venc. SF-1','Venc. SF-2','2026-07-19T17:00:00-03:00','MetLife Stadium, NJ','F');
@@ -2634,9 +2676,9 @@ function isPredOpen(match){
   const now = nowReal();
   // block if match already started
   if(match.datetime && now >= new Date(match.datetime)) return false;
-  // block if 2h before match (deadline = matchtime - 2h)
+  // block if 1h before match (deadline = matchtime - 1h)
   if(match.datetime){
-    const limit = new Date(new Date(match.datetime).getTime() - 2 * 3600 * 1000);
+    const limit = new Date(new Date(match.datetime).getTime() - 1 * 3600 * 1000);
     if(now >= limit) return false;
   }
   // also respect explicit deadline if set
@@ -2646,7 +2688,7 @@ function isPredOpen(match){
 
 function getDeadline(match){
   if(match.datetime){
-    return new Date(new Date(match.datetime).getTime() - 2 * 3600 * 1000);
+    return new Date(new Date(match.datetime).getTime() - 1 * 3600 * 1000);
   }
   if(match.deadline) return new Date(match.deadline);
   return null;
@@ -2971,6 +3013,46 @@ function doLogin(){
 
   currentUser = user;
   showApp();
+}
+
+function openChangeMyPwd(){
+  openModal('Alterar minha senha', `
+    <div style="margin-bottom:14px;font-size:13px;color:var(--text-2)">Olá, <strong>${currentUser.name}</strong>. Digite sua senha atual e a nova senha.</div>
+    <div style="display:grid;gap:12px">
+      <div>
+        <label class="label">Senha atual</label>
+        <input class="input" type="password" id="myOldPwd" placeholder="senha atual">
+      </div>
+      <div>
+        <label class="label">Nova senha</label>
+        <input class="input" type="password" id="myNewPwd" placeholder="nova senha (mín. 3 caracteres)">
+      </div>
+      <div>
+        <label class="label">Confirmar nova senha</label>
+        <input class="input" type="password" id="myNewPwd2" placeholder="repita a nova senha">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="doChangeMyPwd()">Alterar senha</button>
+    </div>
+  `);
+}
+
+async function doChangeMyPwd(){
+  const oldPwd = document.getElementById('myOldPwd').value;
+  const newPwd = document.getElementById('myNewPwd').value;
+  const newPwd2 = document.getElementById('myNewPwd2').value;
+  if(!oldPwd){ toast('Digite sua senha atual','err'); return; }
+  if(hashPwd(oldPwd) !== currentUser.pwdHash){ toast('Senha atual incorreta','err'); return; }
+  if(!newPwd || newPwd.length < 3){ toast('Nova senha deve ter pelo menos 3 caracteres','err'); return; }
+  if(newPwd !== newPwd2){ toast('As senhas não conferem','err'); return; }
+  const p = state.participants.find(x => x.id === currentUser.id);
+  p.pwdHash = hashPwd(newPwd);
+  currentUser.pwdHash = p.pwdHash;
+  await saveState();
+  closeModal();
+  toast('Senha alterada com sucesso!','ok');
 }
 
 function doLogout(){
@@ -5760,6 +5842,26 @@ function adminResultsHTML(){
       ` : `<div class="empty" style="padding:30px"><p>Nenhum resultado lançado ainda.</p></div>`}
     </div>
   `;
+}
+
+async function saveResult(matchId){
+  const m = state.matches.find(x => x.id === matchId);
+  if(!m){ toast('Jogo não encontrado','err'); return; }
+  const hVal = document.getElementById('op-h-'+matchId)?.value;
+  const aVal = document.getElementById('op-a-'+matchId)?.value;
+  if(hVal === '' || aVal === '' || hVal == null || aVal == null){ toast('Preencha o placar','err'); return; }
+  const h = parseInt(hVal), a = parseInt(aVal);
+  if(isNaN(h) || isNaN(a) || h < 0 || a < 0){ toast('Placar inválido','err'); return; }
+  m.result = { home: h, away: a };
+  m.status = 'finished';
+  state.predictions.forEach(p => {
+    if(p.matchId !== matchId) return;
+    const pts = calcPoints(p, m);
+    if(pts !== null){ p.points = pts; p.status = 'pontuado'; }
+  });
+  await saveState();
+  toast(`${teamName(m.home)} ${h}–${a} ${teamName(m.away)} · salvo!`, 'ok');
+  renderAdmin('results');
 }
 
 async function recalcAllPoints(){

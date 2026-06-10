@@ -3194,7 +3194,7 @@ function renderHistorico(participantId){
   if(!view) return;
 
   const allPlayers = state.participants
-    .filter(p => p.role!=='admin' || p.alsoPlayer)
+    .filter(p => !p.inactive && (p.role!=='admin' || p.alsoPlayer))
     .map(p => ({ p, stats: getParticipantStats(p.id) }))
     .sort((a,b) => b.stats.total - a.stats.total);
 
@@ -3579,7 +3579,7 @@ window.addEventListener('DOMContentLoaded', init);
 // ───────────────────────────────────────────
 function renderHome(){
   const me = currentUser;
-  const allPlayers = state.participants.filter(p => p.role!=='admin' || p.alsoPlayer);
+  const allPlayers = state.participants.filter(p => !p.inactive && (p.role!=='admin' || p.alsoPlayer));
   const myStats = getParticipantStats(me.id);
 
   const ranked = [...allPlayers].map(p => ({p, pts:getTotalPoints(p.id)})).sort((a,b)=>b.pts-a.pts);
@@ -4338,7 +4338,7 @@ async function importPreds(file){
 // ───────────────────────────────────────────
 function renderRanking(){
   const view = document.getElementById('view-ranking');
-  const allPlayers = state.participants.filter(p => p.role!=='admin' || p.alsoPlayer);
+  const allPlayers = state.participants.filter(p => !p.inactive && (p.role!=='admin' || p.alsoPlayer));
   const ranked = allPlayers
     .map(p => ({ p, stats: getParticipantStats(p.id) }))
     .sort((a,b) => b.stats.total - a.stats.total);
@@ -5649,6 +5649,7 @@ function adminParticipantsHTML(){
           <button class="btn btn-ghost btn-xs" onclick="openEditParticipant('${p.id}')">✏️ Editar</button>
           <button class="btn btn-ghost btn-xs" onclick="openResetPwd('${p.id}')">🔑 Senha</button>
           <button class="btn btn-${p.inactive?'green':'danger'} btn-xs" onclick="toggleParticipant('${p.id}')">${p.inactive?'Ativar':'Desativar'}</button>
+          <button class="btn btn-danger btn-xs" onclick="deleteParticipant('${p.id}')">🗑️ Excluir</button>
         </div>
       </td>
     </tr>`;
@@ -5657,7 +5658,7 @@ function adminParticipantsHTML(){
   return `
     <div class="panel">
       <div class="panel-head">
-        <div><h2>Participantes</h2><p>${state.participants.length} cadastrado(s)</p></div>
+        <div><h2>Participantes</h2><p>${state.participants.filter(p=>!p.inactive).length} ativo(s) de ${state.participants.length} cadastrado(s)</p></div>
         <button class="btn btn-primary btn-sm" onclick="openAddParticipant()">+ Novo participante</button>
       </div>
       ${state.participants.length ? `
@@ -5778,6 +5779,21 @@ async function toggleParticipant(id){
   if(p.id === currentUser.id){ toast('Não é possível desativar a si mesmo','err'); return; }
   p.inactive = !p.inactive;
   await saveState();
+  renderAdmin('participants');
+}
+
+async function deleteParticipant(id){
+  if(id === currentUser.id){ toast('Não é possível excluir a si mesmo','err'); return; }
+  const p = state.participants.find(x => x.id === id);
+  if(!p){ toast('Participante não encontrado','err'); return; }
+  const preds = state.predictions.filter(x => x.participantId === id);
+  if(!confirm(`Excluir "${p.name}" e seus ${preds.length} palpite(s)? Essa ação não pode ser desfeita.`)) return;
+  state.participants = state.participants.filter(x => x.id !== id);
+  state.predictions = state.predictions.filter(x => x.participantId !== id);
+  state.predictionHistory = (state.predictionHistory||[]).filter(x => x.participantId !== id);
+  state.specialPredictions = (state.specialPredictions||[]).filter(x => x.participantId !== id);
+  await saveState();
+  toast(`${p.name} excluído(a) com sucesso`,'ok');
   renderAdmin('participants');
 }
 

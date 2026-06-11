@@ -2165,6 +2165,7 @@ select.input {
         <span class="h-name" id="hName"></span>
         <span class="h-badge" id="hBadge"></span>
       </div>
+      <button class="btn-logout" id="btnSync" onclick="manualSync(this)" title="Atualizar dados — puxa os palpites e resultados mais recentes do servidor">🔄</button>
       <button class="btn-logout" onclick="openChangeMyPwd()" title="Alterar senha" style="border-color:var(--gold);color:var(--gold-2)">🔑</button>
       <button class="btn-logout" onclick="doLogout()" title="Sair">Sair</button>
     </div>
@@ -3067,6 +3068,42 @@ async function saveState(){
   }
 }
 
+// Pull the latest state from the server and merge it into the local state.
+// Used by the header 🔄 button (with feedback) and the tab-focus auto-sync.
+async function syncFromServer(showFeedback){
+  if(!currentUser) return false;
+  try{
+    const res = await fetch(DB_URL);
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const remote = normalizeState(await res.json());
+    if(remote && remote.participants.length){
+      mergeUserData(remote);
+      state.participants = mergeParticipants(state.participants, remote.participants);
+      if(!isAdmin()){
+        if(remote.rules) state.rules = remote.rules;
+        if(remote.pool)  state.pool  = remote.pool;
+      }
+      if(!isOperator() && remote.matches) mergeMatchResults(remote.matches);
+      saveLocal();
+      const activeView = document.querySelector('.view.active')?.id?.replace('view-','');
+      if(activeView) goView(activeView);
+      updateUnsavedIndicator();
+    }
+    if(showFeedback) toast('Dados atualizados ✓','ok');
+    return true;
+  }catch(e){
+    console.warn('sync:',e);
+    if(showFeedback) toast('Não foi possível atualizar agora — tente em instantes','err');
+    return false;
+  }
+}
+
+async function manualSync(btn){
+  if(btn){ btn.disabled = true; btn.textContent = '⏳'; }
+  await syncFromServer(true);
+  if(btn){ btn.disabled = false; btn.textContent = '🔄'; }
+}
+
 // Merge participants by id, newest updatedAt wins.
 // - currentUser: local wins on tie (preserves e.g. an unsynced password change),
 //   but a strictly newer remote record wins (admin reset/deactivation cannot be undone by a stale tab)
@@ -3187,7 +3224,7 @@ function showApp(){
   document.getElementById('mainApp').style.display='block';
   document.getElementById('hName').textContent = currentUser.name;
   document.getElementById('hAvatar').textContent = initials(currentUser.name);
-  document.getElementById('headerPoolName').innerHTML = esc(state.pool.name || 'Bolão Copa 2026') + ' <span style="font-size:10px;opacity:0.6;margin-left:6px;font-weight:normal;">v1.4</span>';
+  document.getElementById('headerPoolName').innerHTML = esc(state.pool.name || 'Bolão Copa 2026') + ' <span style="font-size:10px;opacity:0.6;margin-left:6px;font-weight:normal;">v1.4.1</span>';
   const badge = document.getElementById('hBadge');
   const roleLabel = {admin:'Admin', operator:'Operador', player:'Participante'};
   const roleClass = {admin:'admin', operator:'operator', player:'player'};
@@ -3669,30 +3706,14 @@ async function init(){
     if(e.target.id === 'modalOverlay') closeModal();
   });
 
-  // Auto-sync when user returns to the tab (picks up others' predictions)
-  // Throttled to once every 3 min: each sync is 1 request against the JSONBin free quota (10k/month)
+  // Auto-sync when user returns to the tab (picks up others' predictions),
+  // throttled to once every 3 min to limit request volume
   let _lastVisSync = 0;
   document.addEventListener('visibilitychange', async ()=>{
     if(document.visibilityState !== 'visible' || !currentUser) return;
     if(Date.now() - _lastVisSync < 3*60*1000) return;
     _lastVisSync = Date.now();
-    try{
-      const res = await fetch(DB_URL);
-      if(!res.ok) return;
-      const remote = normalizeState(await res.json());
-      if(remote && remote.participants.length){
-        mergeUserData(remote);
-        if(remote.participants) state.participants = mergeParticipants(state.participants, remote.participants);
-        if(!isAdmin()){
-          if(remote.rules) state.rules = remote.rules;
-          if(remote.pool)  state.pool  = remote.pool;
-        }
-        if(!isOperator() && remote.matches) mergeMatchResults(remote.matches);
-        saveLocal();
-        const activeView = document.querySelector('.view.active')?.id?.replace('view-','');
-        if(activeView) goView(activeView);
-      }
-    }catch(e){}
+    await syncFromServer(false);
   });
 }
 
@@ -6662,7 +6683,7 @@ async function saveSettings(){
   state.pool.name = document.getElementById('sName').value.trim() || state.pool.name;
   state.pool.competition = document.getElementById('sComp').value.trim() || state.pool.competition;
   await saveState();
-  document.getElementById('headerPoolName').innerHTML = esc(state.pool.name) + ' <span style="font-size:10px;opacity:0.6;margin-left:6px;font-weight:normal;">v1.4</span>';
+  document.getElementById('headerPoolName').innerHTML = esc(state.pool.name) + ' <span style="font-size:10px;opacity:0.6;margin-left:6px;font-weight:normal;">v1.4.1</span>';
   document.getElementById('loginPoolName').textContent  = state.pool.name;
   toast('Configurações salvas!','ok');
 }

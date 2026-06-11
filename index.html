@@ -2600,6 +2600,11 @@ let countdownInterval = null;
 // ═══════════════════════════════════════════
 function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
 
+// Escape user-provided text before interpolating into innerHTML (XSS)
+function esc(s){
+  return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
 function fmtDate(iso, opts){
   if(!iso) return '--';
   const d = new Date(iso);
@@ -2698,6 +2703,26 @@ function getMyPred(matchId){
   return state.predictions.find(p => p.participantId === currentUser?.id && p.matchId === matchId);
 }
 
+// Winner of a match considering penalty shootouts (knockout draws carry result.penaltyWinner = 'home'|'away')
+function matchWinner(m){
+  if(!m || !m.result || m.result.home === null || m.result.home === undefined) return null;
+  const rh = parseInt(m.result.home), ra = parseInt(m.result.away);
+  if(isNaN(rh) || isNaN(ra)) return null;
+  if(rh > ra) return m.home;
+  if(ra > rh) return m.away;
+  if(m.result.penaltyWinner === 'home') return m.home;
+  if(m.result.penaltyWinner === 'away') return m.away;
+  return null;
+}
+function matchLoser(m){
+  const w = matchWinner(m);
+  if(!w) return null;
+  return w === m.home ? m.away : m.home;
+}
+function isKnockoutMatch(m){
+  return m && m.phase && m.phase !== 'Fase de Grupos';
+}
+
 function calcPoints(pred, match){
   if(!match.result || match.result.home === null || match.result.away === null) return null;
   const ph = parseInt(pred.home), pa = parseInt(pred.away);
@@ -2731,17 +2756,15 @@ function calcSpecialPoints(participantId){
   const finalMatch    = state.matches.find(m => m.phase === 'Final' && m.status === 'finished');
   const thirdMatch    = state.matches.find(m => m.phase === 'Terceiro Lugar' && m.status === 'finished');
 
-  if(finalMatch && finalMatch.result?.home !== null){
-    const rh = parseInt(finalMatch.result.home), ra = parseInt(finalMatch.result.away);
-    const champion  = rh > ra ? finalMatch.home : ra > rh ? finalMatch.away : null;
-    const runnerUp  = rh > ra ? finalMatch.away : ra > rh ? finalMatch.home : null;
+  if(finalMatch){
+    const champion  = matchWinner(finalMatch);
+    const runnerUp  = matchLoser(finalMatch);
     if(champion && sp.champion === champion)   pts += (state.rules.champion  || 15);
     if(runnerUp && sp.runnerUp === runnerUp)   pts += (state.rules.runnerUp  || 10);
   }
 
-  if(thirdMatch && thirdMatch.result?.home !== null){
-    const rh = parseInt(thirdMatch.result.home), ra = parseInt(thirdMatch.result.away);
-    const third = rh > ra ? thirdMatch.home : ra > rh ? thirdMatch.away : null;
+  if(thirdMatch){
+    const third = matchWinner(thirdMatch);
     if(third && sp.thirdPlace === third)       pts += (state.rules.thirdPlace || 5);
   }
 
@@ -2884,8 +2907,44 @@ async function loadState(){
 // Merge predictions/history/specialPredictions from another state into current state.
 // For each prediction, keeps the one with the most recent updatedAt.
 // For history, unions all entries (append-only log — never lose an entry).
+// Tombstones (state.meta) mark intentional deletions so merges don't resurrect
+// deleted/reset data: predTombstones {participantId|matchId: ts},
+// participantTombstones {participantId: ts}, resetAt (global reset timestamp).
+function recordTs(r){ return r.updatedAt || r.createdAt || ''; }
+
+function mergeTombstones(other){
+  state.meta = state.meta || {};
+  const om = (other && other.meta) || {};
+  if(om.resetAt && (!state.meta.resetAt || om.resetAt > state.meta.resetAt)){
+    state.meta.resetAt = om.resetAt;
+  }
+  ['predTombstones','participantTombstones'].forEach(k => {
+    if(!om[k]) return;
+    state.meta[k] = state.meta[k] || {};
+    Object.entries(om[k]).forEach(([key,ts]) => {
+      if(!state.meta[k][key] || ts > state.meta[k][key]) state.meta[k][key] = ts;
+    });
+  });
+}
+
+// A record is "dead" if a tombstone newer than its last update covers it
+function isDeadRecord(ts, participantId, predKey){
+  const meta = state.meta || {};
+  if(meta.resetAt && ts <= meta.resetAt) return true;
+  if(participantId && meta.participantTombstones){
+    const t = meta.participantTombstones[participantId];
+    if(t && ts <= t) return true;
+  }
+  if(predKey && meta.predTombstones){
+    const t = meta.predTombstones[predKey];
+    if(t && ts <= t) return true;
+  }
+  return false;
+}
+
 function mergeUserData(other){
   if(!other) return;
+  mergeTombstones(other);
 
   // — predictions: key = participantId|matchId, keep most recent —
   const predMap = new Map();
@@ -2898,12 +2957,13 @@ function mergeUserData(other){
     if(!existing){
       predMap.set(key, p);
     } else {
-      const ets = existing.updatedAt || existing.createdAt || '';
-      const pts = p.updatedAt || p.createdAt || '';
+      const ets = recordTs(existing);
+      const pts = recordTs(p);
       if(pts > ets) predMap.set(key, p);
     }
   });
-  state.predictions = Array.from(predMap.values());
+  state.predictions = Array.from(predMap.values())
+    .filter(p => !isDeadRecord(recordTs(p), p.participantId, p.participantId + '|' + p.matchId));
 
   // — predictionHistory: union by id (never lose a log entry) —
   const histIds = new Set((state.predictionHistory || []).map(h => h.id));
@@ -2912,7 +2972,9 @@ function mergeUserData(other){
       state.predictionHistory.push(h);
     }
   });
-  state.predictionHistory.sort((a,b) => (a.ts||'').localeCompare(b.ts||''));
+  state.predictionHistory = state.predictionHistory
+    .filter(h => !isDeadRecord(h.ts || '', h.participantId, null))
+    .sort((a,b) => (a.ts||'').localeCompare(b.ts||''));
 
   // — specialPredictions: key = participantId, keep most recent —
   const specMap = new Map();
@@ -2922,12 +2984,13 @@ function mergeUserData(other){
     if(!existing){
       specMap.set(s.participantId, s);
     } else {
-      const ets = existing.updatedAt || existing.createdAt || '';
-      const sts = s.updatedAt || s.createdAt || '';
+      const ets = recordTs(existing);
+      const sts = recordTs(s);
       if(sts > ets) specMap.set(s.participantId, s);
     }
   });
-  state.specialPredictions = Array.from(specMap.values());
+  state.specialPredictions = Array.from(specMap.values())
+    .filter(s => !isDeadRecord(recordTs(s), s.participantId, null));
 }
 
 async function saveState(){
@@ -2945,9 +3008,10 @@ async function saveState(){
         const remote = json.record;
         if(remote && remote.predictions){
           mergeUserData(remote);
+          // Participants are always merged (timestamp-based) so two admins don't overwrite each other
+          if(remote.participants) state.participants = mergeParticipants(state.participants, remote.participants);
           // For non-admin users, also pull structural changes from remote
           if(!isAdmin()){
-            if(remote.participants) state.participants = mergeParticipants(state.participants, remote.participants);
             if(remote.rules) state.rules = remote.rules;
             if(remote.pool)  state.pool  = remote.pool;
           }
@@ -2980,16 +3044,29 @@ async function saveState(){
   }
 }
 
-// Merge participants: keep all from remote, add any local-only ones, but preserve local edits for currentUser (e.g. password change)
+// Merge participants by id, newest updatedAt wins.
+// - currentUser: local wins on tie (preserves e.g. an unsynced password change),
+//   but a strictly newer remote record wins (admin reset/deactivation cannot be undone by a stale tab)
+// - others: remote wins on tie (previous behavior), local wins only if strictly newer (admin edits)
+// - tombstoned (deleted) participants stay deleted unless recreated after the tombstone
 function mergeParticipants(local, remote){
   const map = new Map();
   remote.forEach(p => map.set(p.id, p));
   local.forEach(p => {
-    if(!map.has(p.id) || (currentUser && p.id === currentUser.id)){
+    const r = map.get(p.id);
+    if(!r){ map.set(p.id, p); return; }
+    const lts = recordTs(p), rts = recordTs(r);
+    if(currentUser && p.id === currentUser.id){
+      if(!(rts > lts)) map.set(p.id, p);
+    } else if(lts > rts){
       map.set(p.id, p);
     }
   });
-  return Array.from(map.values());
+  const tombs = (state.meta && state.meta.participantTombstones) || {};
+  return Array.from(map.values()).filter(p => {
+    const t = tombs[p.id];
+    return !t || (p.createdAt || '') > t;
+  });
 }
 
 // Merge match results from remote (operator may have posted results while participant was offline)
@@ -3030,7 +3107,7 @@ function doLogin(){
 
 function openChangeMyPwd(){
   openModal('Alterar minha senha', `
-    <div style="margin-bottom:14px;font-size:13px;color:var(--text-2)">Olá, <strong>${currentUser.name}</strong>. Digite sua senha atual e a nova senha.</div>
+    <div style="margin-bottom:14px;font-size:13px;color:var(--text-2)">Olá, <strong>${esc(currentUser.name)}</strong>. Digite sua senha atual e a nova senha.</div>
     <div style="display:grid;gap:12px">
       <div>
         <label class="label">Senha atual</label>
@@ -3062,7 +3139,9 @@ async function doChangeMyPwd(){
   if(newPwd !== newPwd2){ toast('As senhas não conferem','err'); return; }
   const p = state.participants.find(x => x.id === currentUser.id);
   p.pwdHash = hashPwd(newPwd);
+  p.updatedAt = nowReal().toISOString();
   currentUser.pwdHash = p.pwdHash;
+  currentUser.updatedAt = p.updatedAt;
   await saveState();
   closeModal();
   toast('Senha alterada com sucesso!','ok');
@@ -3083,7 +3162,7 @@ function showApp(){
   document.getElementById('mainApp').style.display='block';
   document.getElementById('hName').textContent = currentUser.name;
   document.getElementById('hAvatar').textContent = initials(currentUser.name);
-  document.getElementById('headerPoolName').innerHTML = (state.pool.name || 'Bolão Copa 2026') + ' <span style="font-size:10px;opacity:0.6;margin-left:6px;font-weight:normal;">v1.1</span>';
+  document.getElementById('headerPoolName').innerHTML = esc(state.pool.name || 'Bolão Copa 2026') + ' <span style="font-size:10px;opacity:0.6;margin-left:6px;font-weight:normal;">v1.2</span>';
   const badge = document.getElementById('hBadge');
   const roleLabel = {admin:'Admin', operator:'Operador', player:'Participante'};
   const roleClass = {admin:'admin', operator:'operator', player:'player'};
@@ -3256,7 +3335,7 @@ function renderHistorico(participantId){
       const label = (pred.home !== null && pred.away !== null) ? pred.home+'×'+pred.away : '?×?';
       const ptsLabel = (pts !== null && pts !== undefined) ? '+'+pts : '';
       const cellBg = (pts === null || pts === undefined) ? 'var(--surface-2)' : bg+'22';
-      return '<td style="padding:3px 2px;text-align:center" title="'+row.p.name+': '+label+(ptsLabel?' ('+ptsLabel+' pts)':' (aguardando)')+'">'
+      return '<td style="padding:3px 2px;text-align:center" title="'+esc(row.p.name)+': '+label+(ptsLabel?' ('+ptsLabel+' pts)':' (aguardando)')+'">'
         +'<div style="min-width:36px;padding:2px 4px;border-radius:5px;background:'+cellBg+';border:1px solid '+bg+';display:inline-block">'
         +'<div style="font-size:10px;font-weight:800;color:'+((pts===null||pts===undefined)?'var(--text)':bg)+'">'+label+'</div>'
         +(ptsLabel ? '<div style="font-size:9px;color:'+bg+';font-weight:700">'+ptsLabel+'</div>' : '')
@@ -3267,7 +3346,7 @@ function renderHistorico(participantId){
     const isMe = row.p.id === currentUser?.id;
     return '<tr style="'+(isMe?'background:rgba(46,123,255,.04)':'')+'">'
       +'<td style="padding:6px 10px;white-space:nowrap;font-weight:700;font-size:12px;position:sticky;left:0;background:var(--surface);border-right:2px solid var(--border);z-index:1">'
-      +'<div>'+row.p.name+(isMe?' <span style="font-size:9px;color:var(--blue)">você</span>':'')+'</div>'
+      +'<div>'+esc(row.p.name)+(isMe?' <span style="font-size:9px;color:var(--blue)">você</span>':'')+'</div>'
       +'<div style="font-size:10px;color:var(--muted)">'+s.total+'pts · '+s.ec+'🎯 '+s.res+'✅ '+s.one+'⚡</div>'
       +'</td>'+cells
       +'<td style="padding:6px 8px;text-align:right;font-weight:900;font-size:14px;color:var(--gold-2);position:sticky;right:0;background:var(--surface);border-left:2px solid var(--border)">'+s.total+'</td>'
@@ -3279,7 +3358,7 @@ function renderHistorico(participantId){
     const d  = dt ? (dt.getDate()+'').padStart(2,'0')+'/'+(dt.getMonth()+1+'').padStart(2,'0') : '--';
     return '<th style="padding:4px 3px;min-width:42px;text-align:center;font-size:9px;font-weight:700;color:var(--muted);border-bottom:1px solid var(--border)">'
       +'<div style="margin-bottom:2px">'+flag(m.home)+'<br>'+flag(m.away)+'</div>'
-      +'<div style="font-size:8px;color:var(--muted2)">'+d+'</div>'
+      +'<div style="font-size:8px;color:var(--muted-2)">'+d+'</div>'
       +'</th>';
   }).join('');
 
@@ -3556,8 +3635,12 @@ async function init(){
   });
 
   // Auto-sync when user returns to the tab (picks up others' predictions)
+  // Throttled to once every 3 min: each sync is 1 request against the JSONBin free quota (10k/month)
+  let _lastVisSync = 0;
   document.addEventListener('visibilitychange', async ()=>{
     if(document.visibilityState !== 'visible' || !currentUser) return;
+    if(Date.now() - _lastVisSync < 3*60*1000) return;
+    _lastVisSync = Date.now();
     try{
       const res = await fetch(URL_BIN+'/latest', {headers:{'X-Access-Key':API_KEY}});
       if(!res.ok) return;
@@ -3565,8 +3648,8 @@ async function init(){
       const remote = json.record;
       if(remote && remote.predictions){
         mergeUserData(remote);
+        if(remote.participants) state.participants = mergeParticipants(state.participants, remote.participants);
         if(!isAdmin()){
-          if(remote.participants) state.participants = mergeParticipants(state.participants, remote.participants);
           if(remote.rules) state.rules = remote.rules;
           if(remote.pool)  state.pool  = remote.pool;
         }
@@ -3625,7 +3708,7 @@ function renderHome(){
       <div class="home-hero">
         <div class="hero-row">
           <div>
-            <div class="hero-greeting">Olá, ${me.name.split(' ')[0]} 👋</div>
+            <div class="hero-greeting">Olá, ${esc(me.name.split(' ')[0])} 👋</div>
             <div class="hero-title">${nextMatch.phase==='Final'?'A grande Final':'Próximo jogo'}</div>
             <div id="heroCountdown" class="hero-countdown"></div>
             <div class="hero-match">
@@ -3644,7 +3727,7 @@ function renderHome(){
     heroHTML = `
       <div class="home-hero">
         <div>
-          <div class="hero-greeting">Olá, ${me.name.split(' ')[0]} 👋</div>
+          <div class="hero-greeting">Olá, ${esc(me.name.split(' ')[0])} 👋</div>
           <div class="hero-title">Aguardando próximos jogos</div>
           <div style="font-size:13px;opacity:.85">Quando houver partidas agendadas, você verá o countdown aqui.</div>
         </div>
@@ -3769,21 +3852,9 @@ function renderHome(){
         </div>
         <div style="padding:14px 20px;display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
           ${[
-            {label:'🥇 Campeão',val:mySpecial.champion,pts:state.rules.champion||15,real:(() => {
-              if(!finalMatch||finalMatch.result?.home===null) return null;
-              const rh=parseInt(finalMatch.result.home),ra=parseInt(finalMatch.result.away);
-              return rh>ra?finalMatch.home:ra>rh?finalMatch.away:null;
-            })()},
-            {label:'🥈 Vice',val:mySpecial.runnerUp,pts:state.rules.runnerUp||10,real:(() => {
-              if(!finalMatch||finalMatch.result?.home===null) return null;
-              const rh=parseInt(finalMatch.result.home),ra=parseInt(finalMatch.result.away);
-              return rh>ra?finalMatch.away:ra>rh?finalMatch.home:null;
-            })()},
-            {label:'🥉 Terceiro',val:mySpecial.thirdPlace,pts:state.rules.thirdPlace||5,real:(() => {
-              if(!thirdMatch||thirdMatch.result?.home===null) return null;
-              const rh=parseInt(thirdMatch.result.home),ra=parseInt(thirdMatch.result.away);
-              return rh>ra?thirdMatch.home:ra>rh?thirdMatch.away:null;
-            })()},
+            {label:'🥇 Campeão',val:mySpecial.champion,pts:state.rules.champion||15,real:matchWinner(finalMatch)},
+            {label:'🥈 Vice',val:mySpecial.runnerUp,pts:state.rules.runnerUp||10,real:matchLoser(finalMatch)},
+            {label:'🥉 Terceiro',val:mySpecial.thirdPlace,pts:state.rules.thirdPlace||5,real:matchWinner(thirdMatch)},
           ].map(({label,val,pts,real}) => {
             const hit = real && val === real;
             const miss = real && val !== real;
@@ -3829,7 +3900,7 @@ function renderHome(){
         missingHTML = `
           <div style="font-size:12px;color:var(--text-2);margin-top:6px;line-height:1.5">
             <strong style="color:var(--red)">Pendente (${missing.length}):</strong> 
-            ${missing.map(p => p.name.split(' ')[0]).join(', ')}
+            ${esc(missing.map(p => p.name.split(' ')[0]).join(', '))}
           </div>`;
       }
 
@@ -3905,7 +3976,7 @@ function renderHome(){
     
     return `
       <tr style="border-bottom:1px solid var(--border);font-size:12px">
-        <td style="padding:8px;font-weight:700;white-space:nowrap">${d.p.name}</td>
+        <td style="padding:8px;font-weight:700;white-space:nowrap">${esc(d.p.name)}</td>
         <td style="padding:8px;text-align:center;font-weight:800;color:${pctColor}">${d.overallPct}% <span style="font-size:10px;font-weight:normal;color:var(--muted)">(${d.totalCount}/${totalMatches})</span></td>
         <td style="padding:8px;text-align:center">${d.groupPct}% <span style="font-size:10px;color:var(--muted)">(${d.groupCount}/${groupMatchesTotal})</span></td>
         <td style="padding:8px;text-align:center">${d.koPct}% <span style="font-size:10px;color:var(--muted)">(${d.koCount}/${koMatchesTotal})</span></td>
@@ -4322,6 +4393,12 @@ function afterPredSave(){
 }
 
 function handleInputPredChange(matchId){
+  const match = state.matches.find(m => m.id === matchId);
+  if(!match || !isPredOpen(match)){
+    toast('Palpites encerrados para este jogo','err');
+    afterPredSave(); // re-render to hide stale inputs from tabs left open past the deadline
+    return;
+  }
   const hEl = document.getElementById(`ph-${matchId}`);
   const aEl = document.getElementById(`pa-${matchId}`);
   if(!hEl || !aEl) return;
@@ -4463,9 +4540,42 @@ function updateUnsavedIndicator(){
 }
 
 async function saveAllUnsavedPreds(){
-  const unsynced = state.predictions.filter(p => p.participantId === currentUser.id && p.unsynced);
-  if(!unsynced.length){
+  const pending = state.predictions.filter(p => p.participantId === currentUser.id && p.unsynced);
+  if(!pending.length){
     toast('Nenhum palpite pendente','err');
+    return;
+  }
+
+  // Deadline check: accept if the match is still open, or if the prediction was
+  // typed before the deadline and only the upload was delayed (offline/outage grace).
+  const unsynced = [], expired = [];
+  pending.forEach(p => {
+    const match = state.matches.find(m => m.id === p.matchId);
+    if(!match){ expired.push(p); return; }
+    if(isPredOpen(match)){ unsynced.push(p); return; }
+    const dl = getDeadline(match);
+    if(dl && recordTs(p) && recordTs(p) <= dl.toISOString()){ unsynced.push(p); return; }
+    expired.push(p);
+  });
+
+  if(expired.length){
+    // discard local changes made after the deadline: restore the previous value or drop new preds
+    expired.forEach(p => {
+      if(p.originalHome !== null && p.originalHome !== undefined){
+        p.home = p.originalHome;
+        p.away = p.originalAway;
+        delete p.unsynced; delete p.originalHome; delete p.originalAway;
+      } else {
+        state.predictions = state.predictions.filter(x => x !== p);
+      }
+    });
+    saveLocal();
+    toast(`${expired.length} palpite(s) descartado(s) — prazo encerrado`,'err');
+  }
+
+  if(!unsynced.length){
+    afterPredSave();
+    updateUnsavedIndicator();
     return;
   }
 
@@ -4739,7 +4849,7 @@ function renderRanking(){
       <div class="podium-spot silver">
         ${podium[1] ? `
           <div class="podium-medal">🥈</div>
-          <div class="podium-name">${podium[1].p.name}</div>
+          <div class="podium-name">${esc(podium[1].p.name)}</div>
           <div class="podium-pts">${podium[1].stats.total}</div>
           <div class="podium-stats">${podium[1].stats.exact} exatos · ${podium[1].stats.accuracy}%</div>
         ` : `<div class="podium-medal" style="opacity:.3">🥈</div><div class="podium-name" style="opacity:.4">—</div>`}
@@ -4747,7 +4857,7 @@ function renderRanking(){
       <div class="podium-spot gold">
         ${podium[0] ? `
           <div class="podium-medal">🥇</div>
-          <div class="podium-name">${podium[0].p.name}</div>
+          <div class="podium-name">${esc(podium[0].p.name)}</div>
           <div class="podium-pts">${podium[0].stats.total}</div>
           <div class="podium-stats">${podium[0].stats.exact} exatos · ${podium[0].stats.accuracy}%</div>
         ` : `<div class="podium-medal" style="opacity:.3">🥇</div><div class="podium-name" style="opacity:.4">—</div>`}
@@ -4755,7 +4865,7 @@ function renderRanking(){
       <div class="podium-spot bronze">
         ${podium[2] ? `
           <div class="podium-medal">🥉</div>
-          <div class="podium-name">${podium[2].p.name}</div>
+          <div class="podium-name">${esc(podium[2].p.name)}</div>
           <div class="podium-pts">${podium[2].stats.total}</div>
           <div class="podium-stats">${podium[2].stats.exact} exatos · ${podium[2].stats.accuracy}%</div>
         ` : `<div class="podium-medal" style="opacity:.3">🥉</div><div class="podium-name" style="opacity:.4">—</div>`}
@@ -4788,10 +4898,10 @@ function renderRanking(){
               const color = f==='W'?'#22c55e':f==='P'?'#3b82f6':f==='L'?'#ef4444':'#9ca3af';
               return `<span style="width:14px;height:14px;border-radius:50%;background:${color};display:inline-flex;align-items:center;justify-content:center;font-size:8px;font-weight:900;color:#fff">${f==='N'?'·':f}</span>`;
             }).join('');
-            return `<tr style="border-bottom:1px solid var(--border);${isMe?'background:rgba(46,123,255,.05);':''}" onclick="renderHistorico('${row.p.id}')" style="cursor:pointer">
+            return `<tr style="border-bottom:1px solid var(--border);cursor:pointer;${isMe?'background:rgba(46,123,255,.05);':''}" onclick="renderHistorico('${row.p.id}')">
               <td style="padding:10px;font-weight:800;color:${i<3?'var(--gold-2)':'var(--muted)'}">${medals[i]||i+1}</td>
               <td style="padding:10px">
-                <div style="font-weight:700">${row.p.name}${isMe?' <span style="font-size:10px;background:rgba(46,123,255,.15);color:var(--blue);padding:1px 6px;border-radius:999px">você</span>':''}</div>
+                <div style="font-weight:700">${esc(row.p.name)}${isMe?' <span style="font-size:10px;background:rgba(46,123,255,.15);color:var(--blue);padding:1px 6px;border-radius:999px">você</span>':''}</div>
                 ${s.streak>=3?`<div style="font-size:10px;color:var(--orange)">🔥 seq. ${s.streak}</div>`:''}
               </td>
               <td style="padding:10px;text-align:center;font-weight:800;color:#22c55e">${s.ec}</td>
@@ -4824,7 +4934,7 @@ function renderRanking(){
     <div style="margin-top:14px;display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))">
       <div class="stat-card">
         <div class="s-label">Líder</div>
-        <div style="font-size:14px;font-weight:800;margin-top:4px">${leader.p.name}</div>
+        <div style="font-size:14px;font-weight:800;margin-top:4px">${esc(leader.p.name)}</div>
         <div class="s-hint">${leader.stats.total} pontos · ${leader.stats.exact} exatos</div>
       </div>
       ${me ? `<div class="stat-card">
@@ -4836,7 +4946,7 @@ function renderRanking(){
         <div class="s-label">Mais palpites exatos</div>
         ${(() => {
           const top = [...ranked].sort((a,b)=>b.stats.exact - a.stats.exact)[0];
-          return `<div style="font-size:14px;font-weight:800;margin-top:4px">${top.p.name}</div>
+          return `<div style="font-size:14px;font-weight:800;margin-top:4px">${esc(top.p.name)}</div>
                   <div class="s-hint">${top.stats.exact} placar(es) exato(s)</div>`;
         })()}
       </div>
@@ -4937,8 +5047,8 @@ function renderRules(){
           <div class="rule-card">
             <div class="r-emoji">${t.emoji||'⭐'}</div>
             <div class="r-text">
-              <div class="r-title">${t.name}</div>
-              ${t.description?`<div class="r-desc">${t.description}</div>`:''}
+              <div class="r-title">${esc(t.name)}</div>
+              ${t.description?`<div class="r-desc">${esc(t.description)}</div>`:''}
             </div>
           </div>`).join('')}
         </div>
@@ -5035,6 +5145,12 @@ function renderOperator(){
               <input class="op-score-input" type="number" min="0" max="30" id="op-a-${m.id}"
                 value="${hasResult?m.result.away:''}" placeholder="?">
             </div>
+            ${isKO ? `
+            <select class="op-status-sel" id="op-pw-${m.id}" title="Vencedor nos pênaltis — obrigatório se o jogo terminar empatado">
+              <option value="">🥅 Pênaltis…</option>
+              <option value="home" ${m.result?.penaltyWinner==='home'?'selected':''}>${teamName(m.home)}</option>
+              <option value="away" ${m.result?.penaltyWinner==='away'?'selected':''}>${teamName(m.away)}</option>
+            </select>` : ''}
             <select class="op-status-sel" id="op-s-${m.id}">
               ${Object.entries(statusOpts).map(([v,l])=>`<option value="${v}" ${m.status===v?'selected':''}>${l}</option>`).join('')}
             </select>
@@ -5127,7 +5243,13 @@ async function opSaveResult(matchId){
   if(hVal !== '' && aVal !== '' && hVal !== undefined && aVal !== undefined){
     const h = parseInt(hVal), a = parseInt(aVal);
     if(!isNaN(h) && !isNaN(a) && h >= 0 && a >= 0){
+      const penaltyWinner = document.getElementById('op-pw-'+matchId)?.value || '';
+      if(isKnockoutMatch(m) && h === a && m.status === 'finished' && !penaltyWinner){
+        toast('Empate no mata-mata: selecione quem venceu nos pênaltis','err');
+        return;
+      }
       m.result = { home: h, away: a };
+      if(isKnockoutMatch(m) && h === a && penaltyWinner) m.result.penaltyWinner = penaltyWinner;
       if(m.status === 'finished'){
         state.predictions.forEach(p => {
           if(p.matchId !== matchId) return;
@@ -5507,9 +5629,10 @@ function bracketMatchHTML(match, opts){
   const homePh = isKnockoutPlaceholder(home);
   const awayPh = isKnockoutPlaceholder(away);
   const hasResult = match.result && match.result.home !== null && match.result.home !== undefined;
-  const homeWin = hasResult && match.result.home > match.result.away;
-  const awayWin = hasResult && match.result.away > match.result.home;
-  const tied    = hasResult && match.result.home === match.result.away;
+  const winnerTeam = hasResult ? matchWinner(match) : null;
+  const homeWin = hasResult && winnerTeam === match.home;
+  const awayWin = hasResult && winnerTeam === match.away;
+  const tied    = hasResult && !winnerTeam && match.result.home === match.result.away;
 
   const matchClasses = [
     'bracket-match',
@@ -5564,9 +5687,8 @@ function hoverTeam(name){
 // ─── champion detection ───
 function getChampion(){
   const final = state.matches.find(m => m.phase === 'Final');
-  if(!final || !final.result || final.result.home === null) return null;
-  const winner = final.result.home > final.result.away ? final.home : final.away;
-  if(isKnockoutPlaceholder(winner)) return null;
+  const winner = matchWinner(final);
+  if(!winner || isKnockoutPlaceholder(winner)) return null;
   return winner;
 }
 
@@ -6015,7 +6137,7 @@ function adminParticipantsHTML(){
   const rows = state.participants.map(p => {
     const stats = getParticipantStats(p.id);
     return `<tr>
-      <td><strong>${p.name}</strong></td>
+      <td><strong>${esc(p.name)}</strong></td>
       <td style="font-family:var(--font-numeric)">${p.login}</td>
       <td><span class="h-badge ${{admin:'admin',operator:'operator',player:'player'}[p.role]||'player'}">${{admin:'Admin',operator:'Operador',player:'Participante'}[p.role]||'Participante'}</span></td>
       <td style="font-weight:700">${stats.total}</td>
@@ -6058,7 +6180,7 @@ function openParticipantModal(p){
     <div class="form-grid">
       <div class="form-group full">
         <label class="label">Nome completo</label>
-        <input class="input" id="pName" value="${p?.name||''}" placeholder="Ex: João da Silva">
+        <input class="input" id="pName" value="${esc(p?.name||'')}" placeholder="Ex: João da Silva">
       </div>
       <div>
         <label class="label">Login</label>
@@ -6106,7 +6228,7 @@ async function saveParticipant(id){
 
   if(id){
     const p = state.participants.find(x => x.id === id);
-    Object.assign(p, { name, login, role, alsoPlayer });
+    Object.assign(p, { name, login, role, alsoPlayer, updatedAt: nowReal().toISOString() });
   } else {
     const pwdInput = document.getElementById('pPwd');
     const pwd = pwdInput?.value || login;
@@ -6128,7 +6250,7 @@ function openResetPwd(id){
   const p = state.participants.find(x => x.id === id);
   if(!p) return;
   openModal('Redefinir senha', `
-    <div style="margin-bottom:14px;font-size:13px;color:var(--text-2)">Definir nova senha para <strong>${p.name}</strong>:</div>
+    <div style="margin-bottom:14px;font-size:13px;color:var(--text-2)">Definir nova senha para <strong>${esc(p.name)}</strong>:</div>
     <div class="form-group full">
       <label class="label">Nova senha</label>
       <input class="input" type="text" id="newPwd" placeholder="nova senha">
@@ -6145,6 +6267,7 @@ async function doResetPwd(id){
   if(!pwd || pwd.length < 3){ toast('Mínimo 3 caracteres','err'); return; }
   const p = state.participants.find(x => x.id === id);
   p.pwdHash = hashPwd(pwd);
+  p.updatedAt = nowReal().toISOString();
   await saveState();
   closeModal();
   toast('Senha alterada','ok');
@@ -6154,6 +6277,7 @@ async function toggleParticipant(id){
   const p = state.participants.find(x => x.id === id);
   if(p.id === currentUser.id){ toast('Não é possível desativar a si mesmo','err'); return; }
   p.inactive = !p.inactive;
+  p.updatedAt = nowReal().toISOString();
   await saveState();
   renderAdmin('participants');
 }
@@ -6164,12 +6288,17 @@ async function deleteParticipant(id){
   if(!p){ toast('Participante não encontrado','err'); return; }
   const preds = state.predictions.filter(x => x.participantId === id);
   if(!confirm(`Excluir "${p.name}" e seus ${preds.length} palpite(s)? Essa ação não pode ser desfeita.`)) return;
+  // tombstone: prevents the GET-merge-PUT sync (or the user's own open tab) from resurrecting the data
+  const tombTs = nowReal().toISOString();
+  state.meta = state.meta || {};
+  state.meta.participantTombstones = state.meta.participantTombstones || {};
+  state.meta.participantTombstones[id] = tombTs;
   state.participants = state.participants.filter(x => x.id !== id);
   state.predictions = state.predictions.filter(x => x.participantId !== id);
   state.predictionHistory = (state.predictionHistory||[]).filter(x => x.participantId !== id);
   state.specialPredictions = (state.specialPredictions||[]).filter(x => x.participantId !== id);
   await saveState();
-  toast(`${p.name} excluído(a) com sucesso`,'ok');
+  toast(`${esc(p.name)} excluído(a) com sucesso`,'ok');
   renderAdmin('participants');
 }
 
@@ -6203,6 +6332,12 @@ function adminResultsHTML(){
               <span style="color:var(--muted-2);font-weight:800">–</span>
               <input type="number" min="0" max="30" id="op-a-${m.id}" value="${m.result?.away??''}" placeholder="?">
             </div>
+            ${m.phase !== 'Fase de Grupos' ? `
+            <select id="op-pw-${m.id}" class="input" style="width:auto;padding:6px 8px;font-size:12px" title="Vencedor nos pênaltis — obrigatório se o jogo terminar empatado">
+              <option value="">🥅 Pênaltis…</option>
+              <option value="home" ${m.result?.penaltyWinner==='home'?'selected':''}>${teamName(m.home)}</option>
+              <option value="away" ${m.result?.penaltyWinner==='away'?'selected':''}>${teamName(m.away)}</option>
+            </select>` : ''}
             <button class="btn btn-green btn-sm" onclick="saveResult('${m.id}')">Salvar</button>
           </div>
         `).join('')}</div>
@@ -6244,7 +6379,13 @@ async function saveResult(matchId){
   if(hVal === '' || aVal === '' || hVal == null || aVal == null){ toast('Preencha o placar','err'); return; }
   const h = parseInt(hVal), a = parseInt(aVal);
   if(isNaN(h) || isNaN(a) || h < 0 || a < 0){ toast('Placar inválido','err'); return; }
+  const penaltyWinner = document.getElementById('op-pw-'+matchId)?.value || '';
+  if(isKnockoutMatch(m) && h === a && !penaltyWinner){
+    toast('Empate no mata-mata: selecione quem venceu nos pênaltis','err');
+    return;
+  }
   m.result = { home: h, away: a };
+  if(isKnockoutMatch(m) && h === a) m.result.penaltyWinner = penaltyWinner;
   m.status = 'finished';
   state.predictions.forEach(p => {
     if(p.matchId !== matchId) return;
@@ -6295,8 +6436,8 @@ function adminRulesHTML(){
   const turboList = (r.turbo||[]).map((t,i) => `
     <div style="display:grid;grid-template-columns:60px 1fr 1.5fr auto;gap:8px;align-items:center;padding:8px;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;margin-bottom:6px">
       <input class="input" id="te-${i}" value="${t.emoji||'⭐'}" placeholder="🎯" style="text-align:center;padding:8px">
-      <input class="input" id="tn-${i}" value="${t.name||''}" placeholder="Nome">
-      <input class="input" id="td-${i}" value="${t.description||''}" placeholder="Descrição">
+      <input class="input" id="tn-${i}" value="${esc(t.name||'')}" placeholder="Nome">
+      <input class="input" id="td-${i}" value="${esc(t.description||'')}" placeholder="Descrição">
       <button class="btn btn-danger btn-xs" onclick="removeTurboRule(${i})">✕</button>
     </div>
   `).join('');
@@ -6401,7 +6542,7 @@ function adminSettingsHTML(){
         <div style="padding:20px;display:grid;gap:14px">
           <div>
             <label class="label">Nome do bolão</label>
-            <input class="input" id="sName" value="${state.pool.name||''}" placeholder="Ex: Bolão do escritório">
+            <input class="input" id="sName" value="${esc(state.pool.name||'')}" placeholder="Ex: Bolão do escritório">
           </div>
           <div>
             <label class="label">Competição</label>
@@ -6444,7 +6585,7 @@ async function saveSettings(){
   state.pool.name = document.getElementById('sName').value.trim() || state.pool.name;
   state.pool.competition = document.getElementById('sComp').value.trim() || state.pool.competition;
   await saveState();
-  document.getElementById('headerPoolName').innerHTML = state.pool.name + ' <span style="font-size:10px;opacity:0.6;margin-left:6px;font-weight:normal;">v1.1</span>';
+  document.getElementById('headerPoolName').innerHTML = esc(state.pool.name) + ' <span style="font-size:10px;opacity:0.6;margin-left:6px;font-weight:normal;">v1.2</span>';
   document.getElementById('loginPoolName').textContent  = state.pool.name;
   toast('Configurações salvas!','ok');
 }
@@ -6454,14 +6595,19 @@ function resetEverything(){
     'Isso apaga todos os palpites, resultados e participantes (mantém o admin atual). Não pode ser desfeito.',
     async () => {
       const me = state.participants.find(p => p.id === currentUser.id);
+      // tombstone everything so the pre-save merge (and other open tabs) can't resurrect old data
+      const resetTs = nowReal().toISOString();
+      const tombs = {};
+      state.participants.forEach(p => { if(p.id !== currentUser.id) tombs[p.id] = resetTs; });
       state = {
         pool: state.pool,
         participants: me ? [me] : [],
         matches: JSON.parse(JSON.stringify(COPA2026_MATCHES)),
         predictions: [],
         predictionHistory: [],
+        specialPredictions: [],
         rules: state.rules,
-        meta: {}
+        meta: { resetAt: resetTs, participantTombstones: tombs }
       };
       await saveState();
       toast('Dados resetados','ok');

@@ -3038,9 +3038,11 @@ async function saveState(){
     });
     saveLocal();
     updateUnsavedIndicator();
+    return true;
   }catch(e){
     console.warn('JSONBin save:',e);
-    toast('Salvo local — sem conexão com servidor','err');
+    toast('⚠️ Servidor recusou a gravação — seus palpites estão salvos SÓ neste navegador. Tente de novo mais tarde.','err');
+    return false;
   }
 }
 
@@ -3162,7 +3164,7 @@ function showApp(){
   document.getElementById('mainApp').style.display='block';
   document.getElementById('hName').textContent = currentUser.name;
   document.getElementById('hAvatar').textContent = initials(currentUser.name);
-  document.getElementById('headerPoolName').innerHTML = esc(state.pool.name || 'Bolão Copa 2026') + ' <span style="font-size:10px;opacity:0.6;margin-left:6px;font-weight:normal;">v1.2</span>';
+  document.getElementById('headerPoolName').innerHTML = esc(state.pool.name || 'Bolão Copa 2026') + ' <span style="font-size:10px;opacity:0.6;margin-left:6px;font-weight:normal;">v1.2.1</span>';
   const badge = document.getElementById('hBadge');
   const roleLabel = {admin:'Admin', operator:'Operador', player:'Participante'};
   const roleClass = {admin:'admin', operator:'operator', player:'player'};
@@ -4361,7 +4363,12 @@ async function _doSavePred(matchId, h, a, source, skipSaveState = false){
     saveLocal();
     updateUnsavedIndicator();
   } else {
-    await saveState();
+    const ok = await saveState();
+    if(!ok){
+      // upload failed: keep the prediction flagged so the floating bar prompts a retry
+      const pred = getMyPred(matchId);
+      if(pred){ pred.unsynced = true; saveLocal(); updateUnsavedIndicator(); }
+    }
   }
   return true;
 }
@@ -4617,22 +4624,13 @@ async function saveAllUnsavedPreds(){
     p.lastLogTs = now;
     p.status = 'confirmed';
     p.updatedAt = now;
-
-    delete p.unsynced;
-    delete p.originalHome;
-    delete p.originalAway;
   });
 
-  try {
-    await saveState();
+  // saveState clears the unsynced flags only after a successful upload;
+  // on failure they stay pending and the floating bar keeps prompting
+  const ok = await saveState();
+  if(ok){
     toast('Todos os palpites foram salvos com sucesso no servidor!', 'ok');
-  } catch(e) {
-    console.error(e);
-    toast('Erro ao salvar palpites no servidor', 'err');
-    unsynced.forEach(p => {
-      p.unsynced = true;
-    });
-    saveLocal();
   }
 
   afterPredSave();
@@ -6585,7 +6583,7 @@ async function saveSettings(){
   state.pool.name = document.getElementById('sName').value.trim() || state.pool.name;
   state.pool.competition = document.getElementById('sComp').value.trim() || state.pool.competition;
   await saveState();
-  document.getElementById('headerPoolName').innerHTML = esc(state.pool.name) + ' <span style="font-size:10px;opacity:0.6;margin-left:6px;font-weight:normal;">v1.2</span>';
+  document.getElementById('headerPoolName').innerHTML = esc(state.pool.name) + ' <span style="font-size:10px;opacity:0.6;margin-left:6px;font-weight:normal;">v1.2.1</span>';
   document.getElementById('loginPoolName').textContent  = state.pool.name;
   toast('Configurações salvas!','ok');
 }

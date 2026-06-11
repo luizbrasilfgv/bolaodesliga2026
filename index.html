@@ -2559,6 +2559,7 @@ const PHASE_SHORT = {
 // Legado (arquivo morto, somente leitura): JSONBin bin 6a16f5f18ef04f453821630b
 const DB_URL = 'https://bolao-desliga-2026-default-rtdb.firebaseio.com/state.json';
 const STORAGE = 'bolao_copa2026_v2';
+const SESSION_KEY = 'bolao_session_v1';
 const THEME_KEY = 'bolao_theme';
 const BRACKET_STYLE_KEY = 'bolao_bracket_style';
 
@@ -2862,6 +2863,9 @@ function normalizeState(s){
   s.rules = s.rules || {};
   s.pool  = s.pool  || {};
   s.meta  = s.meta  || {};
+  // anything coming from the server is, by definition, synced — strip volatile
+  // local-only flags so a leaked "unsynced" never resurrects a fake pending bar
+  s.predictions.forEach(p => { delete p.unsynced; delete p.originalHome; delete p.originalAway; });
   return s;
 }
 
@@ -3037,10 +3041,13 @@ async function saveState(){
       }
     }catch(e){ console.warn('Merge pre-save:',e); }
 
+    // never persist volatile local-only flags to the server
+    const payload = JSON.stringify(state, (k,v) =>
+      (k==='unsynced'||k==='originalHome'||k==='originalAway') ? undefined : v);
     const res = await fetch(DB_URL, {
       method:'PUT',
       headers:{'Content-Type':'application/json'},
-      body: JSON.stringify(state)
+      body: payload
     });
     if(!res.ok) throw new Error('HTTP '+res.status);
 
@@ -3118,6 +3125,7 @@ function doLogin(){
   if(user.inactive){ err.textContent='Conta inativa. Fale com o administrador.'; return; }
 
   currentUser = user;
+  try { localStorage.setItem(SESSION_KEY, user.id); } catch(e){}
   showApp();
 }
 
@@ -3166,6 +3174,7 @@ async function doChangeMyPwd(){
 function doLogout(){
   if(countdownInterval){ clearInterval(countdownInterval); countdownInterval = null; }
   currentUser = null;
+  try { localStorage.removeItem(SESSION_KEY); } catch(e){}
   document.getElementById('mainApp').style.display='none';
   document.getElementById('loginScreen').style.display='flex';
   document.getElementById('loginUser').value='';
@@ -3178,7 +3187,7 @@ function showApp(){
   document.getElementById('mainApp').style.display='block';
   document.getElementById('hName').textContent = currentUser.name;
   document.getElementById('hAvatar').textContent = initials(currentUser.name);
-  document.getElementById('headerPoolName').innerHTML = esc(state.pool.name || 'Bolão Copa 2026') + ' <span style="font-size:10px;opacity:0.6;margin-left:6px;font-weight:normal;">v1.3</span>';
+  document.getElementById('headerPoolName').innerHTML = esc(state.pool.name || 'Bolão Copa 2026') + ' <span style="font-size:10px;opacity:0.6;margin-left:6px;font-weight:normal;">v1.4</span>';
   const badge = document.getElementById('hBadge');
   const roleLabel = {admin:'Admin', operator:'Operador', player:'Participante'};
   const roleClass = {admin:'admin', operator:'operator', player:'player'};
@@ -3630,6 +3639,16 @@ async function init(){
   fetchServerTime().catch(()=>{});
   await loadState();
 
+  // restore session: F5 / reopening the tab keeps the user logged in
+  try {
+    const sid = localStorage.getItem(SESSION_KEY);
+    if(sid && !currentUser){
+      const u = state.participants.find(p => p.id === sid && !p.inactive);
+      if(u){ currentUser = u; showApp(); }
+      else localStorage.removeItem(SESSION_KEY);
+    }
+  } catch(e){}
+
   document.getElementById('loginUser').addEventListener('keydown',e=>{
     if(e.key==='Enter') document.getElementById('loginPass').focus();
   });
@@ -3690,6 +3709,13 @@ window.addEventListener('DOMContentLoaded', init);
 // ───────────────────────────────────────────
 // HOME — pendências, próximo jogo, posição, estatísticas pessoais
 // ───────────────────────────────────────────
+let completenessSort = { key: 'overallPct', dir: 1 };
+function setCompletenessSort(key){
+  if(completenessSort.key === key) completenessSort.dir *= -1;
+  else completenessSort = { key, dir: 1 };
+  renderHome();
+}
+
 function renderHome(){
   const me = currentUser;
   const allPlayers = state.participants.filter(p => !p.inactive && (p.role!=='admin' || p.alsoPlayer));
@@ -3982,8 +4008,15 @@ function renderHome(){
     };
   });
 
-  // Sort: players with lowest completion percentage first, to highlight who is lagging
-  completenessData.sort((a, b) => a.overallPct - b.overallPct || a.p.name.localeCompare(b.p.name));
+  // Sort by the column the user clicked (default: lowest completion first, to highlight who is lagging)
+  const csKey = completenessSort.key, csDir = completenessSort.dir;
+  completenessData.sort((a, b) => {
+    const va = csKey === 'name' ? a.p.name.toLowerCase() : a[csKey];
+    const vb = csKey === 'name' ? b.p.name.toLowerCase() : b[csKey];
+    if(va < vb) return -1 * csDir;
+    if(va > vb) return  1 * csDir;
+    return a.p.name.localeCompare(b.p.name);
+  });
 
   const tableRowsHTML = completenessData.map(d => {
     const isLagging = d.overallPct < 85;
@@ -4007,10 +4040,10 @@ function renderHome(){
         <table style="width:100%;border-collapse:collapse;min-width:320px">
           <thead>
             <tr style="border-bottom:2px solid var(--border);font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px">
-              <th style="padding:8px;text-align:left">Apostador</th>
-              <th style="padding:8px;text-align:center">Geral</th>
-              <th style="padding:8px;text-align:center">Grupos</th>
-              <th style="padding:8px;text-align:center">Mata-Mata</th>
+              ${[['name','Apostador','left'],['overallPct','Geral','center'],['groupPct','Grupos','center'],['koPct','Mata-Mata','center']].map(([key,label,align]) => `
+              <th style="padding:8px;text-align:${align};cursor:pointer;user-select:none" onclick="setCompletenessSort('${key}')" title="Clique para ordenar">
+                ${label}${csKey===key ? (csDir===1?' ▲':' ▼') : ''}
+              </th>`).join('')}
             </tr>
           </thead>
           <tbody>
@@ -4239,6 +4272,7 @@ function matchCardHTML(match, showPred){
             <input class="pred-input" type="number" min="0" max="30" placeholder="?" id="pa-${match.id}" data-mid="${match.id}" data-side="away" value="${pa}" oninput="handleInputPredChange('${match.id}')">
           </div>
           <button class="btn btn-green btn-sm pred-save-btn" onclick="handleSavePredFromCard('${match.id}', this)">${myPred?'Atualizar':'Salvar'}</button>
+          ${myPred ? `<button class="btn btn-danger btn-sm" onclick="deleteMyPred('${match.id}')" title="Excluir meu palpite deste jogo">🗑</button>` : ''}
           ${myPred ? (myPred.unsynced ? `<span class="pred-result pred-unsaved" style="color:var(--gold-2);font-weight:bold;margin-left:8px">⚠️ Não enviado</span>` : `<span class="pred-result pred-saved">✓ Salvo${lastTs}</span>`) : ''}
           ${serverWarn}
         </div>
@@ -4291,6 +4325,38 @@ function matchCardHTML(match, showPred){
     ${match.venue ? `<div class="match-footer">📍 ${match.venue}${deadlineHTML}</div>` : (deadlineHTML?`<div class="match-footer">${deadlineHTML}</div>`:'')}
     ${predHTML}
   </div>`;
+}
+
+// Apostador exclui o próprio palpite enquanto o jogo estiver aberto.
+// Grava um tombstone para o merge não ressuscitar o palpite excluído;
+// um novo palpite criado depois sobrevive por ter timestamp mais recente.
+async function deleteMyPred(matchId){
+  const match = state.matches.find(m => m.id === matchId);
+  if(!match){ toast('Jogo não encontrado','err'); return; }
+  if(!isPredOpen(match)){ toast('Palpites encerrados — não é mais possível excluir','err'); return; }
+  const pred = getMyPred(matchId);
+  if(!pred){ toast('Você não tem palpite neste jogo','err'); return; }
+
+  showConfirm('Excluir palpite?',
+    `${teamName(match.home)} × ${teamName(match.away)} — seu palpite ${pred.home??'?'}×${pred.away??'?'} será removido. Você pode palpitar de novo enquanto o prazo estiver aberto.`,
+    async () => {
+      const now = nowReal().toISOString();
+      state.meta = state.meta || {};
+      state.meta.predTombstones = state.meta.predTombstones || {};
+      state.meta.predTombstones[currentUser.id + '|' + matchId] = now;
+      state.predictions = state.predictions.filter(p => !(p.participantId === currentUser.id && p.matchId === matchId));
+      appendLog({
+        matchId, matchLabel: `${teamName(match.home)} × ${teamName(match.away)}`,
+        participantId: currentUser.id, participantName: currentUser.name,
+        home: null, away: null, action: 'Exclusão de palpite',
+        prevHome: pred.home, prevAway: pred.away,
+        ts: now, byAdmin: isAdmin(), source: 'manual'
+      });
+      const ok = await saveState();
+      if(ok) toast('Palpite excluído','ok');
+      afterPredSave();
+      updateUnsavedIndicator();
+    });
 }
 
 async function savePred(matchId, importMode = false, importSource = 'manual'){
@@ -6596,7 +6662,7 @@ async function saveSettings(){
   state.pool.name = document.getElementById('sName').value.trim() || state.pool.name;
   state.pool.competition = document.getElementById('sComp').value.trim() || state.pool.competition;
   await saveState();
-  document.getElementById('headerPoolName').innerHTML = esc(state.pool.name) + ' <span style="font-size:10px;opacity:0.6;margin-left:6px;font-weight:normal;">v1.3</span>';
+  document.getElementById('headerPoolName').innerHTML = esc(state.pool.name) + ' <span style="font-size:10px;opacity:0.6;margin-left:6px;font-weight:normal;">v1.4</span>';
   document.getElementById('loginPoolName').textContent  = state.pool.name;
   toast('Configurações salvas!','ok');
 }

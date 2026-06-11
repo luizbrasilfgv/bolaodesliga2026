@@ -2702,6 +2702,15 @@ function getDeadline(match){
   return null;
 }
 
+// Sigilo até o prazo: palpite de outro participante só fica visível depois que
+// o prazo do jogo fecha (evita cópia de palpites). Admin vê tudo (suporte);
+// o próprio dono sempre vê os seus. Após o prazo, abre para todos (auditoria).
+function canSeePred(participantId, match){
+  if(isAdmin()) return true;
+  if(currentUser && participantId === currentUser.id) return true;
+  return !match || !isPredOpen(match);
+}
+
 function getMyPred(matchId){
   return state.predictions.find(p => p.participantId === currentUser?.id && p.matchId === matchId);
 }
@@ -3224,7 +3233,7 @@ function showApp(){
   document.getElementById('mainApp').style.display='block';
   document.getElementById('hName').textContent = currentUser.name;
   document.getElementById('hAvatar').textContent = initials(currentUser.name);
-  document.getElementById('headerPoolName').innerHTML = esc(state.pool.name || 'Bolão Copa 2026') + ' <span style="font-size:10px;opacity:0.6;margin-left:6px;font-weight:normal;">v1.4.1</span>';
+  document.getElementById('headerPoolName').innerHTML = esc(state.pool.name || 'Bolão Copa 2026') + ' <span style="font-size:10px;opacity:0.6;margin-left:6px;font-weight:normal;">v1.5</span>';
   const badge = document.getElementById('hBadge');
   const roleLabel = {admin:'Admin', operator:'Operador', player:'Participante'};
   const roleClass = {admin:'admin', operator:'operator', player:'player'};
@@ -3392,6 +3401,14 @@ function renderHistorico(participantId){
     const cells = matchesWithPreds.map(m => {
       const pred = state.predictions.find(p => p.participantId === row.p.id && p.matchId === m.id);
       if(!pred) return '<td style="padding:3px 2px;text-align:center"><span style="font-size:10px;color:var(--muted)">—</span></td>';
+      if(!canSeePred(row.p.id, m)){
+        const ts = pred.updatedAt || pred.createdAt;
+        return '<td style="padding:3px 2px;text-align:center" title="'+esc(row.p.name)+': palpite registrado em '+fmtDate(ts)+' — o placar fica visível quando o prazo deste jogo fechar">'
+          +'<div style="min-width:36px;padding:2px 4px;border-radius:5px;background:var(--surface-2);border:1px dashed var(--border-2);display:inline-block">'
+          +'<div style="font-size:10px;font-weight:800">🔒</div>'
+          +'<div style="font-size:7.5px;color:var(--muted)">'+fmtDate(ts)+'</div>'
+          +'</div></td>';
+      }
       const pts = pred.points;
       const bg  = ptColor(pts);
       const label = (pred.home !== null && pred.away !== null) ? pred.home+'×'+pred.away : '?×?';
@@ -3433,6 +3450,7 @@ function renderHistorico(participantId){
     +'<span>🔵 <strong style="color:#3b82f6">Resultado certo</strong></span>'
     +'<span>🟡 <strong style="color:#f59e0b">Gols de um time</strong></span>'
     +'<span>🔴 <strong style="color:#ef4444">Errou</strong></span>'
+    +'<span>🔒 <strong>Palpite registrado</strong> — placar visível só após o prazo do jogo fechar</span>'
     +'<span style="color:var(--muted)">— Sem palpite · sem cor = aguardando resultado</span>'
     +'<button onclick="exportLog()" style="margin-left:auto;font-size:11px;color:var(--blue);background:none;border:none;cursor:pointer;font-weight:700">📋 Exportar log TXT</button>'
     +'</div>'
@@ -4802,6 +4820,11 @@ function exportLog(){
   ].join('\n');
 
   const lines = log.map(e => {
+    // sigilo até o prazo: placares de terceiros em jogos abertos saem mascarados
+    const match = state.matches.find(m => m.id === e.matchId);
+    if(!canSeePred(e.participantId, match)){
+      return `${fmtTs(e.ts)} | ${e.participantName||'?'} | ${e.matchLabel||e.matchId} | 🔒 x 🔒 | ${e.action}`;
+    }
     const pred = `${e.home??'?'} x ${e.away??'?'}`;
     const prev = e.prevHome!==null&&e.prevHome!==undefined ? ` (anterior: ${e.prevHome} x ${e.prevAway})` : '';
     return `${fmtTs(e.ts)} | ${e.participantName||'?'} | ${e.matchLabel||e.matchId} | ${pred}${prev} | ${e.action}`;
@@ -6683,7 +6706,7 @@ async function saveSettings(){
   state.pool.name = document.getElementById('sName').value.trim() || state.pool.name;
   state.pool.competition = document.getElementById('sComp').value.trim() || state.pool.competition;
   await saveState();
-  document.getElementById('headerPoolName').innerHTML = esc(state.pool.name) + ' <span style="font-size:10px;opacity:0.6;margin-left:6px;font-weight:normal;">v1.4.1</span>';
+  document.getElementById('headerPoolName').innerHTML = esc(state.pool.name) + ' <span style="font-size:10px;opacity:0.6;margin-left:6px;font-weight:normal;">v1.5</span>';
   document.getElementById('loginPoolName').textContent  = state.pool.name;
   toast('Configurações salvas!','ok');
 }

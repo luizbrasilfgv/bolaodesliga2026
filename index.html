@@ -2703,10 +2703,10 @@ function getDeadline(match){
 }
 
 // Sigilo até o prazo: palpite de outro participante só fica visível depois que
-// o prazo do jogo fecha (evita cópia de palpites). Admin vê tudo (suporte);
-// o próprio dono sempre vê os seus. Após o prazo, abre para todos (auditoria).
+// o prazo do jogo fecha (evita cópia de palpites). Vale para TODOS, inclusive
+// admin (que também aposta). O próprio dono sempre vê os seus.
+// Após o prazo, abre para todos (auditoria).
 function canSeePred(participantId, match){
-  if(isAdmin()) return true;
   if(currentUser && participantId === currentUser.id) return true;
   return !match || !isPredOpen(match);
 }
@@ -3233,7 +3233,7 @@ function showApp(){
   document.getElementById('mainApp').style.display='block';
   document.getElementById('hName').textContent = currentUser.name;
   document.getElementById('hAvatar').textContent = initials(currentUser.name);
-  document.getElementById('headerPoolName').innerHTML = esc(state.pool.name || 'Bolão Copa 2026') + ' <span style="font-size:10px;opacity:0.6;margin-left:6px;font-weight:normal;">v1.5</span>';
+  document.getElementById('headerPoolName').innerHTML = esc(state.pool.name || 'Bolão Copa 2026') + ' <span style="font-size:10px;opacity:0.6;margin-left:6px;font-weight:normal;">v1.5.1</span>';
   const badge = document.getElementById('hBadge');
   const roleLabel = {admin:'Admin', operator:'Operador', player:'Participante'};
   const roleClass = {admin:'admin', operator:'operator', player:'player'};
@@ -6706,7 +6706,7 @@ async function saveSettings(){
   state.pool.name = document.getElementById('sName').value.trim() || state.pool.name;
   state.pool.competition = document.getElementById('sComp').value.trim() || state.pool.competition;
   await saveState();
-  document.getElementById('headerPoolName').innerHTML = esc(state.pool.name) + ' <span style="font-size:10px;opacity:0.6;margin-left:6px;font-weight:normal;">v1.5</span>';
+  document.getElementById('headerPoolName').innerHTML = esc(state.pool.name) + ' <span style="font-size:10px;opacity:0.6;margin-left:6px;font-weight:normal;">v1.5.1</span>';
   document.getElementById('loginPoolName').textContent  = state.pool.name;
   toast('Configurações salvas!','ok');
 }

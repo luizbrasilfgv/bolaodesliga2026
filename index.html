@@ -2965,17 +2965,30 @@ async function saveState(){
       body: JSON.stringify(state)
     });
     if(!res.ok) throw new Error('HTTP '+res.status);
+
+    // Clean unsynced flags after successful upload
+    state.predictions.forEach(p => {
+      delete p.unsynced;
+      delete p.originalHome;
+      delete p.originalAway;
+    });
+    saveLocal();
+    updateUnsavedIndicator();
   }catch(e){
     console.warn('JSONBin save:',e);
     toast('Salvo local — sem conexão com servidor','err');
   }
 }
 
-// Merge participants: keep all from remote, add any local-only ones
+// Merge participants: keep all from remote, add any local-only ones, but preserve local edits for currentUser (e.g. password change)
 function mergeParticipants(local, remote){
   const map = new Map();
   remote.forEach(p => map.set(p.id, p));
-  local.forEach(p => { if(!map.has(p.id)) map.set(p.id, p); });
+  local.forEach(p => {
+    if(!map.has(p.id) || (currentUser && p.id === currentUser.id)){
+      map.set(p.id, p);
+    }
+  });
   return Array.from(map.values());
 }
 
@@ -3062,6 +3075,7 @@ function doLogout(){
   document.getElementById('loginScreen').style.display='flex';
   document.getElementById('loginUser').value='';
   document.getElementById('loginPass').value='';
+  updateUnsavedIndicator();
 }
 
 function showApp(){
@@ -3078,6 +3092,7 @@ function showApp(){
   document.querySelectorAll('.admin-only').forEach(el => el.style.display = isAdmin() ? '' : 'none');
   document.querySelectorAll('.operator-only').forEach(el => el.style.display = isOperator() ? '' : 'none');
   buildGlobalTeamSelect(null);
+  updateUnsavedIndicator();
   goView('home', document.querySelector('[data-view="home"]'));
 }
 
@@ -3991,12 +4006,12 @@ function matchCardHTML(match, showPred){
         <div class="pred-row">
           <span class="pred-label">Seu palpite</span>
           <div class="pred-inputs">
-            <input class="pred-input" type="number" min="0" max="30" placeholder="?" id="ph-${match.id}" data-mid="${match.id}" data-side="home" value="${ph}">
+            <input class="pred-input" type="number" min="0" max="30" placeholder="?" id="ph-${match.id}" data-mid="${match.id}" data-side="home" value="${ph}" oninput="handleInputPredChange('${match.id}')">
             <span class="pred-sep">×</span>
-            <input class="pred-input" type="number" min="0" max="30" placeholder="?" id="pa-${match.id}" data-mid="${match.id}" data-side="away" value="${pa}">
+            <input class="pred-input" type="number" min="0" max="30" placeholder="?" id="pa-${match.id}" data-mid="${match.id}" data-side="away" value="${pa}" oninput="handleInputPredChange('${match.id}')">
           </div>
           <button class="btn btn-green btn-sm pred-save-btn" onclick="handleSavePredFromCard('${match.id}', this)">${myPred?'Atualizar':'Salvar'}</button>
-          ${myPred ? `<span class="pred-result pred-saved">✓ Salvo${lastTs}</span>` : ''}
+          ${myPred ? (myPred.unsynced ? `<span class="pred-result pred-unsaved" style="color:var(--gold-2);font-weight:bold;margin-left:8px">⚠️ Não enviado</span>` : `<span class="pred-result pred-saved">✓ Salvo${lastTs}</span>`) : ''}
           ${serverWarn}
         </div>
         ${deadlineStr ? `<div style="font-size:10px;color:var(--muted);padding:2px 14px 6px">${deadlineStr}${serverWarn}</div>` : ''}`;
@@ -4081,7 +4096,7 @@ async function savePred(matchId, importMode = false, importSource = 'manual'){
   return await _doSavePred(matchId, h, a, importSource);
 }
 
-async function _doSavePred(matchId, h, a, source){
+async function _doSavePred(matchId, h, a, source, skipSaveState = false){
   const match = state.matches.find(m=>m.id===matchId);
   const now   = nowReal().toISOString();
   const existing = getMyPred(matchId);
@@ -4090,18 +4105,24 @@ async function _doSavePred(matchId, h, a, source){
 
   if(existing){
     actionType = source === 'import' ? 'Alteração via importação' : isAdmin_ ? 'Alteração pelo admin' : 'Alteração';
+    const prevH = existing.originalHome !== undefined && existing.originalHome !== null ? existing.originalHome : existing.home;
+    const prevA = existing.originalAway !== undefined && existing.originalAway !== null ? existing.originalAway : existing.away;
     // log before changing
     appendLog({
       matchId, matchLabel: `${teamName(match.home)} × ${teamName(match.away)}`,
       participantId: currentUser.id, participantName: currentUser.name,
       home: h, away: a, action: actionType,
-      prevHome: existing.home, prevAway: existing.away,
+      prevHome: prevH, prevAway: prevA,
       ts: now, byAdmin: isAdmin_, source
     });
     existing.home = h; existing.away = a;
     existing.updatedAt = now;
     existing.status = 'confirmed';
     existing.lastLogTs = now;
+    // clean temporary local properties
+    delete existing.unsynced;
+    delete existing.originalHome;
+    delete existing.originalAway;
   } else {
     actionType = source === 'import' ? 'Novo palpite via importação' : isAdmin_ ? 'Novo palpite pelo admin' : 'Novo palpite';
     const newPred = {
@@ -4119,11 +4140,16 @@ async function _doSavePred(matchId, h, a, source){
     });
   }
 
-  if(_serverTimeWarning && !importMode){
+  if(_serverTimeWarning && source !== 'import'){
     toast(`Palpite salvo (horário do dispositivo — servidor indisponível)`, 'ok');
   }
 
-  await saveState();
+  if(skipSaveState){
+    saveLocal();
+    updateUnsavedIndicator();
+  } else {
+    await saveState();
+  }
   return true;
 }
 
@@ -4151,6 +4177,214 @@ function afterPredSave(){
   const active = document.querySelector('.view.active');
   if(active?.id==='view-home')    renderHome();
   else if(active?.id==='view-matches') renderMatchesList();
+}
+
+function handleInputPredChange(matchId){
+  const hEl = document.getElementById(`ph-${matchId}`);
+  const aEl = document.getElementById(`pa-${matchId}`);
+  if(!hEl || !aEl) return;
+
+  const hVal = hEl.value.trim();
+  const aVal = aEl.value.trim();
+
+  const h = parseInt(hVal);
+  const a = parseInt(aVal);
+  if(isNaN(h) || isNaN(a) || h < 0 || a < 0 || h > 30 || a > 30) {
+    return;
+  }
+
+  const now = nowReal().toISOString();
+  let existing = state.predictions.find(p => p.participantId === currentUser.id && p.matchId === matchId);
+
+  if(existing){
+    if(!existing.unsynced){
+      if(existing.home !== h || existing.away !== a){
+        existing.originalHome = existing.home;
+        existing.originalAway = existing.away;
+        existing.unsynced = true;
+        existing.home = h;
+        existing.away = a;
+        existing.updatedAt = now;
+        saveLocal();
+      }
+    } else {
+      if(existing.originalHome === h && existing.originalAway === a){
+        existing.home = h;
+        existing.away = a;
+        delete existing.unsynced;
+        delete existing.originalHome;
+        delete existing.originalAway;
+      } else {
+        existing.home = h;
+        existing.away = a;
+        existing.updatedAt = now;
+      }
+      saveLocal();
+    }
+  } else {
+    const newPred = {
+      id: uid(),
+      participantId: currentUser.id,
+      matchId: matchId,
+      home: h,
+      away: a,
+      status: 'confirmed',
+      points: null,
+      createdAt: now,
+      updatedAt: now,
+      unsynced: true,
+      originalHome: null,
+      originalAway: null
+    };
+    state.predictions.push(newPred);
+    saveLocal();
+  }
+
+  updateUnsavedIndicator();
+
+  // update local card UI status label
+  const card = hEl.closest('.match-card');
+  if(card){
+    let label = card.querySelector('.pred-result');
+    if(!label){
+      const predRow = hEl.closest('.pred-row');
+      if(predRow){
+        // clean up other indicators
+        const oldLabel = predRow.querySelector('.pred-saved');
+        if(oldLabel) oldLabel.remove();
+        label = document.createElement('span');
+        label.className = 'pred-result';
+        predRow.appendChild(label);
+      }
+    }
+    const currentPred = getMyPred(matchId);
+    if(currentPred && currentPred.unsynced){
+      label.className = 'pred-result pred-unsaved';
+      label.innerHTML = '⚠️ Não enviado';
+      label.style.color = 'var(--gold-2)';
+      label.style.fontWeight = 'bold';
+      label.style.marginLeft = '8px';
+    } else if(currentPred){
+      const lastTs = currentPred.lastLogTs ? `<span style="font-size:10px;color:var(--muted);margin-left:6px">último: ${fmtDate(currentPred.lastLogTs,'short')}</span>` : '';
+      label.className = 'pred-result pred-saved';
+      label.innerHTML = `✓ Salvo${lastTs}`;
+      label.style.color = '';
+      label.style.fontWeight = '';
+    } else {
+      label.innerHTML = '';
+    }
+  }
+}
+
+function updateUnsavedIndicator(){
+  if(!currentUser) {
+    const bar = document.getElementById('unsavedFloatingBar');
+    if(bar) bar.style.display = 'none';
+    return;
+  }
+  const unsyncedCount = state.predictions.filter(p => p.participantId === currentUser.id && p.unsynced).length;
+
+  let bar = document.getElementById('unsavedFloatingBar');
+  if(!bar){
+    bar = document.createElement('div');
+    bar.id = 'unsavedFloatingBar';
+    bar.style.position = 'fixed';
+    bar.style.bottom = '20px';
+    bar.style.left = '50%';
+    bar.style.transform = 'translateX(-50%)';
+    bar.style.background = 'linear-gradient(135deg, var(--gold) 0%, var(--gold-2) 100%)';
+    bar.style.color = '#0c1527';
+    bar.style.padding = '12px 24px';
+    bar.style.borderRadius = '30px';
+    bar.style.boxShadow = '0 10px 25px rgba(0,0,0,0.3)';
+    bar.style.display = 'flex';
+    bar.style.alignItems = 'center';
+    bar.style.gap = '16px';
+    bar.style.zIndex = '1000';
+    bar.style.transition = 'all 0.3s ease';
+    bar.style.fontWeight = 'bold';
+    bar.style.fontSize = '14px';
+    document.body.appendChild(bar);
+  }
+
+  if(unsyncedCount > 0){
+    bar.innerHTML = `
+      <span>⚠️ Você tem ${unsyncedCount} palpite${unsyncedCount > 1 ? 's pendentes' : ' pendente'} de envio</span>
+      <button id="floatingSaveBtn" class="btn" style="background:#0c1527;color:var(--gold-2);border:none;padding:6px 16px;border-radius:20px;font-size:12px;cursor:pointer;font-weight:bold;box-shadow:0 2px 6px rgba(0,0,0,0.2)" onclick="saveAllUnsavedPreds()">
+        Salvar todos na nuvem
+      </button>
+    `;
+    bar.style.display = 'flex';
+  } else {
+    bar.style.display = 'none';
+  }
+}
+
+async function saveAllUnsavedPreds(){
+  const unsynced = state.predictions.filter(p => p.participantId === currentUser.id && p.unsynced);
+  if(!unsynced.length){
+    toast('Nenhum palpite pendente','err');
+    return;
+  }
+
+  const btn = document.getElementById('floatingSaveBtn');
+  if(btn){
+    btn.disabled = true;
+    btn.innerHTML = '⏱ Enviando para o servidor...';
+  }
+
+  const now = nowReal().toISOString();
+  const isAdmin_ = isAdmin();
+
+  unsynced.forEach(p => {
+    const match = state.matches.find(m => m.id === p.matchId);
+    if(!match) return;
+
+    const prevH = p.originalHome !== undefined && p.originalHome !== null ? p.originalHome : null;
+    const prevA = p.originalAway !== undefined && p.originalAway !== null ? p.originalAway : null;
+
+    const actionType = (prevH !== null || prevA !== null)
+      ? (isAdmin_ ? 'Alteração pelo admin' : 'Alteração')
+      : (isAdmin_ ? 'Novo palpite pelo admin' : 'Novo palpite');
+
+    appendLog({
+      matchId: p.matchId,
+      matchLabel: `${teamName(match.home)} × ${teamName(match.away)}`,
+      participantId: currentUser.id,
+      participantName: currentUser.name,
+      home: p.home,
+      away: p.away,
+      action: actionType,
+      prevHome: prevH,
+      prevAway: prevA,
+      ts: now,
+      byAdmin: isAdmin_,
+      source: 'manual'
+    });
+
+    p.lastLogTs = now;
+    p.status = 'confirmed';
+    p.updatedAt = now;
+
+    delete p.unsynced;
+    delete p.originalHome;
+    delete p.originalAway;
+  });
+
+  try {
+    await saveState();
+    toast('Todos os palpites foram salvos com sucesso no servidor!', 'ok');
+  } catch(e) {
+    console.error(e);
+    toast('Erro ao salvar palpites no servidor', 'err');
+    unsynced.forEach(p => {
+      p.unsynced = true;
+    });
+    saveLocal();
+  }
+
+  afterPredSave();
+  updateUnsavedIndicator();
 }
 
 async function handleSavePred(matchId){
@@ -4311,7 +4545,7 @@ async function importPreds(file){
       skipped++; continue;
     }
 
-    await _doSavePred(matchId, h, a, 'import');
+    await _doSavePred(matchId, h, a, 'import', true);
     imported++;
   }
 

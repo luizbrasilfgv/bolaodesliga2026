@@ -2554,9 +2554,10 @@ const PHASE_SHORT = {
 // ═══════════════════════════════════════════
 
 // — config —
-const BIN_ID  = '6a16f5f18ef04f453821630b';
-const API_KEY = '$2a$10$40YJyDbx2qjgu7U8t69n9e5Hh981rItZ6FoKG76pr1UwYpUhQ/rzu';
-const URL_BIN = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
+// Banco: Firebase Realtime Database (migrado do JSONBin em 11/06/2026 — o bin
+// atingiu o limite de 100KB do plano free e passou a rejeitar gravações).
+// Legado (arquivo morto, somente leitura): JSONBin bin 6a16f5f18ef04f453821630b
+const DB_URL = 'https://bolao-desliga-2026-default-rtdb.firebaseio.com/state.json';
 const STORAGE = 'bolao_copa2026_v2';
 const THEME_KEY = 'bolao_theme';
 const BRACKET_STYLE_KEY = 'bolao_bracket_style';
@@ -2850,6 +2851,20 @@ function saveLocal(){
   try { localStorage.setItem(STORAGE, JSON.stringify(state)); } catch(e){}
 }
 
+// Firebase RTDB drops empty arrays/objects and null values — restore the expected shapes
+function normalizeState(s){
+  if(!s || typeof s !== 'object') return null;
+  s.participants       = s.participants       || [];
+  s.matches            = s.matches            || [];
+  s.predictions        = s.predictions        || [];
+  s.predictionHistory  = s.predictionHistory  || [];
+  s.specialPredictions = s.specialPredictions || [];
+  s.rules = s.rules || {};
+  s.pool  = s.pool  || {};
+  s.meta  = s.meta  || {};
+  return s;
+}
+
 async function loadState(){
   // local first
   let local = null;
@@ -2864,11 +2879,11 @@ async function loadState(){
   // remote
   let remote = null;
   try{
-    const res = await fetch(URL_BIN+'/latest', {headers:{'X-Access-Key':API_KEY}});
+    const res = await fetch(DB_URL);
     if(!res.ok) throw new Error('HTTP '+res.status);
-    const json = await res.json();
-    if(json.record && json.record.participants) remote = json.record;
-  }catch(e){ console.warn('JSONBin load:',e); }
+    const json = normalizeState(await res.json());
+    if(json && json.participants.length) remote = json;
+  }catch(e){ console.warn('DB load:',e); }
 
   // merge: remote is base for structural data, merge predictions from both
   if(remote && local){
@@ -3002,11 +3017,10 @@ async function saveState(){
   try{
     // Before writing, fetch latest remote and merge to avoid overwriting others' predictions
     try{
-      const getRes = await fetch(URL_BIN+'/latest', {headers:{'X-Access-Key':API_KEY}});
+      const getRes = await fetch(DB_URL);
       if(getRes.ok){
-        const json = await getRes.json();
-        const remote = json.record;
-        if(remote && remote.predictions){
+        const remote = normalizeState(await getRes.json());
+        if(remote && remote.participants.length){
           mergeUserData(remote);
           // Participants are always merged (timestamp-based) so two admins don't overwrite each other
           if(remote.participants) state.participants = mergeParticipants(state.participants, remote.participants);
@@ -3023,9 +3037,9 @@ async function saveState(){
       }
     }catch(e){ console.warn('Merge pre-save:',e); }
 
-    const res = await fetch(URL_BIN, {
+    const res = await fetch(DB_URL, {
       method:'PUT',
-      headers:{'Content-Type':'application/json','X-Access-Key':API_KEY},
+      headers:{'Content-Type':'application/json'},
       body: JSON.stringify(state)
     });
     if(!res.ok) throw new Error('HTTP '+res.status);
@@ -3164,7 +3178,7 @@ function showApp(){
   document.getElementById('mainApp').style.display='block';
   document.getElementById('hName').textContent = currentUser.name;
   document.getElementById('hAvatar').textContent = initials(currentUser.name);
-  document.getElementById('headerPoolName').innerHTML = esc(state.pool.name || 'Bolão Copa 2026') + ' <span style="font-size:10px;opacity:0.6;margin-left:6px;font-weight:normal;">v1.2.1</span>';
+  document.getElementById('headerPoolName').innerHTML = esc(state.pool.name || 'Bolão Copa 2026') + ' <span style="font-size:10px;opacity:0.6;margin-left:6px;font-weight:normal;">v1.3</span>';
   const badge = document.getElementById('hBadge');
   const roleLabel = {admin:'Admin', operator:'Operador', player:'Participante'};
   const roleClass = {admin:'admin', operator:'operator', player:'player'};
@@ -3644,11 +3658,10 @@ async function init(){
     if(Date.now() - _lastVisSync < 3*60*1000) return;
     _lastVisSync = Date.now();
     try{
-      const res = await fetch(URL_BIN+'/latest', {headers:{'X-Access-Key':API_KEY}});
+      const res = await fetch(DB_URL);
       if(!res.ok) return;
-      const json = await res.json();
-      const remote = json.record;
-      if(remote && remote.predictions){
+      const remote = normalizeState(await res.json());
+      if(remote && remote.participants.length){
         mergeUserData(remote);
         if(remote.participants) state.participants = mergeParticipants(state.participants, remote.participants);
         if(!isAdmin()){
@@ -6583,7 +6596,7 @@ async function saveSettings(){
   state.pool.name = document.getElementById('sName').value.trim() || state.pool.name;
   state.pool.competition = document.getElementById('sComp').value.trim() || state.pool.competition;
   await saveState();
-  document.getElementById('headerPoolName').innerHTML = esc(state.pool.name) + ' <span style="font-size:10px;opacity:0.6;margin-left:6px;font-weight:normal;">v1.2.1</span>';
+  document.getElementById('headerPoolName').innerHTML = esc(state.pool.name) + ' <span style="font-size:10px;opacity:0.6;margin-left:6px;font-weight:normal;">v1.3</span>';
   document.getElementById('loginPoolName').textContent  = state.pool.name;
   toast('Configurações salvas!','ok');
 }

@@ -2603,7 +2603,7 @@ const STORAGE = 'bolao_copa2026_v2';
 const SESSION_KEY = 'bolao_session_v1';
 const THEME_KEY = 'bolao_theme';
 const BRACKET_STYLE_KEY = 'bolao_bracket_style';
-const APP_VERSION = 'v1.5.16';
+const APP_VERSION = 'v1.5.17';
 let lastLoaded = null;
 let lastResultSaved = null;
 let lastRecalculated = null;
@@ -5205,6 +5205,7 @@ function renderRanking(){
         ${podium[1] ? `
           <div class="podium-medal">🥈</div>
           <div class="podium-name">${esc(podium[1].p.name)}</div>
+          ${podium[1].p.troll?.podiumLabel?.active && podium[1].p.troll.podiumLabel.text ? `<div style="font-size:11px;color:#ef4444;font-weight:700;margin:-2px 0 4px">${esc(podium[1].p.troll.podiumLabel.icon||'')} ${esc(podium[1].p.troll.podiumLabel.text)}</div>` : ''}
           <div class="podium-pts">${podium[1].stats.total}</div>
           <div class="podium-stats">${podium[1].stats.exact} exatos · ${podium[1].stats.accuracy}%</div>
         ` : `<div class="podium-medal" style="opacity:.3">🥈</div><div class="podium-name" style="opacity:.4">—</div>`}
@@ -5213,6 +5214,7 @@ function renderRanking(){
         ${podium[0] ? `
           <div class="podium-medal">🥇</div>
           <div class="podium-name">${esc(podium[0].p.name)}</div>
+          ${podium[0].p.troll?.podiumLabel?.active && podium[0].p.troll.podiumLabel.text ? `<div style="font-size:11px;color:#ef4444;font-weight:700;margin:-2px 0 4px">${esc(podium[0].p.troll.podiumLabel.icon||'')} ${esc(podium[0].p.troll.podiumLabel.text)}</div>` : ''}
           <div class="podium-pts">${podium[0].stats.total}</div>
           <div class="podium-stats">${podium[0].stats.exact} exatos · ${podium[0].stats.accuracy}%</div>
         ` : `<div class="podium-medal" style="opacity:.3">🥇</div><div class="podium-name" style="opacity:.4">—</div>`}
@@ -5221,6 +5223,7 @@ function renderRanking(){
         ${podium[2] ? `
           <div class="podium-medal">🥉</div>
           <div class="podium-name">${esc(podium[2].p.name)}</div>
+          ${podium[2].p.troll?.podiumLabel?.active && podium[2].p.troll.podiumLabel.text ? `<div style="font-size:11px;color:#ef4444;font-weight:700;margin:-2px 0 4px">${esc(podium[2].p.troll.podiumLabel.icon||'')} ${esc(podium[2].p.troll.podiumLabel.text)}</div>` : ''}
           <div class="podium-pts">${podium[2].stats.total}</div>
           <div class="podium-stats">${podium[2].stats.exact} exatos · ${podium[2].stats.accuracy}%</div>
         ` : `<div class="podium-medal" style="opacity:.3">🥉</div><div class="podium-name" style="opacity:.4">—</div>`}
@@ -7048,6 +7051,24 @@ function renderTrollControls(){
           </div>
         </div>
       </div>
+      <div class="panel">
+        <div class="panel-head"><div><h2>🏆 Legenda no pódio</h2><div class="section-sub">Aparece abaixo do nome no card ouro/prata/bronze</div></div>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+            <input type="checkbox" id="tPodiumActive" ${(t.podiumLabel||{}).active?'checked':''}>
+            <span style="font-size:12px;font-weight:700">Ativo</span>
+          </label>
+        </div>
+        <div style="padding:16px;display:flex;gap:10px;flex-wrap:wrap">
+          <div class="form-group" style="flex:0 0 80px">
+            <label class="label">Ícone</label>
+            <input class="input" type="text" id="tPodiumIcon" value="${esc((t.podiumLabel||{}).icon||'🕵️')}" style="text-align:center;font-size:18px" placeholder="🕵️">
+          </div>
+          <div class="form-group" style="flex:1;min-width:160px">
+            <label class="label">Texto</label>
+            <input class="input" type="text" id="tPodiumText" value="${esc((t.podiumLabel||{}).text||'')}" placeholder="ex: xeretando palpites alheios...">
+          </div>
+        </div>
+      </div>
       <button class="btn btn-primary" onclick="saveTroll('${id}')">💾 Salvar brincadeiras</button>
     </div>
   `;
@@ -7073,7 +7094,8 @@ async function saveTroll(participantId){
   p.troll = {
     badge:       { active: !!document.getElementById('tBadgeActive')?.checked,   icon:   document.getElementById('tBadgeIcon')?.value   || '🕵️', label:  document.getElementById('tBadgeLabel')?.value  || '' },
     welcomeMsg:  { active: !!document.getElementById('tWelcomeActive')?.checked, text:   document.getElementById('tWelcomeText')?.value  || '' },
-    rankingNote: { active: !!document.getElementById('tNoteActive')?.checked,    column: document.getElementById('tNoteColumn')?.value   || 'Fonte 👀', icon: document.getElementById('tNoteIcon')?.value || '', value: document.getElementById('tNoteValue')?.value || '' }
+    rankingNote: { active: !!document.getElementById('tNoteActive')?.checked,    column: document.getElementById('tNoteColumn')?.value   || 'Fonte 👀', icon: document.getElementById('tNoteIcon')?.value || '', value: document.getElementById('tNoteValue')?.value || '' },
+    podiumLabel: { active: !!document.getElementById('tPodiumActive')?.checked,  icon: document.getElementById('tPodiumIcon')?.value || '🕵️', text: document.getElementById('tPodiumText')?.value || '' }
   };
   p.updatedAt = new Date().toISOString();
   await saveState();

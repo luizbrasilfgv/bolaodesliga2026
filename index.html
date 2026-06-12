@@ -2566,7 +2566,7 @@ const STORAGE = 'bolao_copa2026_v2';
 const SESSION_KEY = 'bolao_session_v1';
 const THEME_KEY = 'bolao_theme';
 const BRACKET_STYLE_KEY = 'bolao_bracket_style';
-const APP_VERSION = 'v1.5.5';
+const APP_VERSION = 'v1.5.6';
 
 // — state —
 let state = {
@@ -4986,6 +4986,20 @@ async function importPreds(file){
 function specialPredsTableHTML(){
   const allPlayers = state.participants.filter(p => !p.inactive && (p.role!=='admin' || p.alsoPlayer));
   if(!allPlayers.length) return '';
+
+  const mySpecial = getMySpecialPred();
+  const isAdmin   = currentUser?.role === 'admin';
+
+  if(!mySpecial && !isAdmin){
+    return `
+      <div class="panel" style="margin-top:14px;border:1px solid rgba(255,182,39,.3)">
+        <div style="padding:28px 20px;text-align:center">
+          <div style="font-size:32px;margin-bottom:10px">🔒</div>
+          <div style="font-size:14px;font-weight:800;color:var(--gold-2);margin-bottom:6px">Palpites Especiais</div>
+          <div style="font-size:13px;color:var(--muted)">Envie seu palpite especial para ver as escolhas de todos os participantes.</div>
+        </div>
+      </div>`;
+  }
 
   const finalMatch = state.matches.find(m => m.phase === 'Final' && m.status === 'finished');
   const thirdMatch = state.matches.find(m => m.phase === 'Terceiro Lugar' && m.status === 'finished');

@@ -2603,7 +2603,7 @@ const STORAGE = 'bolao_copa2026_v2';
 const SESSION_KEY = 'bolao_session_v1';
 const THEME_KEY = 'bolao_theme';
 const BRACKET_STYLE_KEY = 'bolao_bracket_style';
-const APP_VERSION = 'v1.5.15';
+const APP_VERSION = 'v1.5.16';
 let lastLoaded = null;
 let lastResultSaved = null;
 let lastRecalculated = null;
@@ -5262,7 +5262,7 @@ function renderRanking(){
               ? ` <span style="font-size:11px;background:rgba(239,68,68,.15);color:#ef4444;padding:2px 8px;border-radius:999px;font-weight:700">${esc(troll.badge.icon||'')} ${esc(troll.badge.label)}</span>`
               : '';
             const noteCell = trollNoteP
-              ? `<td style="padding:10px;text-align:center;font-size:11px;color:#ef4444;font-weight:700">${troll.rankingNote?.active ? esc(troll.rankingNote.value||'') : ''}</td>`
+              ? `<td style="padding:10px;text-align:center;font-size:11px;color:#ef4444;font-weight:700">${troll.rankingNote?.active ? ((troll.rankingNote.icon ? esc(troll.rankingNote.icon)+' ' : '') + esc(troll.rankingNote.value||'')) : ''}</td>`
               : '';
             return `<tr style="border-bottom:1px solid var(--border);cursor:pointer;${isMe?'background:rgba(46,123,255,.05);':''}" onclick="renderHistorico('${row.p.id}')">
               <td style="padding:10px;font-weight:800;color:${i<3?'var(--gold-2)':'var(--muted)'}">${medals[i]||i+1}</td>
@@ -7038,6 +7038,10 @@ function renderTrollControls(){
             <label class="label">Nome da coluna</label>
             <input class="input" type="text" id="tNoteColumn" value="${esc(r.column||'Fonte 👀')}" placeholder="ex: Fonte 👀">
           </div>
+          <div class="form-group" style="flex:0 0 80px">
+            <label class="label">Ícone</label>
+            <input class="input" type="text" id="tNoteIcon" value="${esc(r.icon||'')}" style="text-align:center;font-size:18px" placeholder="🤖">
+          </div>
           <div class="form-group" style="flex:1;min-width:140px">
             <label class="label">Valor na linha dele</label>
             <input class="input" type="text" id="tNoteValue" value="${esc(r.value||'')}" placeholder="ex: ESPN.com.br">
@@ -7069,7 +7073,7 @@ async function saveTroll(participantId){
   p.troll = {
     badge:       { active: !!document.getElementById('tBadgeActive')?.checked,   icon:   document.getElementById('tBadgeIcon')?.value   || '🕵️', label:  document.getElementById('tBadgeLabel')?.value  || '' },
     welcomeMsg:  { active: !!document.getElementById('tWelcomeActive')?.checked, text:   document.getElementById('tWelcomeText')?.value  || '' },
-    rankingNote: { active: !!document.getElementById('tNoteActive')?.checked,    column: document.getElementById('tNoteColumn')?.value   || 'Fonte 👀', value: document.getElementById('tNoteValue')?.value || '' }
+    rankingNote: { active: !!document.getElementById('tNoteActive')?.checked,    column: document.getElementById('tNoteColumn')?.value   || 'Fonte 👀', icon: document.getElementById('tNoteIcon')?.value || '', value: document.getElementById('tNoteValue')?.value || '' }
   };
   p.updatedAt = new Date().toISOString();
   await saveState();

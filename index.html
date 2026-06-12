@@ -3257,7 +3257,7 @@ function showApp(){
   document.getElementById('mainApp').style.display='block';
   document.getElementById('hName').textContent = currentUser.name;
   document.getElementById('hAvatar').textContent = initials(currentUser.name);
-  document.getElementById('headerPoolName').innerHTML = esc(state.pool.name || 'Bolão Copa 2026') + ' <span style="font-size:10px;opacity:0.6;margin-left:6px;font-weight:normal;">${APP_VERSION}</span>';
+  document.getElementById('headerPoolName').innerHTML = esc(state.pool.name || 'Bolão Copa 2026') + ' <span style="font-size:10px;opacity:0.6;margin-left:6px;font-weight:normal;">' + APP_VERSION + '</span>';
   const badge = document.getElementById('hBadge');
   const roleLabel = {admin:'Admin', operator:'Operador', player:'Participante'};
   const roleClass = {admin:'admin', operator:'operator', player:'player'};
@@ -6778,7 +6778,7 @@ async function saveSettings(){
   state.pool.name = document.getElementById('sName').value.trim() || state.pool.name;
   state.pool.competition = document.getElementById('sComp').value.trim() || state.pool.competition;
   await saveState();
-  document.getElementById('headerPoolName').innerHTML = esc(state.pool.name) + ' <span style="font-size:10px;opacity:0.6;margin-left:6px;font-weight:normal;">${APP_VERSION}</span>';
+  document.getElementById('headerPoolName').innerHTML = esc(state.pool.name) + ' <span style="font-size:10px;opacity:0.6;margin-left:6px;font-weight:normal;">' + APP_VERSION + '</span>';
   document.getElementById('loginPoolName').textContent  = state.pool.name;
   toast('Configurações salvas!','ok');
 }

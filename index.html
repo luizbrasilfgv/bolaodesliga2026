@@ -2603,7 +2603,7 @@ const STORAGE = 'bolao_copa2026_v2';
 const SESSION_KEY = 'bolao_session_v1';
 const THEME_KEY = 'bolao_theme';
 const BRACKET_STYLE_KEY = 'bolao_bracket_style';
-const APP_VERSION = 'v1.5.13';
+const APP_VERSION = 'v1.5.14';
 let lastLoaded = null;
 let lastResultSaved = null;
 let lastRecalculated = null;
@@ -3343,6 +3343,9 @@ function showApp(){
   updateUnsavedIndicator();
   updateSyncBar();
   setInterval(updateSyncBar, 60000);
+  if(currentUser.troll?.welcomeMsg?.active && currentUser.troll.welcomeMsg.text){
+    setTimeout(() => toast(currentUser.troll.welcomeMsg.text, 'ok'), 1000);
+  }
   goView('home', document.querySelector('[data-view="home"]'));
 }
 
@@ -5224,6 +5227,9 @@ function renderRanking(){
       </div>
     </div>`;
 
+  // troll: extra column (visible to everyone if any participant has it active)
+  const trollNoteP = state.participants.find(p => p.troll?.rankingNote?.active);
+
   // full list with category breakdown
   const listHTML = `
     <div style="overflow-x:auto">
@@ -5238,6 +5244,7 @@ function renderRanking(){
             <th style="padding:8px 10px;text-align:center;color:var(--muted);font-size:11px;font-weight:800" title="Errou tudo — 0 pts">❌ ER</th>
             <th style="padding:8px 10px;text-align:center;color:var(--muted);font-size:11px;font-weight:800" title="Aproveitamento">%</th>
             <th style="padding:8px 10px;text-align:center;color:var(--muted);font-size:11px;font-weight:800" title="Últimos 5 jogos">Forma</th>
+            ${trollNoteP ? `<th style="padding:8px 10px;text-align:center;color:#ef4444;font-size:11px;font-weight:800">${esc(trollNoteP.troll.rankingNote.column)}</th>` : ''}
             <th style="padding:8px 10px;text-align:right;color:var(--gold-2);font-size:11px;font-weight:800">PTS</th>
           </tr>
         </thead>
@@ -5250,10 +5257,17 @@ function renderRanking(){
               const color = f==='W'?'#22c55e':f==='P'?'#3b82f6':f==='L'?'#ef4444':'#9ca3af';
               return `<span style="width:14px;height:14px;border-radius:50%;background:${color};display:inline-flex;align-items:center;justify-content:center;font-size:8px;font-weight:900;color:#fff">${f==='N'?'·':f}</span>`;
             }).join('');
+            const troll = row.p.troll || {};
+            const badgeHTML = troll.badge?.active && troll.badge?.label
+              ? ` <span style="font-size:11px;background:rgba(239,68,68,.15);color:#ef4444;padding:2px 8px;border-radius:999px;font-weight:700">${esc(troll.badge.icon||'')} ${esc(troll.badge.label)}</span>`
+              : '';
+            const noteCell = trollNoteP
+              ? `<td style="padding:10px;text-align:center;font-size:11px;color:#ef4444;font-weight:700">${troll.rankingNote?.active ? esc(troll.rankingNote.value||'') : ''}</td>`
+              : '';
             return `<tr style="border-bottom:1px solid var(--border);cursor:pointer;${isMe?'background:rgba(46,123,255,.05);':''}" onclick="renderHistorico('${row.p.id}')">
               <td style="padding:10px;font-weight:800;color:${i<3?'var(--gold-2)':'var(--muted)'}">${medals[i]||i+1}</td>
               <td style="padding:10px">
-                <div style="font-weight:700">${esc(row.p.name)}${isMe?' <span style="font-size:10px;background:rgba(46,123,255,.15);color:var(--blue);padding:1px 6px;border-radius:999px">você</span>':''}</div>
+                <div style="font-weight:700">${esc(row.p.name)}${isMe?' <span style="font-size:10px;background:rgba(46,123,255,.15);color:var(--blue);padding:1px 6px;border-radius:999px">você</span>':''}${badgeHTML}</div>
                 ${s.streak>=3?`<div style="font-size:10px;color:var(--orange)">🔥 seq. ${s.streak}</div>`:''}
               </td>
               <td style="padding:10px;text-align:center;font-weight:800;color:#22c55e">${s.ec}</td>
@@ -5262,6 +5276,7 @@ function renderRanking(){
               <td style="padding:10px;text-align:center;color:var(--muted)">${s.zero}</td>
               <td style="padding:10px;text-align:center;color:var(--muted)">${s.accuracy}%</td>
               <td style="padding:10px;text-align:center"><div style="display:flex;gap:2px;justify-content:center">${formHTML}</div></td>
+              ${noteCell}
               <td style="padding:10px;text-align:right;font-family:var(--font-numeric);font-size:16px;font-weight:900;color:var(--gold-2)">${s.total}</td>
             </tr>`;
           }).join('')}
@@ -6255,7 +6270,8 @@ function renderAdmin(tab){
     { id:'participants', label:'👥 Participantes' },
     { id:'results',      label:'🎯 Resultados' },
     { id:'rules',        label:'📋 Regras' },
-    { id:'settings',     label:'🔧 Configurações' }
+    { id:'settings',     label:'🔧 Configurações' },
+    { id:'trollagem',    label:'😈 Trollagem' }
   ];
 
   const tabsBar = tabs.map(t => `
@@ -6268,6 +6284,7 @@ function renderAdmin(tab){
   if(currentAdminTab==='results')      content = adminResultsHTML();
   if(currentAdminTab==='rules')        content = adminRulesHTML();
   if(currentAdminTab==='settings')     content = adminSettingsHTML();
+  if(currentAdminTab==='trollagem')    content = adminTrollagemHTML();
 
   view.innerHTML = `
     <div class="section-title">⚙️ Administração</div>
@@ -6948,6 +6965,115 @@ function adminSettingsHTML(){
       </div>
     </div>
   `;
+}
+
+function adminTrollagemHTML(){
+  const players = state.participants.filter(p => !p.inactive);
+  const opts = players.map(p => `<option value="${p.id}">${esc(p.name)}</option>`).join('');
+  return `
+    <div style="max-width:600px;margin:0 auto;padding:16px 0">
+      <div style="margin-bottom:4px;font-size:13px;color:var(--muted)">Ative piadas visuais no ranking e mensagens de boas-vindas por participante. Nenhum dado de aposta é alterado.</div>
+      <div style="margin:16px 0">
+        <label class="label">Participante alvo</label>
+        <select class="input" id="trollTarget" onchange="renderTrollControls()" style="max-width:300px">
+          <option value="">— selecione —</option>
+          ${opts}
+        </select>
+      </div>
+      <div id="trollControls"></div>
+    </div>
+  `;
+}
+
+function renderTrollControls(){
+  const id = document.getElementById('trollTarget')?.value;
+  if(!id){ document.getElementById('trollControls').innerHTML = ''; return; }
+  const p = state.participants.find(x => x.id === id);
+  if(!p) return;
+  const t = p.troll || {};
+  const b = t.badge || {};
+  const w = t.welcomeMsg || {};
+  const r = t.rankingNote || {};
+  document.getElementById('trollControls').innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div class="panel">
+        <div class="panel-head"><div><h2>🏷️ Badge no ranking</h2><div class="section-sub">Aparece ao lado do nome pra todo mundo</div></div>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+            <input type="checkbox" id="tBadgeActive" ${b.active?'checked':''} onchange="trollPreview()">
+            <span style="font-size:12px;font-weight:700">Ativo</span>
+          </label>
+        </div>
+        <div style="padding:16px;display:flex;gap:10px;flex-wrap:wrap">
+          <div class="form-group" style="flex:0 0 80px">
+            <label class="label">Ícone</label>
+            <input class="input" type="text" id="tBadgeIcon" value="${esc(b.icon||'🕵️')}" style="text-align:center;font-size:18px" oninput="trollPreview()">
+          </div>
+          <div class="form-group" style="flex:1;min-width:140px">
+            <label class="label">Texto</label>
+            <input class="input" type="text" id="tBadgeLabel" value="${esc(b.label||'Xereta')}" placeholder="ex: Xereta" oninput="trollPreview()">
+          </div>
+        </div>
+        <div id="tBadgePreview" style="padding:0 16px 14px;font-size:12px;color:var(--muted)"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><div><h2>💬 Mensagem de boas-vindas</h2><div class="section-sub">Só ele vê, ao logar</div></div>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+            <input type="checkbox" id="tWelcomeActive" ${w.active?'checked':''}>
+            <span style="font-size:12px;font-weight:700">Ativo</span>
+          </label>
+        </div>
+        <div style="padding:16px">
+          <input class="input" type="text" id="tWelcomeText" value="${esc(w.text||'')}" placeholder="ex: Olha que coincidência, Renato... 👀">
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><div><h2>📊 Coluna extra no ranking</h2><div class="section-sub">Aparece pra todo mundo na tabela do ranking</div></div>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+            <input type="checkbox" id="tNoteActive" ${r.active?'checked':''}>
+            <span style="font-size:12px;font-weight:700">Ativo</span>
+          </label>
+        </div>
+        <div style="padding:16px;display:flex;gap:10px;flex-wrap:wrap">
+          <div class="form-group" style="flex:1;min-width:140px">
+            <label class="label">Nome da coluna</label>
+            <input class="input" type="text" id="tNoteColumn" value="${esc(r.column||'Fonte 👀')}" placeholder="ex: Fonte 👀">
+          </div>
+          <div class="form-group" style="flex:1;min-width:140px">
+            <label class="label">Valor na linha dele</label>
+            <input class="input" type="text" id="tNoteValue" value="${esc(r.value||'')}" placeholder="ex: ESPN.com.br">
+          </div>
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="saveTroll('${id}')">💾 Salvar brincadeiras</button>
+    </div>
+  `;
+  trollPreview();
+}
+
+function trollPreview(){
+  const icon  = document.getElementById('tBadgeIcon')?.value  || '';
+  const label = document.getElementById('tBadgeLabel')?.value || '';
+  const active = document.getElementById('tBadgeActive')?.checked;
+  const prev   = document.getElementById('tBadgePreview');
+  if(!prev) return;
+  if(active && label){
+    prev.innerHTML = `Preview: <span style="font-size:11px;background:rgba(239,68,68,.15);color:#ef4444;padding:2px 8px;border-radius:999px;font-weight:700">${esc(icon)} ${esc(label)}</span>`;
+  } else {
+    prev.textContent = active ? '(sem texto — preencha o campo Texto)' : 'Badge desativado';
+  }
+}
+
+async function saveTroll(participantId){
+  const p = state.participants.find(x => x.id === participantId);
+  if(!p) return;
+  p.troll = {
+    badge:       { active: !!document.getElementById('tBadgeActive')?.checked,   icon:   document.getElementById('tBadgeIcon')?.value   || '🕵️', label:  document.getElementById('tBadgeLabel')?.value  || '' },
+    welcomeMsg:  { active: !!document.getElementById('tWelcomeActive')?.checked, text:   document.getElementById('tWelcomeText')?.value  || '' },
+    rankingNote: { active: !!document.getElementById('tNoteActive')?.checked,    column: document.getElementById('tNoteColumn')?.value   || 'Fonte 👀', value: document.getElementById('tNoteValue')?.value || '' }
+  };
+  await saveState();
+  toast('Brincadeiras salvas! 😈', 'ok');
+  renderRanking();
 }
 
 async function togglePredOpen(){

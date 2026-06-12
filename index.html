@@ -2579,7 +2579,7 @@ const STORAGE = 'bolao_copa2026_v2';
 const SESSION_KEY = 'bolao_session_v1';
 const THEME_KEY = 'bolao_theme';
 const BRACKET_STYLE_KEY = 'bolao_bracket_style';
-const APP_VERSION = 'v1.5.10';
+const APP_VERSION = 'v1.5.11';
 
 // — state —
 let state = {
@@ -3297,7 +3297,7 @@ function goView(name, btn){
     const navBtn = document.querySelector(`[data-view="${name}"]`);
     if(navBtn) navBtn.classList.add('active');
   }
-  if(name==='home'){ try{ renderHome(); }catch(e){ const v=document.getElementById('view-home'); if(v) v.innerHTML='<div style="padding:20px;color:red;background:#1a1a1a;font-size:12px;white-space:pre-wrap;border-radius:8px;margin:16px">ERRO renderHome:\n'+e.message+'\n\n'+e.stack+'</div>'; } }
+  if(name==='home')     renderHome();
   if(name==='matches')  renderMatches();
   if(name==='groups')   renderGroups();
   if(name==='ranking')  renderRanking();
@@ -3853,7 +3853,7 @@ function renderHome(){
 
   // recent results with my pred — filtered by global filter
   const recent = applyGlobalFilterToMatches(state.matches)
-    .filter(m => m.status==='finished' && m.result?.home !== null)
+    .filter(m => m.status==='finished' && m.result?.home != null)
     .sort((a,b) => (b.datetime||'').localeCompare(a.datetime||''))
     .slice(0, 4);
 

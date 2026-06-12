@@ -335,6 +335,24 @@ header {
   #syncBar { padding: 3px 8px; top: 92px; gap: 10px; }
 }
 
+/* ───────────── ZOEIRAS ───────────── */
+#zoeirasOverlay { display:none; position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,0.88); align-items:center; justify-content:center; flex-direction:column; cursor:pointer; user-select:none; }
+#zoeirasOverlay.active { display:flex; }
+#zoeirasChar { line-height:1; text-align:center; min-height:130px; display:flex; align-items:center; justify-content:center; }
+#zoeirasFrom { color:#fff; font-size:20px; font-weight:800; margin-top:20px; text-align:center; padding:0 24px; max-width:420px; }
+#zoeiraDismiss { color:rgba(255,255,255,0.3); font-size:11px; margin-top:32px; letter-spacing:1.5px; text-transform:uppercase; }
+@keyframes z-bounce  { 0%,100%{transform:translateY(0) scale(1)} 45%{transform:translateY(-45px) scale(1.1)} }
+@keyframes z-shake   { 0%,100%{transform:rotate(0) scale(1)} 20%{transform:rotate(-20deg) scale(1.1)} 40%{transform:rotate(20deg) scale(1.15)} 60%{transform:rotate(-15deg) scale(1.1)} 80%{transform:rotate(15deg) scale(1.05)} }
+@keyframes z-spin    { 0%{transform:rotate(0) scale(0.2);opacity:0} 35%{transform:rotate(540deg) scale(1.25);opacity:1} 65%{transform:rotate(680deg) scale(0.95)} 80%{transform:rotate(705deg) scale(1.05)} 100%{transform:rotate(720deg) scale(1)} }
+@keyframes z-sway    { 0%,100%{transform:rotate(-12deg) translateY(0)} 50%{transform:rotate(12deg) translateY(-12px)} }
+@keyframes z-wiggle  { 0%,100%{transform:translateX(0) rotate(0)} 20%{transform:translateX(-22px) rotate(-8deg)} 40%{transform:translateX(22px) rotate(8deg)} 60%{transform:translateX(-14px) rotate(-5deg)} 80%{transform:translateX(14px) rotate(5deg)} }
+@keyframes z-run     { 0%{transform:translateX(-160px) scaleX(-1)} 49%{transform:translateX(160px) scaleX(-1)} 50%{transform:translateX(160px) scaleX(1)} 100%{transform:translateX(-160px) scaleX(1)} }
+@keyframes z-flutter { 0%,100%{transform:translateY(0) rotate(-8deg)} 25%{transform:translateY(-28px) rotate(8deg)} 75%{transform:translateY(-14px) rotate(-4deg)} }
+@keyframes z-swoop   { 0%{transform:translateY(-320px) scale(0.3) rotate(-25deg);opacity:0} 50%{transform:translateY(12px) scale(1.2) rotate(4deg);opacity:1} 75%{transform:translateY(-6px) scale(0.97) rotate(-1deg)} 100%{transform:translateY(0) scale(1) rotate(0)} }
+@keyframes z-pop     { 0%{transform:scale(0) rotate(180deg);opacity:0} 60%{transform:scale(1.4) rotate(-8deg);opacity:1} 80%{transform:scale(0.92) rotate(3deg)} 100%{transform:scale(1) rotate(0)} }
+@keyframes z-peek    { 0%{transform:translateX(-260px) rotate(-30deg);opacity:0} 25%{transform:translateX(8px) rotate(3deg);opacity:1} 75%{transform:translateX(8px) rotate(3deg);opacity:1} 100%{transform:translateX(-260px) rotate(-30deg);opacity:0} }
+@keyframes z-slide   { 0%{transform:translateX(-400px) rotate(-15deg);opacity:0} 45%{transform:translateX(15px) rotate(3deg);opacity:1} 65%{transform:translateX(-5px) rotate(-1deg)} 100%{transform:translateX(0) rotate(0)} }
+
 /* ───────────── NAV ───────────── */
 nav {
   background: var(--surface);
@@ -2211,6 +2229,17 @@ select.input {
     <span id="syncRecalc"></span>
   </div>
 
+  <!-- ZOEIRAS OVERLAY -->
+  <div id="zoeirasOverlay" onclick="dismissZoeira()">
+    <div id="zoeirasChar"></div>
+    <div id="zoeirasFrom"></div>
+    <div id="zoeiraDismiss">toque para fechar</div>
+  </div>
+  <!-- ZOEIRA PICKER -->
+  <div id="zoeirasPickerModal" onclick="if(event.target===this)closeZoeiraPicker()" style="display:none;position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,0.75);align-items:center;justify-content:center">
+    <div id="zoeirasPickerContent" style="background:var(--surface);border-radius:16px;max-width:420px;width:92%;max-height:80vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.5)"></div>
+  </div>
+
   <!-- FILTRO GLOBAL — afeta Início e Jogos -->
   <div id="globalFilterBar" style="background:var(--surface);border-bottom:1px solid var(--border);padding:7px 20px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;position:sticky;top:58px;z-index:40;">
     <span style="font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);font-weight:800;flex-shrink:0">Filtrar:</span>
@@ -2603,10 +2632,28 @@ const STORAGE = 'bolao_copa2026_v2';
 const SESSION_KEY = 'bolao_session_v1';
 const THEME_KEY = 'bolao_theme';
 const BRACKET_STYLE_KEY = 'bolao_bracket_style';
-const APP_VERSION = 'v1.5.17';
+const APP_VERSION = 'v1.5.18';
 let lastLoaded = null;
 let lastResultSaved = null;
 let lastRecalculated = null;
+const ZOEIRAS_BASE_URL = 'https://bolao-desliga-2026-default-rtdb.firebaseio.com/zoeiras';
+const ZOEIRA_TYPES = [
+  { id:'desliga',    emoji:'⚖️',  label:'Desliga da Justiça', anim:'z-spin',    dur:1.2,  repeat:2           },
+  { id:'batuqueiro', emoji:'🥁',  label:'Batuqueiro',         anim:'z-bounce',  dur:0.5,  repeat:'infinite'  },
+  { id:'heroi',      emoji:'🦸',  label:'Super-Herói',        anim:'z-swoop',   dur:0.8,  repeat:1           },
+  { id:'vilao',      emoji:'🦹',  label:'Vilão',              anim:'z-shake',   dur:0.4,  repeat:'infinite'  },
+  { id:'xereta',     emoji:'🕵️', label:'Xereta',             anim:'z-peek',    dur:1.5,  repeat:2           },
+  { id:'papagaio',   emoji:'🦜',  label:'Papagaio',           anim:'z-flutter', dur:0.6,  repeat:'infinite'  },
+  { id:'frango',     emoji:'🐔',  label:'Frango',             anim:'z-run',     dur:1.2,  repeat:'infinite'  },
+  { id:'passista',   emoji:'💃',  label:'Passista',           anim:'z-sway',    dur:0.7,  repeat:'infinite'  },
+  { id:'confetti',   emoji:'🎉',  label:'Confeteira',         anim:'z-pop',     dur:0.6,  repeat:1           },
+  { id:'nudge',      emoji:'💥',  label:'Nudge!',             anim:'z-shake',   dur:0.15, repeat:'infinite'  },
+  { id:'porco',      emoji:'🐷',  label:'Porco Funkeiro',     anim:'z-wiggle',  dur:0.5,  repeat:'infinite'  },
+  { id:'corneta',    emoji:'📯',  label:'Corneta',            anim:'z-slide',   dur:0.7,  repeat:1           },
+];
+let zoeirasQueue   = [];
+let zoeirasPlaying = false;
+let zoeirasTimeout = null;
 
 // — state —
 let state = {
@@ -3343,6 +3390,8 @@ function showApp(){
   updateUnsavedIndicator();
   updateSyncBar();
   setInterval(updateSyncBar, 60000);
+  checkZoeiras();
+  setInterval(checkZoeiras, 15000);
   if(currentUser.troll?.welcomeMsg?.active && currentUser.troll.welcomeMsg.text){
     setTimeout(() => toast(currentUser.troll.welcomeMsg.text, 'ok'), 1000);
   }
@@ -5270,7 +5319,7 @@ function renderRanking(){
             return `<tr style="border-bottom:1px solid var(--border);cursor:pointer;${isMe?'background:rgba(46,123,255,.05);':''}" onclick="renderHistorico('${row.p.id}')">
               <td style="padding:10px;font-weight:800;color:${i<3?'var(--gold-2)':'var(--muted)'}">${medals[i]||i+1}</td>
               <td style="padding:10px">
-                <div style="font-weight:700">${esc(row.p.name)}${isMe?' <span style="font-size:10px;background:rgba(46,123,255,.15);color:var(--blue);padding:1px 6px;border-radius:999px">você</span>':''}${badgeHTML}</div>
+                <div style="font-weight:700">${esc(row.p.name)}${isMe?' <span style="font-size:10px;background:rgba(46,123,255,.15);color:var(--blue);padding:1px 6px;border-radius:999px">você</span>':''}${badgeHTML}${!isMe?`<button onclick="event.stopPropagation();openZoeiraPicker('${row.p.id}')" style="background:none;border:none;cursor:pointer;font-size:12px;padding:1px 3px;opacity:0.4;vertical-align:middle;line-height:1;margin-left:3px" title="Zoar! 😈">😈</button>`:''}</div>
                 ${s.streak>=3?`<div style="font-size:10px;color:var(--orange)">🔥 seq. ${s.streak}</div>`:''}
               </td>
               <td style="padding:10px;text-align:center;font-weight:800;color:#22c55e">${s.ec}</td>
@@ -7101,6 +7150,78 @@ async function saveTroll(participantId){
   await saveState();
   toast('Brincadeiras salvas! 😈', 'ok');
   renderRanking();
+}
+
+function openZoeiraPicker(participantId) {
+  const p = state.participants.find(x => x.id === participantId);
+  if (!p) return;
+  const grid = ZOEIRA_TYPES.map(t => `<button onclick="sendZoeira('${participantId}','${t.id}')" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 6px;border-radius:10px;border:1px solid var(--border);background:var(--surface-2);cursor:pointer;font-size:11px;color:var(--text)" onmouseover="this.style.background='rgba(46,123,255,.1)'" onmouseout="this.style.background='var(--surface-2)'"><span style="font-size:28px;line-height:1">${t.emoji}</span><span style="font-weight:600;text-align:center;line-height:1.3">${esc(t.label)}</span></button>`).join('');
+  document.getElementById('zoeirasPickerContent').innerHTML = `<div style="padding:18px 16px 12px;font-size:16px;font-weight:800;border-bottom:1px solid var(--border)">😈 Zoar ${esc(p.name)}</div><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:14px">${grid}</div><div style="padding:10px 14px 14px;text-align:center"><button onclick="closeZoeiraPicker()" style="padding:8px 24px;border-radius:8px;border:1px solid var(--border);background:var(--surface-2);color:var(--muted);cursor:pointer;font-size:12px">Cancelar</button></div>`;
+  document.getElementById('zoeirasPickerModal').style.display = 'flex';
+}
+
+function closeZoeiraPicker() {
+  document.getElementById('zoeirasPickerModal').style.display = 'none';
+}
+
+async function sendZoeira(recipientId, typeId) {
+  closeZoeiraPicker();
+  const type = ZOEIRA_TYPES.find(t => t.id === typeId);
+  if (!type) return;
+  try {
+    await fetch(`${ZOEIRAS_BASE_URL}/${recipientId}.json`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ from: currentUser.id, fromName: currentUser.name, type: typeId, ts: Date.now() })
+    });
+    toast(`${type.emoji} Zoeira enviada! 😈`, 'ok');
+  } catch(e) { toast('Erro ao enviar zoeira', 'error'); }
+}
+
+async function checkZoeiras() {
+  if (!currentUser) return;
+  try {
+    const r = await fetch(`${ZOEIRAS_BASE_URL}/${currentUser.id}.json`);
+    if (!r.ok) return;
+    const data = await r.json();
+    if (!data) return;
+    const slots = Math.max(0, 10 - zoeirasQueue.length);
+    Object.keys(data).slice(0, slots).forEach(key => {
+      zoeirasQueue.push({ key, ...data[key] });
+      fetch(`${ZOEIRAS_BASE_URL}/${currentUser.id}/${key}.json`, { method: 'DELETE' });
+    });
+    if (!zoeirasPlaying && zoeirasQueue.length > 0) playNextZoeira();
+  } catch(e) { /* silent */ }
+}
+
+function playNextZoeira() {
+  if (zoeirasQueue.length === 0) { zoeirasPlaying = false; return; }
+  showZoeiraAnimation(zoeirasQueue.shift());
+}
+
+function showZoeiraAnimation(z) {
+  zoeirasPlaying = true;
+  const type = ZOEIRA_TYPES.find(t => t.id === z.type) || ZOEIRA_TYPES[0];
+  const overlay = document.getElementById('zoeirasOverlay');
+  const charEl  = document.getElementById('zoeirasChar');
+  if (z.type === 'desliga') {
+    charEl.innerHTML = `<svg width="130" height="130" viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="#E31E24" stroke="#F5D400" stroke-width="7"/><text x="50" y="50" text-anchor="middle" dominant-baseline="central" font-size="58" font-weight="900" fill="#F5D400" font-family="Arial Black,Impact,sans-serif">D</text></svg>`;
+  } else {
+    charEl.innerHTML = `<span style="font-size:110px;line-height:1;display:block">${type.emoji}</span>`;
+  }
+  document.getElementById('zoeirasFrom').textContent = `${z.fromName} te mandou um ${type.label}! 😈`;
+  charEl.style.animation = 'none';
+  charEl.offsetHeight;
+  charEl.style.animation = `${type.anim} ${type.dur}s ease ${type.repeat}`;
+  overlay.classList.add('active');
+  clearTimeout(zoeirasTimeout);
+  zoeirasTimeout = setTimeout(dismissZoeira, 4500);
+}
+
+function dismissZoeira() {
+  clearTimeout(zoeirasTimeout);
+  document.getElementById('zoeirasOverlay').classList.remove('active');
+  setTimeout(playNextZoeira, 400);
 }
 
 async function togglePredOpen(){

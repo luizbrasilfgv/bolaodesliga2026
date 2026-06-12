@@ -335,6 +335,10 @@ header {
   #syncBar { padding: 3px 8px; top: 92px; gap: 10px; }
 }
 
+/* ───────────── WATCH LINKS ───────────── */
+.watch-links{display:flex;align-items:center;gap:6px;padding:6px 14px 10px;flex-wrap:wrap;border-top:1px solid var(--border)}
+.watch-chip{font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px;border:1px solid var(--border);background:var(--surface-2);color:var(--muted);text-decoration:none;transition:background .15s,color .15s,border-color .15s}
+.watch-chip:hover{background:rgba(46,123,255,.12);color:var(--blue);border-color:var(--blue)}
 /* ───────────── ZOEIRAS ───────────── */
 #zoeirasOverlay { display:none; position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,0.88); align-items:center; justify-content:center; flex-direction:column; cursor:pointer; user-select:none; }
 #zoeirasOverlay.active { display:flex; }
@@ -2632,7 +2636,7 @@ const STORAGE = 'bolao_copa2026_v2';
 const SESSION_KEY = 'bolao_session_v1';
 const THEME_KEY = 'bolao_theme';
 const BRACKET_STYLE_KEY = 'bolao_bracket_style';
-const APP_VERSION = 'v1.5.18';
+const APP_VERSION = 'v1.5.19';
 let lastLoaded = null;
 let lastResultSaved = null;
 let lastRecalculated = null;
@@ -4536,6 +4540,19 @@ function matchCardHTML(match, showPred){
     }
   }
 
+  // streaming links — only for today's non-finished matches
+  const _todayBRT = new Date(new Date().getTime() - 3*3600*1000).toISOString().slice(0,10);
+  const _matchDayBRT = match.datetime ? new Date(new Date(match.datetime).getTime() - 3*3600*1000).toISOString().slice(0,10) : null;
+  const watchLinksHTML = (_matchDayBRT === _todayBRT && match.status !== 'finished') ? `
+    <div class="watch-links">
+      <span style="font-size:11px;color:var(--muted);font-weight:700">📺</span>
+      <a href="https://www.youtube.com/@CazeOficial/live" target="_blank" rel="noopener" class="watch-chip">Cazé TV</a>
+      <a href="https://www.twitch.tv/casimito" target="_blank" rel="noopener" class="watch-chip">Twitch</a>
+      <a href="https://globoplay.globo.com/ao-vivo/tv-globo/" target="_blank" rel="noopener" class="watch-chip">Globo</a>
+      <a href="https://globoplay.globo.com/sportv/" target="_blank" rel="noopener" class="watch-chip">SporTV</a>
+      <a href="https://www.fifa.com/fifaplus" target="_blank" rel="noopener" class="watch-chip">FIFA+</a>
+    </div>` : '';
+
   // phase badge color
   const phaseClass =
     match.phase === 'Final' ? 'phase-badge final' :
@@ -4562,6 +4579,7 @@ function matchCardHTML(match, showPred){
     </div>
     ${match.venue ? `<div class="match-footer">📍 ${match.venue}${deadlineHTML}</div>` : (deadlineHTML?`<div class="match-footer">${deadlineHTML}</div>`:'')}
     ${predHTML}
+    ${watchLinksHTML}
   </div>`;
 }
 

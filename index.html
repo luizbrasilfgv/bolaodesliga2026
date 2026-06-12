@@ -2579,7 +2579,7 @@ const STORAGE = 'bolao_copa2026_v2';
 const SESSION_KEY = 'bolao_session_v1';
 const THEME_KEY = 'bolao_theme';
 const BRACKET_STYLE_KEY = 'bolao_bracket_style';
-const APP_VERSION = 'v1.5.8';
+const APP_VERSION = 'v1.5.9';
 
 // — state —
 let state = {
@@ -4245,10 +4245,12 @@ function renderMatches(){
   // sort by datetime
   filtered.sort((a,b) => (a.datetime||'').localeCompare(b.datetime||''));
 
-  // group by day
+  // group by day (BRT date = UTC - 3h)
   const byDay = {};
   filtered.forEach(m => {
-    const key = m.datetime ? m.datetime.slice(0,10) : 'sem-data';
+    const key = m.datetime
+      ? new Date(new Date(m.datetime).getTime() - 3*3600*1000).toISOString().slice(0,10)
+      : 'sem-data';
     (byDay[key] = byDay[key] || []).push(m);
   });
 
@@ -4316,7 +4318,9 @@ function renderMatchesList(){
 
   const byDay = {};
   filtered.forEach(m => {
-    const key = m.datetime ? m.datetime.slice(0,10) : 'sem-data';
+    const key = m.datetime
+      ? new Date(new Date(m.datetime).getTime() - 3*3600*1000).toISOString().slice(0,10)
+      : 'sem-data';
     (byDay[key] = byDay[key] || []).push(m);
   });
 

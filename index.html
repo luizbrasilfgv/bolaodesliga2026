@@ -316,6 +316,25 @@ header {
 }
 .btn-logout:hover { color: var(--red); border-color: var(--red); }
 
+/* ───────────── SYNC BAR ───────────── */
+#syncBar {
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  padding: 3px 24px;
+  font-size: 11px;
+  color: var(--muted);
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  position: sticky;
+  top: 102px;
+  z-index: 48;
+}
+#syncBar span:empty { display: none; }
+@media (max-width: 700px) {
+  #syncBar { padding: 3px 8px; top: 92px; gap: 10px; }
+}
+
 /* ───────────── NAV ───────────── */
 nav {
   background: var(--surface);
@@ -2186,6 +2205,11 @@ select.input {
     <button class="nav-btn admin-only" data-view="admin" onclick="goView('admin',this)" style="display:none"><span class="nav-ic">⚙️</span> Admin</button>
     <button class="nav-btn" onclick="toggleTweaks()" style="margin-left:auto"><span class="nav-ic">🎨</span> Personalizar</button>
   </nav>
+  <div id="syncBar">
+    <span id="syncLoaded"></span>
+    <span id="syncResult"></span>
+    <span id="syncRecalc"></span>
+  </div>
 
   <!-- FILTRO GLOBAL — afeta Início e Jogos -->
   <div id="globalFilterBar" style="background:var(--surface);border-bottom:1px solid var(--border);padding:7px 20px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;position:sticky;top:58px;z-index:40;">
@@ -2579,7 +2603,10 @@ const STORAGE = 'bolao_copa2026_v2';
 const SESSION_KEY = 'bolao_session_v1';
 const THEME_KEY = 'bolao_theme';
 const BRACKET_STYLE_KEY = 'bolao_bracket_style';
-const APP_VERSION = 'v1.5.12';
+const APP_VERSION = 'v1.5.13';
+let lastLoaded = null;
+let lastResultSaved = null;
+let lastRecalculated = null;
 
 // — state —
 let state = {
@@ -2930,7 +2957,7 @@ async function loadState(){
     const res = await fetch(DB_URL);
     if(!res.ok) throw new Error('HTTP '+res.status);
     const json = normalizeState(await res.json());
-    if(json && json.participants.length) remote = json;
+    if(json && json.participants.length){ remote = json; lastLoaded = Date.now(); }
   }catch(e){ console.warn('DB load:',e); }
 
   // merge: remote is base for structural data, merge predictions from both
@@ -3130,6 +3157,7 @@ async function syncFromServer(showFeedback){
       }
       if(!isOperator() && remote.matches) mergeMatchResults(remote.matches);
       saveLocal();
+      lastLoaded = Date.now(); updateSyncBar();
       const activeView = document.querySelector('.view.active')?.id?.replace('view-','');
       if(activeView) goView(activeView);
       updateUnsavedIndicator();
@@ -3275,6 +3303,28 @@ function doLogout(){
   updateUnsavedIndicator();
 }
 
+function fmtSyncTime(ts){
+  if(!ts) return '—';
+  const diff = Math.round((Date.now() - ts) / 1000);
+  if(diff < 60) return 'agora mesmo';
+  if(diff < 3600) return `há ${Math.round(diff/60)} min`;
+  const d = new Date(ts);
+  const hh = d.getHours().toString().padStart(2,'0');
+  const mm = d.getMinutes().toString().padStart(2,'0');
+  const today = new Date();
+  if(d.getDate()===today.getDate() && d.getMonth()===today.getMonth()) return `hoje às ${hh}:${mm}`;
+  return `ontem às ${hh}:${mm}`;
+}
+function updateSyncBar(){
+  const elL = document.getElementById('syncLoaded');
+  const elR = document.getElementById('syncResult');
+  const elC = document.getElementById('syncRecalc');
+  if(!elL) return;
+  elL.textContent = `📡 Dados: ${fmtSyncTime(lastLoaded)}`;
+  elR.textContent = lastResultSaved  ? `⚽ Resultado: ${fmtSyncTime(lastResultSaved)}`  : '';
+  elC.textContent = lastRecalculated ? `📊 Pontos: ${fmtSyncTime(lastRecalculated)}` : '';
+}
+
 function showApp(){
   document.getElementById('loginScreen').style.display='none';
   document.getElementById('mainApp').style.display='block';
@@ -3291,6 +3341,8 @@ function showApp(){
   buildGlobalTeamSelect(null);
   buildGlobalDaySelect('all');
   updateUnsavedIndicator();
+  updateSyncBar();
+  setInterval(updateSyncBar, 60000);
   goView('home', document.querySelector('[data-view="home"]'));
 }
 
@@ -5561,6 +5613,7 @@ async function opSaveResult(matchId){
   }
 
   await saveState();
+  lastResultSaved = Date.now(); updateSyncBar();
   toast(`${teamName(m.home)} ${m.result?.home??'?'}–${m.result?.away??'?'} ${teamName(m.away)} · salvo!`, 'ok');
   renderOperator();
 }
@@ -5575,6 +5628,7 @@ async function opRecalcAll(){
     if(pts !== null){ pred.points = pts; pred.status = 'pontuado'; changed++; }
   });
   await saveState();
+  lastRecalculated = Date.now(); updateSyncBar();
   toast(`${changed} palpite(s) recalculado(s)!`, 'ok');
   renderOperator();
 }

@@ -2566,7 +2566,7 @@ const STORAGE = 'bolao_copa2026_v2';
 const SESSION_KEY = 'bolao_session_v1';
 const THEME_KEY = 'bolao_theme';
 const BRACKET_STYLE_KEY = 'bolao_bracket_style';
-const APP_VERSION = 'v1.5.4';
+const APP_VERSION = 'v1.5.5';
 
 // — state —
 let state = {
@@ -4981,6 +4981,76 @@ async function importPreds(file){
 }
 
 // ───────────────────────────────────────────
+// SPECIAL PREDICTIONS TABLE (used in Ranking)
+// ───────────────────────────────────────────
+function specialPredsTableHTML(){
+  const allPlayers = state.participants.filter(p => !p.inactive && (p.role!=='admin' || p.alsoPlayer));
+  if(!allPlayers.length) return '';
+
+  const finalMatch = state.matches.find(m => m.phase === 'Final' && m.status === 'finished');
+  const thirdMatch = state.matches.find(m => m.phase === 'Terceiro Lugar' && m.status === 'finished');
+  const realChamp  = matchWinner(finalMatch);
+  const realVice   = matchLoser(finalMatch);
+  const realThird  = matchWinner(thirdMatch);
+  const hasResults = !!(realChamp || realVice || realThird);
+
+  const cell = (val, real) => {
+    const hit  = real && val === real;
+    const miss = real && val !== real;
+    return `<td style="padding:6px 8px;text-align:center">
+      <div style="display:inline-flex;flex-direction:column;align-items:center;gap:2px;background:var(--surface-2);border-radius:8px;padding:5px 8px;border:1px solid ${hit?'var(--green-2)':miss?'rgba(255,71,87,.3)':'var(--border)'}">
+        ${flag(val,'sm')}
+        <span style="font-size:10px;font-weight:700;white-space:nowrap">${teamName(val)}</span>
+        ${hit?'<span style="font-size:9px;color:var(--green-2)">✓</span>':miss?'<span style="font-size:9px;color:var(--red)">✕</span>':''}
+      </div>
+    </td>`;
+  };
+
+  const rows = allPlayers.map(p => {
+    const sp   = (state.specialPredictions||[]).find(s => s.participantId === p.id);
+    const pts  = calcSpecialPoints(p.id);
+    const isMe = p.id === currentUser.id;
+    const nameTD = `<td style="padding:10px;font-weight:700;white-space:nowrap">${esc(p.name)}${isMe?' <span style="font-size:10px;background:rgba(46,123,255,.15);color:var(--blue);padding:1px 6px;border-radius:999px">você</span>':''}</td>`;
+    if(!sp) return `
+      <tr style="border-bottom:1px solid var(--border);${isMe?'background:rgba(46,123,255,.05);':''}">
+        ${nameTD}
+        <td colspan="4" style="padding:10px;text-align:center;color:var(--muted);font-size:11px;font-style:italic">não enviou</td>
+      </tr>`;
+    return `<tr style="border-bottom:1px solid var(--border);${isMe?'background:rgba(46,123,255,.05);':''}">
+      ${nameTD}
+      ${cell(sp.champion, realChamp)}
+      ${cell(sp.runnerUp, realVice)}
+      ${cell(sp.thirdPlace, realThird)}
+      <td style="padding:10px;text-align:right;font-family:var(--font-numeric);font-weight:900;color:var(--gold-2)">${hasResults ? pts : '—'}</td>
+    </tr>`;
+  });
+
+  const submitted = allPlayers.filter(p => (state.specialPredictions||[]).some(s => s.participantId === p.id)).length;
+
+  return `
+    <div class="panel" style="margin-top:14px;border:1px solid rgba(255,182,39,.3)">
+      <div style="padding:14px 20px;border-bottom:1px solid var(--border)">
+        <div style="font-size:13px;font-weight:800;color:var(--gold-2)">🏆 Palpites Especiais</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">${submitted} de ${allPlayers.length} enviaram · quem vai ganhar a Copa?</div>
+      </div>
+      <div style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:12px">
+          <thead>
+            <tr style="border-bottom:2px solid var(--border)">
+              <th style="padding:8px 10px;text-align:left;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:1px">Participante</th>
+              <th style="padding:8px 10px;text-align:center;color:var(--gold-2);font-size:11px;font-weight:800">🥇 Campeão<br><span style="font-weight:400;color:var(--muted)">(+${state.rules.champion||15} pts)</span></th>
+              <th style="padding:8px 10px;text-align:center;color:#c0c0c0;font-size:11px;font-weight:800">🥈 Vice<br><span style="font-weight:400;color:var(--muted)">(+${state.rules.runnerUp||10} pts)</span></th>
+              <th style="padding:8px 10px;text-align:center;color:#cd7f32;font-size:11px;font-weight:800">🥉 Terceiro<br><span style="font-weight:400;color:var(--muted)">(+${state.rules.thirdPlace||5} pts)</span></th>
+              <th style="padding:8px 10px;text-align:right;color:var(--gold-2);font-size:11px;font-weight:800">PTS</th>
+            </tr>
+          </thead>
+          <tbody>${rows.join('')}</tbody>
+        </table>
+      </div>
+    </div>`;
+}
+
+// ───────────────────────────────────────────
 // RANKING
 // ───────────────────────────────────────────
 function renderRanking(){
@@ -5112,6 +5182,7 @@ function renderRanking(){
         })()}
       </div>
     </div>
+    ${specialPredsTableHTML()}
   `;
 }
 

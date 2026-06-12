@@ -2202,6 +2202,19 @@ select.input {
     <select id="gfTeamSel" onchange="applyGlobalFilter('team',this.value)" style="background:var(--surface-2);border:1px solid var(--border-2);border-radius:8px;padding:5px 24px 5px 10px;font-size:12px;font-weight:600;color:var(--text);cursor:pointer;appearance:none;background-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2210%22 height=%226%22%3E%3Cpath d=%22M1 1l4 4 4-4%22 stroke=%22%236b7a95%22 stroke-width=%221.5%22 fill=%22none%22 stroke-linecap=%22round%22/%3E%3C/svg%3E');background-repeat:no-repeat;background-position:right 8px center;outline:none;">
       <option value="all">Todos os times</option>
     </select>
+    <select id="gfPhaseSel" onchange="applyGlobalFilter('phase',this.value)" style="background:var(--surface-2);border:1px solid var(--border-2);border-radius:8px;padding:5px 24px 5px 10px;font-size:12px;font-weight:600;color:var(--text);cursor:pointer;appearance:none;background-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2210%22 height=%226%22%3E%3Cpath d=%22M1 1l4 4 4-4%22 stroke=%22%236b7a95%22 stroke-width=%221.5%22 fill=%22none%22 stroke-linecap=%22round%22/%3E%3C/svg%3E');background-repeat:no-repeat;background-position:right 8px center;outline:none;">
+      <option value="all">Todas as fases</option>
+      <option value="Fase de Grupos">Grupos</option>
+      <option value="Oitavas (R32)">R32</option>
+      <option value="Oitavas de Final">Oitavas</option>
+      <option value="Quartas de Final">Quartas</option>
+      <option value="Semifinal">Semi</option>
+      <option value="Terceiro Lugar">3º Lugar</option>
+      <option value="Final">Final</option>
+    </select>
+    <select id="gfDaySel" onchange="applyGlobalFilter('day',this.value)" style="background:var(--surface-2);border:1px solid var(--border-2);border-radius:8px;padding:5px 24px 5px 10px;font-size:12px;font-weight:600;color:var(--text);cursor:pointer;appearance:none;background-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2210%22 height=%226%22%3E%3Cpath d=%22M1 1l4 4 4-4%22 stroke=%22%236b7a95%22 stroke-width=%221.5%22 fill=%22none%22 stroke-linecap=%22round%22/%3E%3C/svg%3E');background-repeat:no-repeat;background-position:right 8px center;outline:none;">
+      <option value="all">Todos os dias</option>
+    </select>
     <button id="gfClear" onclick="clearGlobalFilter()" style="display:none;font-size:11px;color:var(--muted);padding:4px 9px;border:1px solid var(--border-2);border-radius:6px;background:none;cursor:pointer;font-weight:700">✕ Limpar</button>
     <span id="gfStatus" style="font-size:11px;color:var(--gold-2);font-weight:800"></span>
   </div>
@@ -2395,7 +2408,7 @@ const COPA2026_MATCHES = (function(){
     ['A','South Korea','Czech Republic','2026-06-11T23:00','Guadalajara'],
     ['B','Canada','Bosnia and Herzegovina','2026-06-12T16:00','Toronto'],
     ['D','USA','Paraguay','2026-06-12T22:00','Los Angeles'],
-    ['D','Australia','Turkey','2026-06-13T22:00','Vancouver'],
+    ['D','Australia','Turkey','2026-06-14T01:00','Vancouver'],
     ['B','Qatar','Switzerland','2026-06-13T16:00','San Francisco'],
     ['C','Brazil','Morocco','2026-06-13T19:00','Nova York/Nova Jersey'],
     ['C','Haiti','Scotland','2026-06-13T22:00','Boston'],
@@ -2566,7 +2579,7 @@ const STORAGE = 'bolao_copa2026_v2';
 const SESSION_KEY = 'bolao_session_v1';
 const THEME_KEY = 'bolao_theme';
 const BRACKET_STYLE_KEY = 'bolao_bracket_style';
-const APP_VERSION = 'v1.5.7';
+const APP_VERSION = 'v1.5.8';
 
 // — state —
 let state = {
@@ -2590,7 +2603,7 @@ let state = {
 };
 
 let currentUser   = null;
-let globalFilter = { type:'all', value:'all' };
+let globalFilter = { group:'all', team:'all', phase:'all', day:'all' };
 let confirmCb     = null;
 let currentMatchTab = 'upcoming';   // 'upcoming' | 'live' | 'finished' | 'all'
 let currentPhaseFilter = 'all';
@@ -3266,6 +3279,7 @@ function showApp(){
   document.querySelectorAll('.admin-only').forEach(el => el.style.display = isAdmin() ? '' : 'none');
   document.querySelectorAll('.operator-only').forEach(el => el.style.display = isOperator() ? '' : 'none');
   buildGlobalTeamSelect(null);
+  buildGlobalDaySelect('all');
   updateUnsavedIndicator();
   goView('home', document.querySelector('[data-view="home"]'));
 }
@@ -3387,11 +3401,8 @@ function renderHistorico(participantId){
     .map(p => ({ p, stats: getParticipantStats(p.id) }))
     .sort((a,b) => b.stats.total - a.stats.total);
 
-  const phases = ['all', ...new Set(state.matches.map(m=>m.phase).filter(Boolean))];
-  const filteredMatches = (historicoFilter.phase === 'all'
-    ? state.matches
-    : state.matches.filter(m => m.phase === historicoFilter.phase)
-  ).sort((a,b) => (a.datetime||'').localeCompare(b.datetime||''));
+  const filteredMatches = applyGlobalFilterToMatches(state.matches)
+    .sort((a,b) => (a.datetime||'').localeCompare(b.datetime||''));
 
   const matchesWithPreds = filteredMatches.filter(m =>
     state.predictions.some(p => p.matchId === m.id)
@@ -3406,18 +3417,11 @@ function renderHistorico(participantId){
     return 'var(--border)';
   }
 
-  const phaseChips = phases.map(p =>
-    `<button onclick="historicoFilter.phase='${p}';renderHistorico(null)"
-      style="padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;border:1px solid ${historicoFilter.phase===p?'var(--gold)':'var(--border-2)'};background:${historicoFilter.phase===p?'var(--gold)':'var(--surface-2)'};color:${historicoFilter.phase===p?'#000':'var(--muted)'}">
-      ${p==='all'?'Todos':(PHASE_SHORT[p]||p)}
-    </button>`
-  ).join('');
-
   if(!matchesWithPreds.length){
     view.innerHTML = `
       <div class="section-title">Historico de Palpites</div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px">${phaseChips}</div>
       <div class="panel"><div class="empty"><div class="icon">📊</div><div class="title">Nenhum palpite ainda</div><p>Os palpites aparecerão aqui após serem enviados.</p></div></div>`;
+    view.innerHTML += specialPredsTableHTML();
     return;
   }
 
@@ -3468,7 +3472,6 @@ function renderHistorico(participantId){
   view.innerHTML =
     '<div class="section-title">📊 Histórico de Palpites</div>'
     +'<div class="section-sub">Matriz completa · '+allPlayers.length+' apostador(es) · '+matchesWithPreds.length+' jogo(s) com palpites</div>'
-    +'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px">'+phaseChips+'</div>'
     +'<div style="background:var(--surface-2);border:1px solid var(--border);border-radius:9px;padding:8px 12px;margin-bottom:14px;font-size:11px;display:flex;gap:16px;flex-wrap:wrap">'
     +'<span>🟢 <strong style="color:#22c55e">Placar exato</strong></span>'
     +'<span>🔵 <strong style="color:#3b82f6">Resultado certo</strong></span>'
@@ -3488,6 +3491,7 @@ function renderHistorico(participantId){
     +'</tr></thead>'
     +'<tbody>'+matrixRows+'</tbody>'
     +'</table></div></div>';
+  view.innerHTML += specialPredsTableHTML();
 }
 
 // ═══════════════════════════════════════════
@@ -3618,58 +3622,95 @@ function buildGlobalTeamSelect(groupKey){
   const sorted = [...new Set(teams)].sort((a,b)=>teamName(a).localeCompare(teamName(b)));
   sel.innerHTML = `<option value="all">${groupKey&&groupKey!=='all'?'Todos do Gr.'+groupKey:'Todos os times'}</option>` +
     sorted.map(t=>`<option value="${t}">${teamName(t)}</option>`).join('');
-  if(globalFilter.type==='team') sel.value = globalFilter.value;
+  if(globalFilter.team !== 'all') sel.value = globalFilter.team;
+}
+
+function buildGlobalDaySelect(phaseKey){
+  const sel = document.getElementById('gfDaySel');
+  if(!sel) return;
+  const DAYS_PT = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+  let src = state.matches;
+  if(phaseKey && phaseKey !== 'all') src = src.filter(m => m.phase === phaseKey);
+  const datesSet = new Set();
+  src.forEach(m => {
+    if(!m.datetime) return;
+    const brtDate = new Date(new Date(m.datetime).getTime() - 3*3600*1000).toISOString().slice(0,10);
+    datesSet.add(brtDate);
+  });
+  const dates = [...datesSet].sort();
+  sel.innerHTML = `<option value="all">Todos os dias</option>` +
+    dates.map(d => {
+      const dt  = new Date(d + 'T12:00:00Z');
+      const dow = DAYS_PT[dt.getUTCDay()];
+      return `<option value="${d}">${d.slice(8)}/${d.slice(5,7)} ${dow}</option>`;
+    }).join('');
+  if(globalFilter.day !== 'all') sel.value = globalFilter.day;
+}
+
+function _gfUpdateUI(){
+  const DAYS_PT = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+  const ids = {group:'gfGroupSel', team:'gfTeamSel', phase:'gfPhaseSel', day:'gfDaySel'};
+  Object.entries(ids).forEach(([k,id]) => {
+    const el = document.getElementById(id);
+    if(el) el.style.borderColor = globalFilter[k] !== 'all' ? 'var(--gold)' : '';
+  });
+  const active = [];
+  if(globalFilter.group !== 'all') active.push('Grupo ' + globalFilter.group);
+  if(globalFilter.team  !== 'all') active.push(teamName(globalFilter.team));
+  if(globalFilter.phase !== 'all') active.push(PHASE_SHORT[globalFilter.phase] || globalFilter.phase);
+  if(globalFilter.day   !== 'all'){
+    const dt  = new Date(globalFilter.day + 'T12:00:00Z');
+    active.push(globalFilter.day.slice(8)+'/'+globalFilter.day.slice(5,7)+' '+DAYS_PT[dt.getUTCDay()]);
+  }
+  const status = document.getElementById('gfStatus');
+  if(status) status.textContent = active.length ? '— ' + active.join(' · ') : '';
+  const clear = document.getElementById('gfClear');
+  if(clear) clear.style.display = active.length ? '' : 'none';
 }
 
 function applyGlobalFilter(type, value){
-  if(value === 'all'){ clearGlobalFilter(); return; }
-  globalFilter = { type, value };
-  const gfGroup = document.getElementById('gfGroupSel');
-  const gfTeam  = document.getElementById('gfTeamSel');
-  if(type==='group'){
-    buildGlobalTeamSelect(value);
-    if(gfTeam) gfTeam.value = 'all';
-    if(gfGroup) gfGroup.style.borderColor = 'var(--gold)';
+  globalFilter[type] = value;
+  if(type === 'group'){
+    buildGlobalTeamSelect(value === 'all' ? null : value);
+    if(globalFilter.team !== 'all'){ globalFilter.team = 'all'; const s=document.getElementById('gfTeamSel'); if(s) s.value='all'; }
   }
-  if(type==='team'){
-    if(gfGroup) gfGroup.style.borderColor = '';
-    if(gfTeam)  gfTeam.style.borderColor  = 'var(--gold)';
+  if(type === 'phase'){
+    buildGlobalDaySelect(value);
+    if(globalFilter.day !== 'all'){ globalFilter.day = 'all'; const s=document.getElementById('gfDaySel'); if(s) s.value='all'; }
   }
-  const label = type==='group' ? `Grupo ${value}` : teamName(value);
-  const status = document.getElementById('gfStatus');
-  if(status) status.textContent = '— ' + label;
-  const clear = document.getElementById('gfClear');
-  if(clear) clear.style.display = '';
+  _gfUpdateUI();
   refreshGlobalFilterViews();
 }
 
 function clearGlobalFilter(){
-  globalFilter = { type:'all', value:'all' };
-  const gfGroup = document.getElementById('gfGroupSel');
-  const gfTeam  = document.getElementById('gfTeamSel');
-  if(gfGroup){ gfGroup.value='all'; gfGroup.style.borderColor=''; }
-  if(gfTeam) { buildGlobalTeamSelect(null); gfTeam.value='all'; gfTeam.style.borderColor=''; }
-  const status = document.getElementById('gfStatus');
-  if(status) status.textContent = '';
-  const clear = document.getElementById('gfClear');
-  if(clear) clear.style.display = 'none';
+  globalFilter = { group:'all', team:'all', phase:'all', day:'all' };
+  ['gfGroupSel','gfTeamSel','gfPhaseSel','gfDaySel'].forEach(id => {
+    const el = document.getElementById(id); if(el){ el.value='all'; el.style.borderColor=''; }
+  });
+  buildGlobalTeamSelect(null);
+  buildGlobalDaySelect('all');
+  const status = document.getElementById('gfStatus'); if(status) status.textContent='';
+  const clear  = document.getElementById('gfClear');  if(clear)  clear.style.display='none';
   refreshGlobalFilterViews();
 }
 
 function refreshGlobalFilterViews(){
   const activeView = document.querySelector('.view.active')?.id;
-  if(activeView === 'view-home')    renderHome();
-  if(activeView === 'view-matches') renderMatches();
+  if(activeView === 'view-home')      renderHome();
+  if(activeView === 'view-matches')   renderMatches();
+  if(activeView === 'view-historico') renderHistorico(historicoFilter.participantId);
 }
 
 function applyGlobalFilterToMatches(matches){
-  if(globalFilter.type === 'all') return matches;
-  if(globalFilter.type === 'group') return matches.filter(m => m.group === globalFilter.value);
-  if(globalFilter.type === 'team'){
-    const t = globalFilter.value;
-    return matches.filter(m => m.home === t || m.away === t);
-  }
-  return matches;
+  let out = matches;
+  if(globalFilter.group !== 'all') out = out.filter(m => m.group === globalFilter.group);
+  if(globalFilter.team  !== 'all'){ const t=globalFilter.team; out = out.filter(m => m.home===t || m.away===t); }
+  if(globalFilter.phase !== 'all') out = out.filter(m => m.phase === globalFilter.phase);
+  if(globalFilter.day   !== 'all') out = out.filter(m => {
+    if(!m.datetime) return false;
+    return new Date(new Date(m.datetime).getTime()-3*3600*1000).toISOString().slice(0,10) === globalFilter.day;
+  });
+  return out;
 }
 
 // ═══════════════════════════════════════════
@@ -5196,7 +5237,6 @@ function renderRanking(){
         })()}
       </div>
     </div>
-    ${specialPredsTableHTML()}
   `;
 }
 

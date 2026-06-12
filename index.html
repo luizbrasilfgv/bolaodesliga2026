@@ -2579,7 +2579,7 @@ const STORAGE = 'bolao_copa2026_v2';
 const SESSION_KEY = 'bolao_session_v1';
 const THEME_KEY = 'bolao_theme';
 const BRACKET_STYLE_KEY = 'bolao_bracket_style';
-const APP_VERSION = 'v1.5.11';
+const APP_VERSION = 'v1.5.12';
 
 // — state —
 let state = {
@@ -2897,6 +2897,16 @@ function normalizeState(s){
   s.rules = s.rules || {};
   s.pool  = s.pool  || {};
   s.meta  = s.meta  || {};
+  // Regenerate match datetimes from authoritative HTML schedule (source of truth)
+  // This self-heals any wrong datetime stored in Firebase whenever state loads.
+  if(s.matches.length && typeof COPA2026_MATCHES !== 'undefined'){
+    const schedMap = {};
+    COPA2026_MATCHES.forEach(m => { schedMap[m.id] = { datetime: m.datetime, deadline: m.deadline }; });
+    s.matches.forEach(m => {
+      const sched = schedMap[m.id];
+      if(sched){ m.datetime = sched.datetime; m.deadline = sched.deadline; }
+    });
+  }
   // anything coming from the server is, by definition, synced — strip volatile
   // local-only flags so a leaked "unsynced" never resurrects a fake pending bar
   s.predictions.forEach(p => { delete p.unsynced; delete p.originalHome; delete p.originalAway; });
@@ -5657,7 +5667,7 @@ async function opSyncTSDB(){
       });
 
       if(!match) return;
-      if(match.status === 'finished' && match.result?.home !== null) return; // já tem resultado
+      if(match.status === 'finished' && match.result?.home != null) return; // já tem resultado
 
       const swapped = norm(match.home) !== norm(apiHome);
       match.result  = { home: swapped ? a : h, away: swapped ? h : a };

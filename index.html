@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Bolão Copa 2026</title>
 <meta name="description" content="Bolão da Copa do Mundo FIFA 2026">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <style>
 /* ═══════════════════════════════════════════
    BOLÃO COPA 2026 — STYLES
@@ -2563,6 +2566,7 @@ const STORAGE = 'bolao_copa2026_v2';
 const SESSION_KEY = 'bolao_session_v1';
 const THEME_KEY = 'bolao_theme';
 const BRACKET_STYLE_KEY = 'bolao_bracket_style';
+const APP_VERSION = 'v1.5.2';
 
 // — state —
 let state = {
@@ -2910,6 +2914,7 @@ async function loadState(){
   }
 
   saveLocal();
+  if(remote?.meta?.appVersion && remote.meta.appVersion !== APP_VERSION) showVersionBanner();
 
   // fallback: seed admin if no participants
   if(!state.participants.length){
@@ -3026,6 +3031,7 @@ async function saveState(){
   state.meta = state.meta || {};
   state.meta.updatedAt = new Date().toISOString();
   state.meta.updatedBy = currentUser?.name || 'Sistema';
+  state.meta.appVersion = APP_VERSION;
   saveLocal();
 
   try{
@@ -3097,6 +3103,7 @@ async function syncFromServer(showFeedback){
       const activeView = document.querySelector('.view.active')?.id?.replace('view-','');
       if(activeView) goView(activeView);
       updateUnsavedIndicator();
+      if(remote?.meta?.appVersion && remote.meta.appVersion !== APP_VERSION) showVersionBanner();
     }
     if(showFeedback) toast('Dados atualizados ✓','ok');
     return true;
@@ -3105,6 +3112,16 @@ async function syncFromServer(showFeedback){
     if(showFeedback) toast('Não foi possível atualizar agora — tente em instantes','err');
     return false;
   }
+}
+
+function showVersionBanner(){
+  if(document.getElementById('version-banner')) return;
+  const bar = document.createElement('div');
+  bar.id = 'version-banner';
+  bar.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:#f59e0b;color:#1a1a1a;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;font-weight:600;font-size:14px;box-shadow:0 2px 8px rgba(0,0,0,.4);gap:12px';
+  bar.innerHTML = '<span>⚠️ Versão desatualizada — atualize para não perder palpites nem ver dados incorretos.</span>'
+    + '<button onclick="window.location.replace(window.location.pathname+\'?v=\'+Date.now())" style="background:#1a1a1a;color:#fff;border:none;padding:7px 16px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:700;white-space:nowrap;flex-shrink:0">Atualizar agora</button>';
+  document.body.prepend(bar);
 }
 
 async function manualSync(btn){

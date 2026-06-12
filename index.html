@@ -2566,7 +2566,7 @@ const STORAGE = 'bolao_copa2026_v2';
 const SESSION_KEY = 'bolao_session_v1';
 const THEME_KEY = 'bolao_theme';
 const BRACKET_STYLE_KEY = 'bolao_bracket_style';
-const APP_VERSION = 'v1.5.2';
+const APP_VERSION = 'v1.5.4';
 
 // — state —
 let state = {
@@ -2791,6 +2791,13 @@ function calcSpecialPoints(participantId){
 const SPECIAL_PRED_DEADLINE = new Date('2026-06-11T16:00:00-03:00');
 function isSpecialPredOpen(){
   return new Date() < SPECIAL_PRED_DEADLINE && state.pool.predictionsOpen;
+}
+// Retorna true se o usuário atual PODE enviar palpite especial agora:
+// — dentro do prazo normal, OU
+// — janela de override ativa pelo admin E usuário ainda não apostou (1 chance)
+function canSubmitSpecialPred(){
+  if(isSpecialPredOpen()) return true;
+  return state.pool.specialPredOpen === true && !getMySpecialPred();
 }
 
 function getParticipantStats(participantId){
@@ -3250,7 +3257,7 @@ function showApp(){
   document.getElementById('mainApp').style.display='block';
   document.getElementById('hName').textContent = currentUser.name;
   document.getElementById('hAvatar').textContent = initials(currentUser.name);
-  document.getElementById('headerPoolName').innerHTML = esc(state.pool.name || 'Bolão Copa 2026') + ' <span style="font-size:10px;opacity:0.6;margin-left:6px;font-weight:normal;">v1.5.2</span>';
+  document.getElementById('headerPoolName').innerHTML = esc(state.pool.name || 'Bolão Copa 2026') + ' <span style="font-size:10px;opacity:0.6;margin-left:6px;font-weight:normal;">${APP_VERSION}</span>';
   const badge = document.getElementById('hBadge');
   const roleLabel = {admin:'Admin', operator:'Operador', player:'Participante'};
   const roleClass = {admin:'admin', operator:'operator', player:'player'};
@@ -3496,9 +3503,15 @@ function openSpecialPredModal(){
     `<option value="${t}">${teamName(t)}</option>`
   ).join('');
 
+  const overrideMode = !isSpecialPredOpen() && state.pool.specialPredOpen;
   const disclaimer = isEdit
     ? `<div style="background:rgba(255,182,39,.08);border:1px solid rgba(255,182,39,.3);border-radius:10px;padding:12px 14px;margin-bottom:18px;font-size:12px;color:var(--muted);line-height:1.6">
         ⚠️ <strong>Atenção:</strong> você já fez este palpite. Ao salvar novamente ele será substituído — mas somente enquanto o prazo estiver aberto (antes de 11/06 às 16h). Após o início do torneio, este palpite fica bloqueado permanentemente.
+      </div>`
+    : overrideMode
+    ? `<div style="background:rgba(255,71,87,.08);border:1px solid rgba(255,71,87,.3);border-radius:10px;padding:12px 14px;margin-bottom:18px;font-size:12px;line-height:1.6">
+        ⚠️ <strong style="color:var(--red)">ATENÇÃO — JANELA ESPECIAL REABERTA PELO ADMIN:</strong><br>
+        Você tem <strong>apenas esta oportunidade</strong>. Este palpite <strong>não poderá ser alterado após salvar</strong>. Certifique-se das suas escolhas antes de confirmar.
       </div>`
     : `<div style="background:rgba(255,71,87,.08);border:1px solid rgba(255,71,87,.3);border-radius:10px;padding:12px 14px;margin-bottom:18px;font-size:12px;line-height:1.6">
         🔒 <strong style="color:var(--red)">ATENÇÃO — LEIA ANTES DE SALVAR:</strong><br>
@@ -3559,8 +3572,13 @@ async function saveSpecialPred(){
     toast('Os três times precisam ser diferentes', 'err'); return;
   }
 
-  if(!isSpecialPredOpen()){
+  if(!canSubmitSpecialPred()){
     toast('Prazo encerrado — palpite especial bloqueado', 'err');
+    closeModal(); return;
+  }
+  // Override ativo mas usuário já apostou: bloqueia alteração (1 chance apenas)
+  if(!isSpecialPredOpen() && state.pool.specialPredOpen && getMySpecialPred()){
+    toast('Você já enviou seu palpite especial — não é possível alterar.', 'err');
     closeModal(); return;
   }
 
@@ -3921,18 +3939,23 @@ function renderHome(){
   }
 
   // — SPECIAL PREDICTION CARD —
-  const mySpecial = getMySpecialPred();
-  const specOpen  = isSpecialPredOpen();
-  let specialHTML = '';
+  const mySpecial  = getMySpecialPred();
+  const specOpen   = isSpecialPredOpen();
+  const canSpecial = canSubmitSpecialPred();
+  let specialHTML  = '';
 
-  if(specOpen && !mySpecial){
+  if(canSpecial && !mySpecial){
+    const overrideMode = !specOpen && state.pool.specialPredOpen;
+    const subline = overrideMode
+      ? '⚠️ Janela reaberta pelo admin · <strong style="color:var(--red)">Única chance — não pode ser alterado após salvar!</strong>'
+      : 'Prazo: antes do 1º jogo · 11/06 às 16:00 · <strong style="color:var(--red)">Não pode ser alterado após salvar!</strong>';
     specialHTML = `
       <div class="panel special-pred-panel" style="margin-bottom:20px;border:2px solid var(--gold);background:linear-gradient(135deg,rgba(255,182,39,.06),var(--surface))">
         <div style="padding:16px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
           <div>
             <div style="font-size:12px;text-transform:uppercase;letter-spacing:1.5px;color:var(--gold-2);font-weight:800;margin-bottom:4px">🏆 Palpite especial</div>
             <div style="font-size:16px;font-weight:800">Quem vai ganhar a Copa?</div>
-            <div style="font-size:12px;color:var(--muted);margin-top:3px">Prazo: antes do 1º jogo · 11/06 às 16:00 · <strong style="color:var(--red)">Não pode ser alterado após salvar!</strong></div>
+            <div style="font-size:12px;color:var(--muted);margin-top:3px">${subline}</div>
           </div>
           <button class="btn btn-primary" onclick="openSpecialPredModal()">Fazer palpite especial →</button>
         </div>
@@ -6700,6 +6723,25 @@ function adminSettingsHTML(){
               ${state.pool.predictionsOpen?'Fechar palpites':'Abrir palpites'}
             </button>
           </div>
+          ${(()=>{
+            const semEspecial = (state.participants||[]).filter(p =>
+              !p.inactive && !(state.specialPredictions||[]).find(s => s.participantId === p.id)
+            );
+            return `<div style="display:flex;align-items:center;gap:14px;padding:14px;background:var(--surface-2);border:1px solid var(--border);border-radius:10px">
+              <div style="flex:1">
+                <div style="font-size:14px;font-weight:800">🏆 Janela de palpite especial</div>
+                <div style="font-size:12px;color:var(--muted);margin-top:3px">
+                  Sem palpite especial: <strong>${semEspecial.length}</strong> participante(s)
+                  ${semEspecial.length ? '('+semEspecial.map(p=>esc(p.name)).join(', ')+')' : '— todos já apostaram'}
+                </div>
+                <div style="font-size:11px;color:var(--muted);margin-top:2px">Quando aberta: 1 envio para quem ainda não apostou · quem já apostou permanece bloqueado</div>
+                <div style="font-size:12px;margin-top:4px">Janela: <strong style="color:${state.pool.specialPredOpen?'var(--green-2)':'var(--muted)'}">${state.pool.specialPredOpen?'ABERTA':'FECHADA'}</strong></div>
+              </div>
+              <button class="btn ${state.pool.specialPredOpen?'btn-danger':'btn-primary'} btn-sm" onclick="toggleSpecialPredOverride()" ${!semEspecial.length && !state.pool.specialPredOpen ? 'disabled title="Todos já apostaram"' : ''}>
+                ${state.pool.specialPredOpen?'🔒 Fechar janela':'🔓 Abrir janela'}
+              </button>
+            </div>`;
+          })()}
           <button class="btn btn-primary" onclick="saveSettings()">Salvar configurações</button>
         </div>
       </div>
@@ -6722,11 +6764,21 @@ async function togglePredOpen(){
   toast(`Palpites ${state.pool.predictionsOpen?'ABERTOS':'FECHADOS'}`,'ok');
 }
 
+async function toggleSpecialPredOverride(){
+  state.pool.specialPredOpen = !state.pool.specialPredOpen;
+  await saveState();
+  renderAdmin('settings');
+  toast(state.pool.specialPredOpen
+    ? '🔓 Janela aberta — quem ainda não apostou já pode enviar o palpite especial'
+    : '🔒 Janela fechada — palpites especiais bloqueados',
+    'ok');
+}
+
 async function saveSettings(){
   state.pool.name = document.getElementById('sName').value.trim() || state.pool.name;
   state.pool.competition = document.getElementById('sComp').value.trim() || state.pool.competition;
   await saveState();
-  document.getElementById('headerPoolName').innerHTML = esc(state.pool.name) + ' <span style="font-size:10px;opacity:0.6;margin-left:6px;font-weight:normal;">v1.5.2</span>';
+  document.getElementById('headerPoolName').innerHTML = esc(state.pool.name) + ' <span style="font-size:10px;opacity:0.6;margin-left:6px;font-weight:normal;">${APP_VERSION}</span>';
   document.getElementById('loginPoolName').textContent  = state.pool.name;
   toast('Configurações salvas!','ok');
 }

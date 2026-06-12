@@ -2603,7 +2603,7 @@ const STORAGE = 'bolao_copa2026_v2';
 const SESSION_KEY = 'bolao_session_v1';
 const THEME_KEY = 'bolao_theme';
 const BRACKET_STYLE_KEY = 'bolao_bracket_style';
-const APP_VERSION = 'v1.5.14';
+const APP_VERSION = 'v1.5.15';
 let lastLoaded = null;
 let lastResultSaved = null;
 let lastRecalculated = null;
@@ -7071,6 +7071,7 @@ async function saveTroll(participantId){
     welcomeMsg:  { active: !!document.getElementById('tWelcomeActive')?.checked, text:   document.getElementById('tWelcomeText')?.value  || '' },
     rankingNote: { active: !!document.getElementById('tNoteActive')?.checked,    column: document.getElementById('tNoteColumn')?.value   || 'Fonte 👀', value: document.getElementById('tNoteValue')?.value || '' }
   };
+  p.updatedAt = new Date().toISOString();
   await saveState();
   toast('Brincadeiras salvas! 😈', 'ok');
   renderRanking();

@@ -5439,8 +5439,8 @@ function renderRules(){
           <div class="rule-card">
             <div class="r-emoji">🎯</div>
             <div class="r-text">
-              <div class="r-title">Placar exato</div>
-              <div class="r-desc">Acertou o placar perfeito dos dois times</div>
+              <div class="r-title">Placar Exato</div>
+              <div class="r-desc">Cravou o placar perfeitamente</div>
             </div>
             <div class="r-points">${r.exactScore||10}</div>
           </div>
@@ -5448,25 +5448,33 @@ function renderRules(){
             <div class="r-emoji">⚖️</div>
             <div class="r-text">
               <div class="r-title">Vencedor + Saldo Exato</div>
-              <div class="r-desc">Acertou quem venceu e a diferença de gols (inclui acertar um Empate, mas errando o placar exato do empate)</div>
+              <div class="r-desc">Acertou quem venceu e a diferença exata de gols (ou empate não exato). Ex: Apostou 2x0 e deu 3x1. Você ganha 7 pontos pela leitura técnica perfeita do saldo!</div>
             </div>
             <div class="r-points">${r.exactGoalDiff||7}</div>
           </div>
           <div class="rule-card">
             <div class="r-emoji">✅</div>
             <div class="r-text">
-              <div class="r-title">Resultado certo</div>
-              <div class="r-desc">Acertou o vencedor, mas errou o placar e o saldo de gols</div>
+              <div class="r-title">Resultado Certo</div>
+              <div class="r-desc">Acertou o vencedor ou empate, mas errou o saldo. O prêmio aumentou para colar mais nos líderes!</div>
             </div>
             <div class="r-points">${r.correctResult||5}</div>
           </div>
           <div class="rule-card">
             <div class="r-emoji">⚡</div>
             <div class="r-text">
-              <div class="r-title">Gols de um time</div>
-              <div class="r-desc">Errou o resultado, mas acertou os gols de um dos times</div>
+              <div class="r-title">Gols de 1 Time</div>
+              <div class="r-desc">Errou quem ganhou, mas acertou os gols de uma equipe. O prêmio de consolação dobrou para ajudar a não zerar na rodada.</div>
             </div>
             <div class="r-points">${r.oneTeamScore||2}</div>
+          </div>
+          <div class="rule-card" style="opacity:.7">
+            <div class="r-emoji">❌</div>
+            <div class="r-text">
+              <div class="r-title">Errou tudo</div>
+              <div class="r-desc">Não acertou nem placar nem resultado nem gols</div>
+            </div>
+            <div class="r-points" style="color:var(--muted-2)">0</div>
           </div>
         </div>
       </div>

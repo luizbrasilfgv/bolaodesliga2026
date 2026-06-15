@@ -3558,9 +3558,17 @@ function renderHistorico(participantId){
       const pts = pred.points;
       const bg  = ptColor(pts);
       const label = (pred.home !== null && pred.away !== null) ? pred.home+'×'+pred.away : '?×?';
+      let ruleDesc = '';
+      if(pts !== null && pts !== undefined) {
+        if(pts >= (state.rules.exactScore||10)) ruleDesc = ' — Placar exato';
+        else if(pts === (state.rules.correctResult||3)) ruleDesc = ' — Resultado certo';
+        else if(pts === (state.rules.oneTeamScore||1)) ruleDesc = ' — Gols de um time';
+        else if(pts === 0) ruleDesc = ' — Errou';
+      }
+      const realResult = (m.status==='finished' && m.result && m.result.home!==null) ? ` (Placar oficial: ${m.result.home}×${m.result.away})` : '';
       const ptsLabel = (pts !== null && pts !== undefined) ? '+'+pts : '';
       const cellBg = (pts === null || pts === undefined) ? 'var(--surface-2)' : bg+'22';
-      return '<td style="padding:3px 2px;text-align:center" title="'+esc(row.p.name)+': '+label+(ptsLabel?' ('+ptsLabel+' pts)':' (aguardando)')+'">'
+      return '<td style="padding:3px 2px;text-align:center" title="'+esc(row.p.name)+': Apostou '+label+(ptsLabel?' ('+ptsLabel+' pts)'+ruleDesc+realResult:' (aguardando)')+'">'
         +'<div style="min-width:36px;padding:2px 4px;border-radius:5px;background:'+cellBg+';border:1px solid '+bg+';display:inline-block">'
         +'<div style="font-size:10px;font-weight:800;color:'+((pts===null||pts===undefined)?'var(--text)':bg)+'">'+label+'</div>'
         +(ptsLabel ? '<div style="font-size:9px;color:'+bg+';font-weight:700">'+ptsLabel+'</div>' : '')

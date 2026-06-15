@@ -3547,10 +3547,11 @@ function renderHistorico(participantId){
 
   function ptColor(pts){
     if(pts === null || pts === undefined) return 'var(--border)';
-    if(pts >= (state.rules.exactScore||10)) return '#22c55e';
-    if(pts === (state.rules.correctResult||3)) return '#3b82f6';
-    if(pts === (state.rules.oneTeamScore||1)) return '#f59e0b';
-    if(pts === 0) return '#ef4444';
+    if(pts >= (state.rules.exactScore||10)) return '#22c55e'; // Verde
+    if(pts === (state.rules.exactGoalDiff||7)) return '#8b5cf6'; // Roxo (Saldo Exato)
+    if(pts === (state.rules.correctResult||5) || pts === 3) return '#3b82f6'; // Azul
+    if(pts === (state.rules.oneTeamScore||2) || pts === 1) return '#f59e0b'; // Amarelo
+    if(pts === 0) return '#ef4444'; // Vermelho
     return 'var(--border)';
   }
 
@@ -3620,6 +3621,7 @@ function renderHistorico(participantId){
     +'<div class="section-sub">Matriz completa · '+allPlayers.length+' apostador(es) · '+matchesWithPreds.length+' jogo(s) com palpites</div>'
     +'<div style="background:var(--surface-2);border:1px solid var(--border);border-radius:9px;padding:8px 12px;margin-bottom:14px;font-size:11px;display:flex;gap:16px;flex-wrap:wrap">'
     +'<span>🟢 <strong style="color:#22c55e">Placar exato</strong></span>'
+    +'<span>🟣 <strong style="color:#8b5cf6">Saldo Exato</strong></span>'
     +'<span>🔵 <strong style="color:#3b82f6">Resultado certo</strong></span>'
     +'<span>🟡 <strong style="color:#f59e0b">Gols de um time</strong></span>'
     +'<span>🔴 <strong style="color:#ef4444">Errou</strong></span>'

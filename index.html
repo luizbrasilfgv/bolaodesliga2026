@@ -2636,7 +2636,7 @@ const STORAGE = 'bolao_copa2026_v2';
 const SESSION_KEY = 'bolao_session_v1';
 const THEME_KEY = 'bolao_theme';
 const BRACKET_STYLE_KEY = 'bolao_bracket_style';
-const APP_VERSION = 'v1.5.20';
+const APP_VERSION = 'v1.5.21';
 let lastLoaded = null;
 let lastResultSaved = null;
 let lastRecalculated = null;
@@ -5811,10 +5811,13 @@ async function opSyncTSDB(){
       });
 
       if(!match) return;
-      if(match.status === 'finished' && match.result?.home != null) return; // já tem resultado
-
       const swapped = norm(match.home) !== norm(apiHome);
-      match.result  = { home: swapped ? a : h, away: swapped ? h : a };
+      // Permite sobrescrever resultados manuais, só pula se o placar oficial já for idêntico
+      const finalH = swapped ? a : h;
+      const finalA = swapped ? h : a;
+      if(match.status === 'finished' && match.result?.home === finalH && match.result?.away === finalA) return;
+
+      match.result  = { home: finalH, away: finalA };
       match.status  = 'finished';
 
       // recalc pontos
@@ -5828,17 +5831,98 @@ async function opSyncTSDB(){
     });
 
     if(updRes === 0){
-      toast('TheSportsDB: sem novos resultados para atualizar.','ok');
+      if(state.pool.apiSportsKey){
+        toast('TheSportsDB sem novidades, tentando API-Sports...','ok');
+        await opSyncApiSports();
+      } else {
+        toast('TheSportsDB: sem novos resultados. (Dica: Configure a chave API-Sports para mais resultados)','ok');
+      }
     } else {
       await saveState();
       toast(`${updRes} resultado(s) atualizado(s) via TheSportsDB!`,'ok');
+      renderOperator();
     }
-
-    renderOperator();
 
   } catch(e) {
     console.error('TheSportsDB sync:', e);
     toast('Erro ao buscar TheSportsDB: ' + e.message,'err');
+  }
+}
+
+async function opSyncApiSports(){
+  try {
+    const d = new Date();
+    d.setDate(d.getDate() - 2);
+    const fromStr = d.toISOString().slice(0,10);
+    const toStr = new Date().toISOString().slice(0,10);
+    
+    // Liga 1 = World Cup (API-Football)
+    const url = `https://v3.football.api-sports.io/fixtures?league=1&season=2026&from=${fromStr}&to=${toStr}`;
+    const res = await fetch(url, {
+      headers: {
+        'x-apisports-key': state.pool.apiSportsKey
+      }
+    });
+    
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    if(data.errors && Object.keys(data.errors).length > 0) {
+      throw new Error(Object.values(data.errors)[0]);
+    }
+    
+    const events = data.response || [];
+    if(!events.length){
+      toast('API-Sports: nenhum evento recente finalizado.','ok');
+      return;
+    }
+
+    let updRes = 0;
+    events.forEach(ev => {
+      if(ev.fixture.status.short !== 'FT' && ev.fixture.status.short !== 'AET' && ev.fixture.status.short !== 'PEN') return;
+      
+      const h = ev.goals.home, a = ev.goals.away;
+      if(h === null || a === null) return;
+
+      const apiHome = ev.teams.home.name || '';
+      const apiAway = ev.teams.away.name || '';
+
+      const norm = s => (s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+      const match = state.matches.find(x => {
+        const mh = norm(x.home), ma = norm(x.away);
+        const ah = norm(apiHome), aa = norm(apiAway);
+        return (mh===ah && ma===aa) || (mh===aa && ma===ah);
+      });
+
+      if(!match) return;
+      
+      const swapped = norm(match.home) !== norm(apiHome);
+      const finalH = swapped ? a : h;
+      const finalA = swapped ? h : a;
+      
+      if(match.status === 'finished' && match.result?.home === finalH && match.result?.away === finalA) return;
+
+      match.result  = { home: finalH, away: finalA };
+      match.status  = 'finished';
+
+      state.predictions.forEach(p => {
+        if(p.matchId !== match.id) return;
+        const pts = calcPoints(p, match);
+        if(pts !== null){ p.points = pts; p.status = 'pontuado'; }
+      });
+
+      updRes++;
+    });
+
+    if(updRes === 0){
+      toast('API-Sports: sem novos resultados.','ok');
+    } else {
+      await saveState();
+      toast(`${updRes} resultado(s) atualizado(s) via API-Sports!`,'ok');
+      renderOperator();
+    }
+  } catch(e) {
+    console.error('API-Sports sync:', e);
+    toast('Erro API-Sports: ' + e.message, 'err');
   }
 }
 
@@ -6997,6 +7081,10 @@ function adminSettingsHTML(){
             <label class="label">Competição</label>
             <input class="input" id="sComp" value="${state.pool.competition||''}">
           </div>
+          <div>
+            <label class="label">API-Sports Key (Fallback Resultados)</label>
+            <input class="input" type="password" id="sApiSportsKey" value="${state.pool.apiSportsKey||''}" placeholder="Cole sua chave api-sports.io aqui">
+          </div>
           <div style="display:flex;align-items:center;gap:14px;padding:14px;background:var(--surface-2);border:1px solid var(--border);border-radius:10px">
             <div style="flex:1">
               <div style="font-size:14px;font-weight:800">Palpites abertos globalmente</div>
@@ -7267,6 +7355,8 @@ async function toggleSpecialPredOverride(){
 async function saveSettings(){
   state.pool.name = document.getElementById('sName').value.trim() || state.pool.name;
   state.pool.competition = document.getElementById('sComp').value.trim() || state.pool.competition;
+  const apiKeyInput = document.getElementById('sApiSportsKey');
+  if(apiKeyInput) state.pool.apiSportsKey = apiKeyInput.value.trim();
   await saveState();
   document.getElementById('headerPoolName').innerHTML = esc(state.pool.name) + ' <span style="font-size:10px;opacity:0.6;margin-left:6px;font-weight:normal;">' + APP_VERSION + '</span>';
   document.getElementById('loginPoolName').textContent  = state.pool.name;

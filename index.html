@@ -2636,7 +2636,7 @@ const STORAGE = 'bolao_copa2026_v2';
 const SESSION_KEY = 'bolao_session_v1';
 const THEME_KEY = 'bolao_theme';
 const BRACKET_STYLE_KEY = 'bolao_bracket_style';
-const APP_VERSION = 'v1.5.19';
+const APP_VERSION = 'v1.5.20';
 let lastLoaded = null;
 let lastResultSaved = null;
 let lastRecalculated = null;
@@ -5681,6 +5681,11 @@ async function opSaveResult(matchId){
     const h = parseInt(hVal), a = parseInt(aVal);
     if(!isNaN(h) && !isNaN(a) && h >= 0 && a >= 0){
       const penaltyWinner = document.getElementById('op-pw-'+matchId)?.value || '';
+      // Auto-promove para 'finished' se o admin digitou um placar e o status ainda era agendado/aberto/live
+      if(st !== 'finished' && st !== 'closed'){
+        m.status = 'finished';
+      }
+      
       if(isKnockoutMatch(m) && h === a && m.status === 'finished' && !penaltyWinner){
         toast('Empate no mata-mata: selecione quem venceu nos pênaltis','err');
         return;

@@ -2835,11 +2835,30 @@ function calcPoints(pred, match){
   const ph = parseInt(pred.home), pa = parseInt(pred.away);
   const rh = parseInt(match.result.home), ra = parseInt(match.result.away);
   if(isNaN(ph)||isNaN(pa)) return null;
+  
+  // Placar Exato (10 pts em ambas as regras)
   if(ph===rh && pa===ra) return state.rules.exactScore||10;
+  
+  // Trava de data: V2 vale a partir de 15/06/2026
+  const isV2 = new Date(match.datetime) >= new Date('2026-06-15T00:00:00Z');
+  
   const predResult = ph>pa?'H':ph<pa?'A':'D';
   const realResult = rh>ra?'H':rh<ra?'A':'D';
-  if(predResult===realResult) return state.rules.correctResult||3;
-  if(ph===rh || pa===ra) return state.rules.oneTeamScore||1;
+  const predDiff = ph - pa;
+  const realDiff = rh - ra;
+  
+  if(isV2) {
+    // Vencedor + Saldo Exato (7 pts) - inclui empates, pois empate é saldo 0
+    if(predResult===realResult && predDiff===realDiff) return state.rules.exactGoalDiff||7;
+    // Resultado Certo (5 pts)
+    if(predResult===realResult) return state.rules.correctResult||5;
+    // Gols de um time (2 pts)
+    if(ph===rh || pa===ra) return state.rules.oneTeamScore||2;
+  } else {
+    // Regras V1 (até 14/06)
+    if(predResult===realResult) return 3;
+    if(ph===rh || pa===ra) return 1;
+  }
   return 0;
 }
 
@@ -3561,8 +3580,9 @@ function renderHistorico(participantId){
       let ruleDesc = '';
       if(pts !== null && pts !== undefined) {
         if(pts >= (state.rules.exactScore||10)) ruleDesc = ' — Placar exato';
-        else if(pts === (state.rules.correctResult||3)) ruleDesc = ' — Resultado certo';
-        else if(pts === (state.rules.oneTeamScore||1)) ruleDesc = ' — Gols de um time';
+        else if(pts === (state.rules.exactGoalDiff||7)) ruleDesc = ' — Vencedor + Saldo Exato';
+        else if(pts === (state.rules.correctResult||5) || pts === 3) ruleDesc = ' — Resultado certo';
+        else if(pts === (state.rules.oneTeamScore||2) || pts === 1) ruleDesc = ' — Gols de um time';
         else if(pts === 0) ruleDesc = ' — Errou';
       }
       const realResult = (m.status==='finished' && m.result && m.result.home!==null) ? ` (Placar oficial: ${m.result.home}×${m.result.away})` : '';
@@ -5412,7 +5432,9 @@ function renderRules(){
     <div style="display:grid;gap:14px;max-width:760px">
 
       <div class="panel">
-        <div class="panel-head"><div><h2>⚽ Pontuação por Jogo</h2><p>Não acumulativa — vale sempre a melhor pontuação atingida</p></div></div>
+        <div class="panel-head" style="background:linear-gradient(90deg,rgba(46,123,255,.06),transparent)">
+          <div><h2>⚽ Pontuação — Fase 2 (A partir de 15/06)</h2><p>Novas regras aprovadas: maior equilíbrio matemático e prêmio para saldo exato (incluindo empates)</p></div>
+        </div>
         <div style="padding:14px;display:grid;gap:8px">
           <div class="rule-card">
             <div class="r-emoji">🎯</div>
@@ -5423,28 +5445,55 @@ function renderRules(){
             <div class="r-points">${r.exactScore||10}</div>
           </div>
           <div class="rule-card">
+            <div class="r-emoji">⚖️</div>
+            <div class="r-text">
+              <div class="r-title">Vencedor + Saldo Exato</div>
+              <div class="r-desc">Acertou quem venceu e a diferença de gols (inclui acertar um Empate, mas errando o placar exato do empate)</div>
+            </div>
+            <div class="r-points">${r.exactGoalDiff||7}</div>
+          </div>
+          <div class="rule-card">
             <div class="r-emoji">✅</div>
             <div class="r-text">
               <div class="r-title">Resultado certo</div>
-              <div class="r-desc">Acertou o vencedor (ou empate), mas errou o placar</div>
+              <div class="r-desc">Acertou o vencedor, mas errou o placar e o saldo de gols</div>
             </div>
-            <div class="r-points">${r.correctResult||3}</div>
+            <div class="r-points">${r.correctResult||5}</div>
           </div>
           <div class="rule-card">
             <div class="r-emoji">⚡</div>
             <div class="r-text">
               <div class="r-title">Gols de um time</div>
-              <div class="r-desc">Acertou os gols de um dos times, mesmo errando o resultado</div>
+              <div class="r-desc">Errou o resultado, mas acertou os gols de um dos times</div>
             </div>
-            <div class="r-points">${r.oneTeamScore||1}</div>
+            <div class="r-points">${r.oneTeamScore||2}</div>
           </div>
-          <div class="rule-card" style="opacity:.7">
-            <div class="r-emoji">❌</div>
+        </div>
+      </div>
+
+      <div class="panel" style="opacity:0.8">
+        <div class="panel-head"><div><h2>⚽ Pontuação — Fase 1 (Até 14/06)</h2><p>Regras antigas — aplicadas rigidamente ao histórico inicial</p></div></div>
+        <div style="padding:14px;display:grid;gap:8px">
+          <div class="rule-card">
+            <div class="r-emoji">🎯</div>
             <div class="r-text">
-              <div class="r-title">Errou tudo</div>
-              <div class="r-desc">Não acertou nem placar nem resultado nem gols</div>
+              <div class="r-title">Placar exato</div>
             </div>
-            <div class="r-points" style="color:var(--muted-2)">0</div>
+            <div class="r-points">10</div>
+          </div>
+          <div class="rule-card">
+            <div class="r-emoji">✅</div>
+            <div class="r-text">
+              <div class="r-title">Resultado certo</div>
+            </div>
+            <div class="r-points">3</div>
+          </div>
+          <div class="rule-card">
+            <div class="r-emoji">⚡</div>
+            <div class="r-text">
+              <div class="r-title">Gols de um time</div>
+            </div>
+            <div class="r-points">1</div>
           </div>
         </div>
       </div>
@@ -6911,6 +6960,7 @@ function adminRulesHTML(){
           <div style="display:grid;gap:8px">
             ${[
               ['rExact', '🎯 Placar exato', r.exactScore||10],
+              ['rExactDiff', '⚖️ Vencedor + Saldo Exato', r.exactGoalDiff||7],
               ['rResult', '✅ Resultado certo (placar errado)', r.correctResult||3],
               ['rOne', '⚡ Gols de um time', r.oneTeamScore||1]
             ].map(([id,label,val]) => `
@@ -6975,6 +7025,7 @@ function removeTurboRule(i){
 
 async function saveRules(){
   state.rules.exactScore    = parseInt(document.getElementById('rExact').value)||10;
+  state.rules.exactGoalDiff = parseInt(document.getElementById('rExactDiff').value)||7;
   state.rules.correctResult = parseInt(document.getElementById('rResult').value)||3;
   state.rules.oneTeamScore  = parseInt(document.getElementById('rOne').value)||1;
   state.rules.champion      = parseInt(document.getElementById('rChampion').value)||15;

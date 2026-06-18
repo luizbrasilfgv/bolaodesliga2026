@@ -2920,8 +2920,9 @@ function getParticipantStats(participantId){
 
   // category breakdown
   const ec  = scored.filter(p => p.points >= (state.rules.exactScore||10)).length;   // placar exato
-  const res = scored.filter(p => p.points === (state.rules.correctResult||3)).length; // resultado certo
-  const one = scored.filter(p => p.points === (state.rules.oneTeamScore||1)).length;  // gols de um time
+  const exDiff = scored.filter(p => p.points === (state.rules.exactGoalDiff||7)).length; // saldo exato
+  const res = scored.filter(p => p.points === (state.rules.correctResult||5) || p.points === 3).length; // resultado certo
+  const one = scored.filter(p => p.points === (state.rules.oneTeamScore||2) || p.points === 1).length;  // gols de um time
   const zero= scored.filter(p => p.points === 0).length;                              // errou tudo
 
   // streak: consecutive scored preds with points > 0 from most recent
@@ -2950,7 +2951,7 @@ function getParticipantStats(participantId){
   });
 
   return { total, exact, accuracy, hits, scored: scored.length, predTotal: preds.length,
-           streak, form, byPhase, ec, res, one, zero };
+           streak, form, byPhase, ec, exDiff, res, one, zero };
 }
 
 function hashPwd(pwd){
@@ -5339,8 +5340,9 @@ function renderRanking(){
             <th style="padding:8px 10px;text-align:left;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:1px">#</th>
             <th style="padding:8px 10px;text-align:left;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:1px">Apostador</th>
             <th style="padding:8px 10px;text-align:center;color:#22c55e;font-size:11px;font-weight:800" title="Placar exato — ${state.rules.exactScore||10} pts">🎯 EC</th>
-            <th style="padding:8px 10px;text-align:center;color:#3b82f6;font-size:11px;font-weight:800" title="Resultado certo — ${state.rules.correctResult||3} pts">✅ RC</th>
-            <th style="padding:8px 10px;text-align:center;color:#f59e0b;font-size:11px;font-weight:800" title="Gols de um time — ${state.rules.oneTeamScore||1} pt">⚡ GT</th>
+            <th style="padding:8px 10px;text-align:center;color:#8b5cf6;font-size:11px;font-weight:800" title="Saldo exato — ${state.rules.exactGoalDiff||7} pts">⚖️ SE</th>
+            <th style="padding:8px 10px;text-align:center;color:#3b82f6;font-size:11px;font-weight:800" title="Resultado certo — ${state.rules.correctResult||5} pts">✅ RC</th>
+            <th style="padding:8px 10px;text-align:center;color:#f59e0b;font-size:11px;font-weight:800" title="Gols de um time — ${state.rules.oneTeamScore||2} pts">⚡ GT</th>
             <th style="padding:8px 10px;text-align:center;color:var(--muted);font-size:11px;font-weight:800" title="Errou tudo — 0 pts">❌ ER</th>
             <th style="padding:8px 10px;text-align:center;color:var(--muted);font-size:11px;font-weight:800" title="Aproveitamento">%</th>
             <th style="padding:8px 10px;text-align:center;color:var(--muted);font-size:11px;font-weight:800" title="Últimos 5 jogos">Forma</th>
@@ -5371,6 +5373,7 @@ function renderRanking(){
                 ${s.streak>=3?`<div style="font-size:10px;color:var(--orange)">🔥 seq. ${s.streak}</div>`:''}
               </td>
               <td style="padding:10px;text-align:center;font-weight:800;color:#22c55e">${s.ec}</td>
+              <td style="padding:10px;text-align:center;font-weight:800;color:#8b5cf6">${s.exDiff}</td>
               <td style="padding:10px;text-align:center;font-weight:800;color:#3b82f6">${s.res}</td>
               <td style="padding:10px;text-align:center;font-weight:800;color:#f59e0b">${s.one}</td>
               <td style="padding:10px;text-align:center;color:var(--muted)">${s.zero}</td>
@@ -5385,8 +5388,9 @@ function renderRanking(){
     </div>
     <div style="padding:8px 12px;font-size:10px;color:var(--muted);border-top:1px solid var(--border);display:flex;gap:16px;flex-wrap:wrap">
       <span><strong style="color:#22c55e">EC</strong> Placar exato (${state.rules.exactScore||10}pts)</span>
-      <span><strong style="color:#3b82f6">RC</strong> Resultado certo (${state.rules.correctResult||3}pts)</span>
-      <span><strong style="color:#f59e0b">GT</strong> Gols de um time (${state.rules.oneTeamScore||1}pt)</span>
+      <span><strong style="color:#8b5cf6">SE</strong> Saldo Exato (${state.rules.exactGoalDiff||7}pts)</span>
+      <span><strong style="color:#3b82f6">RC</strong> Resultado certo (${state.rules.correctResult||5}pts)</span>
+      <span><strong style="color:#f59e0b">GT</strong> Gols de um time (${state.rules.oneTeamScore||2}pts)</span>
       <span><strong style="color:var(--muted)">ER</strong> Errou tudo (0pts)</span>
       <span style="margin-left:auto;cursor:pointer;color:var(--blue)" onclick="renderHistorico(null)">📊 Ver matriz completa →</span>
     </div>`;

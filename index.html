@@ -6502,13 +6502,15 @@ function adminMatchesHTML(){
 }
 
 async function autoFillKnockouts(){
+  const force = confirm('Deseja projetar os LÍDERES ATUAIS para os grupos que ainda não terminaram?\n\n(Se clicar em Cancelar, preencherá apenas os grupos 100% finalizados).');
+  
   let changed = 0;
   const groupWinners = {};
   Object.keys(COPA_GROUPS).forEach(gk => {
     const standings = calcGroupStandings(gk);
     const totalMatches = state.matches.filter(m => m.phase === 'Fase de Grupos' && m.group === gk).length;
     const finishedMatches = state.matches.filter(m => m.phase === 'Fase de Grupos' && m.group === gk && m.status === 'finished').length;
-    if(finishedMatches === totalMatches && totalMatches > 0){
+    if((finishedMatches === totalMatches && totalMatches > 0) || (force && standings.length >= 2)){
       groupWinners['1'+gk] = standings[0].team;
       groupWinners['2'+gk] = standings[1].team;
     }
@@ -6516,17 +6518,20 @@ async function autoFillKnockouts(){
 
   state.matches.forEach(m => {
     if(m.phase !== 'Fase de Grupos'){
-      if(groupWinners[m.home]){ m.home = groupWinners[m.home]; changed++; }
-      if(groupWinners[m.away]){ m.away = groupWinners[m.away]; changed++; }
+      const orig = COPA2026_MATCHES.find(x => x.id === m.id);
+      if(orig){
+        if(groupWinners[orig.home] && m.home !== groupWinners[orig.home]){ m.home = groupWinners[orig.home]; changed++; }
+        if(groupWinners[orig.away] && m.away !== groupWinners[orig.away]){ m.away = groupWinners[orig.away]; changed++; }
+      }
     }
   });
 
   if(changed > 0){
     await saveState();
-    toast(changed + ' times classificados preenchidos no mata-mata!', 'ok');
+    toast(changed + ' vagas de mata-mata atualizadas!', 'ok');
     renderAdmin('matches');
   } else {
-    toast('Nenhum novo classificado automático encontrado.', 'err');
+    toast('Nenhuma alteração no chaveamento.', 'err');
   }
 }
 

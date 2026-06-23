@@ -6486,6 +6486,7 @@ function adminMatchesHTML(){
       <div class="panel-head">
         <div><h2>Partidas</h2><p>${state.matches.length} jogos cadastrados · ${phases.length} fases</p></div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-ghost btn-sm" onclick="autoFillKnockouts()" title="Preenche 1ºs e 2ºs lugares dos grupos finalizados">🪄 Auto-preencher Chaves</button>
           <button class="btn btn-ghost btn-sm" onclick="confirmReseedMatches()">🔄 Recarregar jogos Copa 2026</button>
           <button class="btn btn-primary btn-sm" onclick="openAddMatch()">+ Nova partida</button>
         </div>
@@ -6498,6 +6499,35 @@ function adminMatchesHTML(){
       </div>
     </div>
   `;
+}
+
+async function autoFillKnockouts(){
+  let changed = 0;
+  const groupWinners = {};
+  Object.keys(COPA_GROUPS).forEach(gk => {
+    const standings = calcGroupStandings(gk);
+    const totalMatches = state.matches.filter(m => m.phase === 'Fase de Grupos' && m.group === gk).length;
+    const finishedMatches = state.matches.filter(m => m.phase === 'Fase de Grupos' && m.group === gk && m.status === 'finished').length;
+    if(finishedMatches === totalMatches && totalMatches > 0){
+      groupWinners['1'+gk] = standings[0].team;
+      groupWinners['2'+gk] = standings[1].team;
+    }
+  });
+
+  state.matches.forEach(m => {
+    if(m.phase !== 'Fase de Grupos'){
+      if(groupWinners[m.home]){ m.home = groupWinners[m.home]; changed++; }
+      if(groupWinners[m.away]){ m.away = groupWinners[m.away]; changed++; }
+    }
+  });
+
+  if(changed > 0){
+    await saveState();
+    toast(changed + ' times classificados preenchidos no mata-mata!', 'ok');
+    renderAdmin('matches');
+  } else {
+    toast('Nenhum novo classificado automático encontrado.', 'err');
+  }
 }
 
 function confirmReseedMatches(){

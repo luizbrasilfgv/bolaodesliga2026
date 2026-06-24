@@ -2636,7 +2636,7 @@ const STORAGE = 'bolao_copa2026_v2';
 const SESSION_KEY = 'bolao_session_v1';
 const THEME_KEY = 'bolao_theme';
 const BRACKET_STYLE_KEY = 'bolao_bracket_style';
-const APP_VERSION = 'v1.5.22';
+const APP_VERSION = 'v1.5.24';
 let lastLoaded = null;
 let lastResultSaved = null;
 let lastRecalculated = null;
@@ -3025,7 +3025,7 @@ async function loadState(){
   // remote
   let remote = null;
   try{
-    const res = await fetch(DB_URL);
+    const res = await fetch(DB_URL + '?_=' + Date.now());
     if(!res.ok) throw new Error('HTTP '+res.status);
     const json = normalizeState(await res.json());
     if(json && json.participants.length){ remote = json; lastLoaded = Date.now(); }
@@ -3165,7 +3165,7 @@ async function saveState(){
   try{
     // Before writing, fetch latest remote and merge to avoid overwriting others' predictions
     try{
-      const getRes = await fetch(DB_URL);
+      const getRes = await fetch(DB_URL + '?_=' + Date.now());
       if(getRes.ok){
         const remote = normalizeState(await getRes.json());
         if(remote && remote.participants.length){
@@ -3216,7 +3216,7 @@ async function saveState(){
 async function syncFromServer(showFeedback){
   if(!currentUser) return false;
   try{
-    const res = await fetch(DB_URL);
+    const res = await fetch(DB_URL + '?_=' + Date.now());
     if(!res.ok) throw new Error('HTTP '+res.status);
     const remote = normalizeState(await res.json());
     if(remote && remote.participants.length){

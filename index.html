@@ -5838,80 +5838,90 @@ async function opSaveTeams(matchId){
   renderOperator();
 }
 
-// ── TheSportsDB sync ──
-// Plano free: sem livescore, mas retorna resultados de partidas finalizadas
+// -- TheSportsDB sync --
+// Usa eventsday.php (por data) - funciona no plano free e retorna resultados do dia
 // Liga Copa 2026: id 4429
 async function opSyncTSDB(){
   if(!isOperator()){ toast('Sem permissão','err'); return; }
-  toast('Buscando resultados no TheSportsDB...','ok');
+  toast('Buscando resultados dos últimos dias...','ok');
 
-  // busca por liga + temporada 2026
-  // endpoint: /api/v1/json/{key}/eventsseason.php?id=4429&s=2026
-  // (a temporada de torneio no TheSportsDB é "2026", não "2026-2027" — verificado em 11/06/2026)
-  const url = `https://www.thesportsdb.com/api/v1/json/${TSDB_KEY}/eventsseason.php?id=${TSDB_LEAGUE_ID}&s=2026`;
+  const TSDB_ALIASES = {
+    'Bosnia-Herzegovina'  : 'Bosnia and Herzegovina',
+    'Curacao'             : 'Curacao',
+    'Curaçao'             : 'Curacao',
+    'Korea Republic'      : 'South Korea',
+    'United States'       : 'USA',
+  };
 
-  try {
-    const res = await fetch(url);
-    if(!res.ok) throw new Error('HTTP ' + res.status);
-    const data = await res.json();
-    const events = data.events || data.results || [];
+  const norm = s => (s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim().replace(/\s+/g,' ');
 
-    if(!events.length){
-      toast('TheSportsDB: nenhum evento encontrado. Tente mais tarde.','err');
-      return;
-    }
+  // Busca os ultimos 5 dias para cobrir rodadas recentes
+  const days = [];
+  for(let i = 0; i <= 4; i++){
+    const d = new Date(Date.now() - i * 86400000);
+    days.push(d.toISOString().split('T')[0]);
+  }
 
-    let updRes = 0;
+  let allEvents = [];
+  for(const day of days){
+    try{
+      const url = 'https://www.thesportsdb.com/api/v1/json/' + TSDB_KEY + '/eventsday.php?d=' + day + '&l=' + TSDB_LEAGUE_ID + '&_t=' + Date.now();
+      const res = await fetch(url);
+      if(!res.ok) continue;
+      const data = await res.json();
+      const evs = (data.events || []).filter(e => e.strStatus === 'FT' || e.strStatus === 'AET' || e.strStatus === 'PEN');
+      allEvents = allEvents.concat(evs);
+    } catch(e){ console.warn('TSDB day error:', day, e); }
+  }
 
-    events.forEach(ev => {
-      // só processa jogos com resultado
-      const h = parseInt(ev.intHomeScore), a = parseInt(ev.intAwayScore);
-      if(isNaN(h) || isNaN(a)) return;
+  if(!allEvents.length){
+    toast('Nenhum resultado encontrado nos últimos 5 dias.','err');
+    return;
+  }
 
-      // nomes da API que diferem dos usados no app
-      const TSDB_ALIASES = { 'Bosnia-Herzegovina': 'Bosnia and Herzegovina' };
-      const apiHome = TSDB_ALIASES[ev.strHomeTeam] || ev.strHomeTeam || '';
-      const apiAway = TSDB_ALIASES[ev.strAwayTeam] || ev.strAwayTeam || '';
+  let updRes = 0;
 
-      // tenta casar com jogo no estado — por nomes normalizados
-      const norm = s => (s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
-      const match = state.matches.find(x => {
-        const mh = norm(x.home), ma = norm(x.away);
-        const ah = norm(apiHome), aa = norm(apiAway);
-        return (mh===ah && ma===aa) || (mh===aa && ma===ah);
-      });
+  allEvents.forEach(ev => {
+    const h = parseInt(ev.intHomeScore), a = parseInt(ev.intAwayScore);
+    if(isNaN(h) || isNaN(a)) return;
 
-      if(!match) return;
-      const swapped = norm(match.home) !== norm(apiHome);
-      // Permite sobrescrever resultados manuais, só pula se o placar oficial já for idêntico
-      const finalH = swapped ? a : h;
-      const finalA = swapped ? h : a;
-      if(match.status === 'finished' && match.result?.home === finalH && match.result?.away === finalA) return;
+    const apiHome = TSDB_ALIASES[ev.strHomeTeam] || ev.strHomeTeam || '';
+    const apiAway = TSDB_ALIASES[ev.strAwayTeam] || ev.strAwayTeam || '';
 
-      match.result  = { home: finalH, away: finalA };
-      match.status  = 'finished';
-
-      // recalc pontos
-      state.predictions.forEach(p => {
-        if(p.matchId !== match.id) return;
-        const pts = calcPoints(p, match);
-        if(pts !== null){ p.points = pts; p.status = 'pontuado'; }
-      });
-
-      updRes++;
+    const findMatch = (skipFinished) => state.matches.find(x => {
+      if(skipFinished && x.status === 'finished') return false;
+      const mh = norm(x.home), ma = norm(x.away);
+      const ah = norm(apiHome), aa = norm(apiAway);
+      return (mh===ah && ma===aa) || (mh===aa && ma===ah);
     });
 
-    if(updRes === 0){
-      toast('TheSportsDB: sem novos resultados para atualizar.','ok');
-    } else {
-      await saveState();
-      toast(`${updRes} resultado(s) atualizado(s) via TheSportsDB!`,'ok');
-      renderOperator();
-    }
+    const match = findMatch(true) || findMatch(false);
+    if(!match) return;
 
-  } catch(e) {
-    console.error('TheSportsDB sync:', e);
-    toast('Erro ao buscar TheSportsDB: ' + e.message,'err');
+    const swapped = norm(match.home) !== norm(apiHome);
+    const finalH  = swapped ? a : h;
+    const finalA  = swapped ? h : a;
+
+    if(match.status === 'finished' && match.result?.home === finalH && match.result?.away === finalA) return;
+
+    match.result = { home: finalH, away: finalA };
+    match.status = 'finished';
+
+    state.predictions.forEach(p => {
+      if(p.matchId !== match.id) return;
+      const pts = calcPoints(p, match);
+      if(pts !== null){ p.points = pts; p.status = 'pontuado'; }
+    });
+
+    updRes++;
+  });
+
+  if(updRes === 0){
+    toast('Tudo atualizado — nenhum resultado novo.','ok');
+  } else {
+    await saveState();
+    toast(updRes + ' resultado(s) importado(s)! Recalculando...','ok');
+    setTimeout(() => { opRecalcAll(); renderOperator(); }, 800);
   }
 }
 

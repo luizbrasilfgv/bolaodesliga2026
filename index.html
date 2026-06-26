@@ -3560,11 +3560,7 @@ function renderHistorico(participantId){
   }
 
   const filteredMatches = [...applyGlobalFilterToMatches(matchesSrc)];
-  if(historicoFilter.phase === 'groups') {
-    filteredMatches.sort((a,b) => (b.datetime||'').localeCompare(a.datetime||''));
-  } else {
-    filteredMatches.sort((a,b) => (a.datetime||'').localeCompare(b.datetime||''));
-  }
+  filteredMatches.sort((a,b) => (b.datetime||'').localeCompare(a.datetime||''));
 
   const matchesWithPreds = filteredMatches; // exibe a grade inteira mesmo se não houver palpites ainda
 
@@ -3651,7 +3647,9 @@ function renderHistorico(participantId){
     +'<option value="knockout" '+(historicoFilter.phase==='knockout'?'selected':'')+'>Fase de Mata-Mata</option>'
     +'</select>'
     +'</div>'
-    +(historicoFilter.phase === 'groups' ? '<div style="background:rgba(255,182,39,.15);border:2px solid rgba(255,182,39,.5);border-radius:10px;padding:12px 16px;margin-bottom:14px;color:var(--text);font-size:12px;line-height:1.5;">⚠️ <strong>ATENÇÃO:</strong> O Histórico está exibindo apenas a <strong>Fase de Grupos</strong>, ordenada <strong>de trás pra frente</strong> (jogos mais recentes primeiro) para você não precisar rolar a barra! Use o seletor acima para ver a matriz completa ou o mata-mata.</div>' : '')
+    +'<div style="background:rgba(255,182,39,.15);border:2px solid rgba(255,182,39,.5);border-radius:10px;padding:12px 16px;margin-bottom:14px;color:var(--text);font-size:12px;line-height:1.5;">⚠️ <strong>ATENÇÃO:</strong> '
+    +(historicoFilter.phase === 'groups' ? 'O Histórico está exibindo apenas a <strong>Fase de Grupos</strong> e está ' : 'O Histórico está ')
+    +'ordenado <strong>de trás pra frente</strong> (jogos mais recentes primeiro) para você não precisar ficar rolando a barra horizontal!</div>'
     +'<div style="background:var(--surface-2);border:1px solid var(--border);border-radius:9px;padding:8px 12px;margin-bottom:14px;font-size:11px;display:flex;gap:16px;flex-wrap:wrap">'
     +'<span>🟢 <strong style="color:#22c55e">Placar exato</strong></span>'
     +'<span>🟣 <strong style="color:#8b5cf6">Saldo Exato</strong></span>'

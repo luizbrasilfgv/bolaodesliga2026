@@ -3559,8 +3559,12 @@ function renderHistorico(participantId){
     matchesSrc = matchesSrc.filter(m => m.phase !== 'Fase de Grupos');
   }
 
-  const filteredMatches = applyGlobalFilterToMatches(matchesSrc);
-  filteredMatches.sort((a,b) => (b.datetime||'').localeCompare(a.datetime||''));
+  const filteredMatches = [...applyGlobalFilterToMatches(matchesSrc)];
+  if(historicoFilter.phase === 'groups') {
+    filteredMatches.sort((a,b) => (b.datetime||'').localeCompare(a.datetime||''));
+  } else {
+    filteredMatches.sort((a,b) => (a.datetime||'').localeCompare(b.datetime||''));
+  }
 
   const matchesWithPreds = filteredMatches; // exibe a grade inteira mesmo se não houver palpites ainda
 
@@ -3643,7 +3647,7 @@ function renderHistorico(participantId){
     +'</div>'
     +'<select class="input" style="padding:6px 12px;font-size:12px;min-width:180px;height:auto" onchange="setHistoricoPhase(this.value)">'
     +'<option value="all" '+(historicoFilter.phase==='all'?'selected':'')+'>Visão Completa</option>'
-    +'<option value="groups" '+(historicoFilter.phase==='groups'?'selected':'')+'>Fase de Grupos</option>'
+    +'<option value="groups" '+(historicoFilter.phase==='groups'?'selected':'')+'>Fase de Grupos (Reversa)</option>'
     +'<option value="knockout" '+(historicoFilter.phase==='knockout'?'selected':'')+'>Fase de Mata-Mata</option>'
     +'</select>'
     +'</div>'

@@ -2644,7 +2644,7 @@ const STORAGE = 'bolao_copa2026_v2';
 const SESSION_KEY = 'bolao_session_v1';
 const THEME_KEY = 'bolao_theme';
 const BRACKET_STYLE_KEY = 'bolao_bracket_style';
-const APP_VERSION = 'v1.5.24';
+const APP_VERSION = 'v1.6.0';
 let lastLoaded = null;
 let lastResultSaved = null;
 let lastRecalculated = null;
@@ -3537,6 +3537,11 @@ function renderTweaks(){
 // ═══════════════════════════════════════════
 let historicoFilter = { participantId: null, phase: 'all' };
 
+window.setHistoricoPhase = function(val) {
+  historicoFilter.phase = val;
+  renderHistorico(historicoFilter.participantId);
+};
+
 function renderHistorico(participantId){
   historicoFilter.participantId = participantId;
   const view = document.getElementById('view-historico');
@@ -3547,8 +3552,19 @@ function renderHistorico(participantId){
     .map(p => ({ p, stats: getParticipantStats(p.id) }))
     .sort((a,b) => b.stats.total - a.stats.total);
 
-  const filteredMatches = applyGlobalFilterToMatches(state.matches)
-    .sort((a,b) => (a.datetime||'').localeCompare(b.datetime||''));
+  let matchesSrc = state.matches;
+  if(historicoFilter.phase === 'groups') {
+    matchesSrc = matchesSrc.filter(m => m.phase === 'Fase de Grupos');
+  } else if(historicoFilter.phase === 'knockout') {
+    matchesSrc = matchesSrc.filter(m => m.phase !== 'Fase de Grupos');
+  }
+
+  const filteredMatches = applyGlobalFilterToMatches(matchesSrc);
+  if(historicoFilter.phase === 'groups') {
+    filteredMatches.sort((a,b) => (b.datetime||'').localeCompare(a.datetime||''));
+  } else {
+    filteredMatches.sort((a,b) => (a.datetime||'').localeCompare(b.datetime||''));
+  }
 
   const matchesWithPreds = filteredMatches.filter(m =>
     state.predictions.some(p => p.matchId === m.id)
@@ -3626,8 +3642,17 @@ function renderHistorico(participantId){
   }).join('');
 
   view.innerHTML =
-    '<div class="section-title">📊 Histórico de Palpites</div>'
-    +'<div class="section-sub">Matriz completa · '+allPlayers.length+' apostador(es) · '+matchesWithPreds.length+' jogo(s) com palpites</div>'
+    '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:10px">'
+    +'<div>'
+    +'<div class="section-title" style="margin-bottom:4px">📊 Histórico de Palpites</div>'
+    +'<div class="section-sub" style="margin-bottom:0">Matriz · '+allPlayers.length+' apostador(es) · '+matchesWithPreds.length+' jogo(s) na visualização</div>'
+    +'</div>'
+    +'<select class="input" style="padding:6px 12px;font-size:12px;min-width:180px;height:auto" onchange="setHistoricoPhase(this.value)">'
+    +'<option value="all" '+(historicoFilter.phase==='all'?'selected':'')+'>Visão Completa</option>'
+    +'<option value="groups" '+(historicoFilter.phase==='groups'?'selected':'')+'>Fase de Grupos (Reversa)</option>'
+    +'<option value="knockout" '+(historicoFilter.phase==='knockout'?'selected':'')+'>Fase de Mata-Mata</option>'
+    +'</select>'
+    +'</div>'
     +'<div style="background:var(--surface-2);border:1px solid var(--border);border-radius:9px;padding:8px 12px;margin-bottom:14px;font-size:11px;display:flex;gap:16px;flex-wrap:wrap">'
     +'<span>🟢 <strong style="color:#22c55e">Placar exato</strong></span>'
     +'<span>🟣 <strong style="color:#8b5cf6">Saldo Exato</strong></span>'
@@ -3639,7 +3664,7 @@ function renderHistorico(participantId){
     +'<button onclick="exportLog()" style="margin-left:auto;font-size:11px;color:var(--blue);background:none;border:none;cursor:pointer;font-weight:700">📋 Exportar log TXT</button>'
     +'</div>'
     +'<div class="panel" style="overflow:hidden">'
-    +'<div style="overflow-x:auto;overflow-y:auto;max-height:70vh">'
+    +'<div style="overflow-x:auto;">'
     +'<table style="border-collapse:collapse;font-size:11px">'
     +'<thead><tr>'
     +'<th style="padding:8px 10px;text-align:left;position:sticky;left:0;background:var(--surface);border-right:2px solid var(--border);border-bottom:1px solid var(--border);font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);min-width:160px">Apostador</th>'

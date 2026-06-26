@@ -3562,9 +3562,7 @@ function renderHistorico(participantId){
   const filteredMatches = applyGlobalFilterToMatches(matchesSrc);
   filteredMatches.sort((a,b) => (b.datetime||'').localeCompare(a.datetime||''));
 
-  const matchesWithPreds = filteredMatches.filter(m =>
-    state.predictions.some(p => p.matchId === m.id)
-  );
+  const matchesWithPreds = filteredMatches; // exibe a grade inteira mesmo se não houver palpites ainda
 
   function ptColor(pts){
     if(pts === null || pts === undefined) return 'var(--border)';

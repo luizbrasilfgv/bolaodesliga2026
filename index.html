@@ -5664,8 +5664,8 @@ function renderOperator(){
     return true;
   });
 
-  // Ordenar do mais recente para o mais antigo
-  filtered.sort((a,b) => (b.datetime||'').localeCompare(a.datetime||''));
+  // Ordenar cronologicamente (crescente) para que os jogos de hoje apareçam antes da final
+  filtered.sort((a,b) => (a.datetime||'').localeCompare(b.datetime||''));
 
   const statusOpts = {
     scheduled:'Agendado', open:'Aberto', closed:'Encerrado', live:'🔴 Ao vivo', finished:'Finalizado'
@@ -6590,6 +6590,21 @@ async function autoFillKnockouts(){
       confirmedWinners['1'+gk] = standings[0].team;
       confirmedWinners['2'+gk] = standings[1].team;
       confirmedGroups.add(gk);
+    }
+  });
+
+  // Mapear vencedores e perdedores das fases de mata-mata finalizadas
+  state.matches.forEach(m => {
+    if(m.status === 'finished' && m.phase !== 'Fase de Grupos') {
+      const orig = COPA2026_MATCHES.find(x => x.id === m.id);
+      if(orig && orig.knockoutLabel) {
+        const w = matchWinner(m);
+        if(w) {
+          confirmedWinners['Venc. ' + orig.knockoutLabel] = w;
+          const loser = (w === m.home) ? m.away : m.home;
+          confirmedWinners['Perd. ' + orig.knockoutLabel] = loser;
+        }
+      }
     }
   });
 

@@ -3535,7 +3535,7 @@ function renderTweaks(){
 // ═══════════════════════════════════════════
 // HISTÓRICO — Matriz de palpites
 // ═══════════════════════════════════════════
-let historicoFilter = { participantId: null, phase: 'groups' };
+let historicoFilter = { participantId: null, phase: 'auto' };
 
 window.setHistoricoPhase = function(val) {
   historicoFilter.phase = val;
@@ -3555,10 +3555,17 @@ function renderHistorico(participantId){
   // Evitar choque entre o filtro global e o filtro local
   if(globalFilter.phase !== 'all') historicoFilter.phase = 'all';
 
+  // Auto-detect: detecta a fase ativa mais recente
+  let effectivePhase = historicoFilter.phase;
+  if(effectivePhase === 'auto'){
+    const hasKnockout = state.matches.some(m => m.phase !== 'Fase de Grupos' && (m.status === 'finished' || m.status === 'live' || m.status === 'open'));
+    effectivePhase = hasKnockout ? 'knockout' : 'groups';
+  }
+
   let matchesSrc = state.matches;
-  if(historicoFilter.phase === 'groups') {
+  if(effectivePhase === 'groups') {
     matchesSrc = matchesSrc.filter(m => m.phase === 'Fase de Grupos');
-  } else if(historicoFilter.phase === 'knockout') {
+  } else if(effectivePhase === 'knockout') {
     matchesSrc = matchesSrc.filter(m => m.phase !== 'Fase de Grupos');
   }
 
@@ -3584,13 +3591,14 @@ function renderHistorico(participantId){
     +'<div class="section-sub" style="margin-bottom:0">Matriz · '+allPlayers.length+' apostador(es) · '+matchesWithPreds.length+' jogo(s) na visualização</div>'
     +'</div>'
     +'<select class="input" style="padding:6px 12px;font-size:12px;min-width:180px;height:auto" onchange="setHistoricoPhase(this.value)">'
+    +'<option value="auto" '+(historicoFilter.phase==='auto'?'selected':'')+'>Fase Atual (auto)</option>'
     +'<option value="all" '+(historicoFilter.phase==='all'?'selected':'')+'>Visão Completa</option>'
-    +'<option value="groups" '+(historicoFilter.phase==='groups'?'selected':'')+'>Fase de Grupos (Reversa)</option>'
+    +'<option value="groups" '+(historicoFilter.phase==='groups'?'selected':'')+'>Fase de Grupos</option>'
     +'<option value="knockout" '+(historicoFilter.phase==='knockout'?'selected':'')+'>Fase de Mata-Mata</option>'
     +'</select>'
     +'</div>'
     +'<div style="background:rgba(255,182,39,.15);border:2px solid rgba(255,182,39,.5);border-radius:10px;padding:12px 16px;margin-bottom:14px;color:var(--text);font-size:12px;line-height:1.5;">⚠️ <strong>ATENÇÃO:</strong> '
-    +(historicoFilter.phase === 'groups' ? 'O Histórico está exibindo apenas a <strong>Fase de Grupos</strong> e está ' : 'O Histórico está ')
+    +(effectivePhase === 'groups' ? 'O Histórico está exibindo apenas a <strong>Fase de Grupos</strong> e está ' : effectivePhase === 'knockout' ? 'O Histórico está exibindo a <strong>Fase de Mata-Mata</strong> e está ' : 'O Histórico está ')
     +'ordenado <strong>de trás pra frente</strong> (jogos mais recentes primeiro) para você não precisar ficar rolando a barra horizontal!</div>';
 
   if(!matchesWithPreds.length){
@@ -5646,6 +5654,9 @@ function renderOperator(){
     return true;
   });
 
+  // Ordenar do mais recente para o mais antigo
+  filtered.sort((a,b) => (b.datetime||'').localeCompare(a.datetime||''));
+
   const statusOpts = {
     scheduled:'Agendado', open:'Aberto', closed:'Encerrado', live:'🔴 Ao vivo', finished:'Finalizado'
   };
@@ -5916,8 +5927,12 @@ async function opSyncTSDB(){
   let updRes = 0;
 
   allEvents.forEach(ev => {
+    // Para jogos AET/PEN, intHomeScore/intAwayScore da TSDB já inclui prorrogação.
+    // Precisamos usar esse placar (que é até o final da prorrogação), não o resultado dos pênaltis.
+    // A TSDB retorna strStatus='AET' ou 'PEN' e os scores já são o placar regulamentar+prorrogação.
     const h = parseInt(ev.intHomeScore), a = parseInt(ev.intAwayScore);
     if(isNaN(h) || isNaN(a)) return;
+    const isAET = ev.strStatus === 'AET' || ev.strStatus === 'PEN';
 
     const apiHome = TSDB_ALIASES[ev.strHomeTeam] || ev.strHomeTeam || '';
     const apiAway = TSDB_ALIASES[ev.strAwayTeam] || ev.strAwayTeam || '';
@@ -5939,6 +5954,13 @@ async function opSyncTSDB(){
     if(match.status === 'finished' && match.result?.home === finalH && match.result?.away === finalA) return;
 
     match.result = { home: finalH, away: finalA };
+    // Se foi pênaltis (empate na prorrogação), marcar quem venceu nos pênaltis
+    if(ev.strStatus === 'PEN' && finalH === finalA){
+      // intHomeScore < intAwayScore nos pênaltis não vem separado na API free,
+      // então marcamos que foi pênaltis sem definir o vencedor automaticamente.
+      // O operador deverá selecionar manualmente quem venceu nos pênaltis.
+      match.result.penaltyNote = 'Decidido nos pênaltis — selecione o vencedor manualmente';
+    }
     match.status = 'finished';
 
     state.predictions.forEach(p => {

@@ -3555,15 +3555,25 @@ function renderHistorico(participantId){
   // Evitar choque entre o filtro global e o filtro local
   if(globalFilter.phase !== 'all') historicoFilter.phase = 'all';
 
-  // Auto-detect: detecta a fase ativa mais recente
+  // Auto-detect: detecta a fase ESPECÍFICA ativa (ex: R32, Oitavas, Quartas...)
   let effectivePhase = historicoFilter.phase;
+  let effectivePhaseKey = null; // nome exato da fase para filtrar
   if(effectivePhase === 'auto'){
-    const hasKnockout = state.matches.some(m => m.phase !== 'Fase de Grupos' && (m.status === 'finished' || m.status === 'live' || m.status === 'open'));
-    effectivePhase = hasKnockout ? 'knockout' : 'groups';
+    // Percorre PHASE_ORDER de trás pra frente e encontra a fase mais avançada que tenha jogo finalizado ou ao vivo
+    for(let i = PHASE_ORDER.length - 1; i >= 0; i--){
+      const ph = PHASE_ORDER[i];
+      if(state.matches.some(m => m.phase === ph && (m.status === 'finished' || m.status === 'live'))){
+        effectivePhaseKey = ph;
+        break;
+      }
+    }
+    if(!effectivePhaseKey) effectivePhaseKey = 'Fase de Grupos';
   }
 
   let matchesSrc = state.matches;
-  if(effectivePhase === 'groups') {
+  if(effectivePhaseKey){
+    matchesSrc = matchesSrc.filter(m => m.phase === effectivePhaseKey);
+  } else if(effectivePhase === 'groups') {
     matchesSrc = matchesSrc.filter(m => m.phase === 'Fase de Grupos');
   } else if(effectivePhase === 'knockout') {
     matchesSrc = matchesSrc.filter(m => m.phase !== 'Fase de Grupos');
@@ -3598,7 +3608,7 @@ function renderHistorico(participantId){
     +'</select>'
     +'</div>'
     +'<div style="background:rgba(255,182,39,.15);border:2px solid rgba(255,182,39,.5);border-radius:10px;padding:12px 16px;margin-bottom:14px;color:var(--text);font-size:12px;line-height:1.5;">⚠️ <strong>ATENÇÃO:</strong> '
-    +(effectivePhase === 'groups' ? 'O Histórico está exibindo apenas a <strong>Fase de Grupos</strong> e está ' : effectivePhase === 'knockout' ? 'O Histórico está exibindo a <strong>Fase de Mata-Mata</strong> e está ' : 'O Histórico está ')
+    +(effectivePhaseKey ? 'O Histórico está exibindo a <strong>' + (PHASE_SHORT[effectivePhaseKey]||effectivePhaseKey) + '</strong> e está ' : effectivePhase === 'groups' ? 'O Histórico está exibindo apenas a <strong>Fase de Grupos</strong> e está ' : effectivePhase === 'knockout' ? 'O Histórico está exibindo a <strong>Fase de Mata-Mata</strong> e está ' : 'O Histórico está ')
     +'ordenado <strong>de trás pra frente</strong> (jogos mais recentes primeiro) para você não precisar ficar rolando a barra horizontal!</div>';
 
   if(!matchesWithPreds.length){

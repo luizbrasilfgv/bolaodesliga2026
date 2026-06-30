@@ -6331,7 +6331,7 @@ function renderBracket(){
 // ─── CLASSIC: 5 columns left → right + trophy + 3rd place sidebar ───
 function renderBracketClassic(finalMatch, thirdPlace, champion){
   const r32 = getMatchesByPhase('Oitavas (R32)');
-  const r32Order = ['m074', 'm077', 'm073', 'm075', 'm076', 'm078', 'm079', 'm080', 'm083', 'm084', 'm081', 'm082', 'm086', 'm088', 'm085', 'm087'];
+  const r32Order = ['m073', 'm076', 'm075', 'm077', 'm074', 'm078', 'm079', 'm080', 'm083', 'm084', 'm081', 'm082', 'm086', 'm088', 'm085', 'm087'];
   const r32Visual = r32Order.map(id => r32.find(m => m.id === id)).filter(Boolean);
   const r32Final = r32Visual.length === 16 ? r32Visual : r32;
   const r16 = getMatchesByPhase('Oitavas de Final');
@@ -6377,7 +6377,7 @@ function renderBracketClassic(finalMatch, thirdPlace, champion){
 // ─── SYMMETRIC: left half mirrors right half, Final in center ───
 function renderBracketSymmetric(finalMatch, thirdPlace, champion){
   const r32 = getMatchesByPhase('Oitavas (R32)');
-  const r32Order = ['m074', 'm077', 'm073', 'm075', 'm076', 'm078', 'm079', 'm080', 'm083', 'm084', 'm081', 'm082', 'm086', 'm088', 'm085', 'm087'];
+  const r32Order = ['m073', 'm076', 'm075', 'm077', 'm074', 'm078', 'm079', 'm080', 'm083', 'm084', 'm081', 'm082', 'm086', 'm088', 'm085', 'm087'];
   const r32Visual = r32Order.map(id => r32.find(m => m.id === id)).filter(Boolean);
   const r32Final = r32Visual.length === 16 ? r32Visual : r32;
   const r16 = getMatchesByPhase('Oitavas de Final');

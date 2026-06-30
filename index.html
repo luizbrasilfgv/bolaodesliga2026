@@ -6331,6 +6331,9 @@ function renderBracket(){
 // ─── CLASSIC: 5 columns left → right + trophy + 3rd place sidebar ───
 function renderBracketClassic(finalMatch, thirdPlace, champion){
   const r32 = getMatchesByPhase('Oitavas (R32)');
+  const r32Order = ['m074', 'm077', 'm073', 'm075', 'm076', 'm078', 'm079', 'm080', 'm083', 'm084', 'm081', 'm082', 'm086', 'm088', 'm085', 'm087'];
+  const r32Visual = r32Order.map(id => r32.find(m => m.id === id)).filter(Boolean);
+  const r32Final = r32Visual.length === 16 ? r32Visual : r32;
   const r16 = getMatchesByPhase('Oitavas de Final');
   const qf  = getMatchesByPhase('Quartas de Final');
   const sf  = getMatchesByPhase('Semifinal');
@@ -6345,7 +6348,7 @@ function renderBracketClassic(finalMatch, thirdPlace, champion){
   return `
     <div class="bracket-wrapper">
       <div class="bracket">
-        ${col('Oitavas (R32)', r32)}
+        ${col('Oitavas (R32)', r32Final)}
         ${col('Oitavas', r16)}
         ${col('Quartas', qf)}
         ${col('Semifinais', sf)}
@@ -6374,6 +6377,9 @@ function renderBracketClassic(finalMatch, thirdPlace, champion){
 // ─── SYMMETRIC: left half mirrors right half, Final in center ───
 function renderBracketSymmetric(finalMatch, thirdPlace, champion){
   const r32 = getMatchesByPhase('Oitavas (R32)');
+  const r32Order = ['m074', 'm077', 'm073', 'm075', 'm076', 'm078', 'm079', 'm080', 'm083', 'm084', 'm081', 'm082', 'm086', 'm088', 'm085', 'm087'];
+  const r32Visual = r32Order.map(id => r32.find(m => m.id === id)).filter(Boolean);
+  const r32Final = r32Visual.length === 16 ? r32Visual : r32;
   const r16 = getMatchesByPhase('Oitavas de Final');
   const qf  = getMatchesByPhase('Quartas de Final');
   const sf  = getMatchesByPhase('Semifinal');
@@ -6383,7 +6389,7 @@ function renderBracketSymmetric(finalMatch, thirdPlace, champion){
     const h = Math.ceil(arr.length / 2);
     return [arr.slice(0,h), arr.slice(h)];
   };
-  const [r32L, r32R] = half(r32);
+  const [r32L, r32R] = half(r32Final);
   const [r16L, r16R] = half(r16);
   const [qfL, qfR]   = half(qf);
   const [sfL, sfR]   = half(sf);

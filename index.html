@@ -3375,6 +3375,7 @@ async function doChangeMyPwd(){
   p.updatedAt = nowReal().toISOString();
   currentUser.pwdHash = p.pwdHash;
   currentUser.updatedAt = p.updatedAt;
+  advanceKnockoutWinner(m, state);
   await saveState();
   closeModal();
   toast('Senha alterada com sucesso!','ok');
@@ -7050,6 +7051,76 @@ function adminResultsHTML(){
       ` : `<div class="empty" style="padding:30px"><p>Nenhum resultado lançado ainda.</p></div>`}
     </div>
   `;
+}
+
+
+const bracketRouting = {
+  'm073': { next: 'm089', slot: 'home' },
+  'm076': { next: 'm089', slot: 'away' },
+  'm075': { next: 'm090', slot: 'home' },
+  'm077': { next: 'm090', slot: 'away' },
+  'm074': { next: 'm091', slot: 'home' },
+  'm078': { next: 'm091', slot: 'away' },
+  'm079': { next: 'm092', slot: 'home' },
+  'm080': { next: 'm092', slot: 'away' },
+  'm083': { next: 'm093', slot: 'home' },
+  'm084': { next: 'm093', slot: 'away' },
+  'm081': { next: 'm094', slot: 'home' },
+  'm082': { next: 'm094', slot: 'away' },
+  'm086': { next: 'm095', slot: 'home' },
+  'm088': { next: 'm095', slot: 'away' },
+  'm085': { next: 'm096', slot: 'home' },
+  'm087': { next: 'm096', slot: 'away' },
+  
+  'm089': { next: 'm097', slot: 'home' },
+  'm090': { next: 'm097', slot: 'away' },
+  'm093': { next: 'm098', slot: 'home' },
+  'm094': { next: 'm098', slot: 'away' },
+  'm091': { next: 'm099', slot: 'home' },
+  'm092': { next: 'm099', slot: 'away' },
+  'm095': { next: 'm100', slot: 'home' },
+  'm096': { next: 'm100', slot: 'away' },
+  
+  'm097': { next: 'm101', slot: 'home' },
+  'm098': { next: 'm101', slot: 'away' },
+  'm099': { next: 'm102', slot: 'home' },
+  'm100': { next: 'm102', slot: 'away' },
+
+  'm101': { next: 'm104', slot: 'home', loserNext: 'm103', loserSlot: 'home' },
+  'm102': { next: 'm104', slot: 'away', loserNext: 'm103', loserSlot: 'away' }
+};
+
+function advanceKnockoutWinner(m, currentState) {
+  if (!isKnockoutMatch(m)) return;
+  const route = bracketRouting[m.id];
+  if (!route) return;
+
+  let winner = null;
+  let loser = null;
+  if (m.result.home > m.result.away) {
+    winner = m.home; loser = m.away;
+  } else if (m.result.away > m.result.home) {
+    winner = m.away; loser = m.home;
+  } else {
+    if (m.result.penaltyWinner === 'home') { winner = m.home; loser = m.away; }
+    else if (m.result.penaltyWinner === 'away') { winner = m.away; loser = m.home; }
+  }
+  
+  if (!winner) return;
+
+  const nextMatch = currentState.matches.find(x => x.id === route.next);
+  if (nextMatch) {
+    if (route.slot === 'home') nextMatch.home = winner;
+    if (route.slot === 'away') nextMatch.away = winner;
+  }
+
+  if (route.loserNext) {
+    const thirdPlaceMatch = currentState.matches.find(x => x.id === route.loserNext);
+    if (thirdPlaceMatch) {
+      if (route.loserSlot === 'home') thirdPlaceMatch.home = loser;
+      if (route.loserSlot === 'away') thirdPlaceMatch.away = loser;
+    }
+  }
 }
 
 async function saveResult(matchId){

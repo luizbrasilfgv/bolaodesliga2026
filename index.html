@@ -2583,24 +2583,24 @@ const COPA2026_MATCHES = (function(){
 
   // ── Quartas ──
   const qf = [
-    ['Venc. R16-1', 'Venc. R16-2', '2026-07-09T20:00'], // m097
-    ['Venc. R16-5', 'Venc. R16-6', '2026-07-10T20:00'], // m098
-    ['Venc. R16-3', 'Venc. R16-4', '2026-07-10T16:00'], // m099
-    ['Venc. R16-7', 'Venc. R16-8', '2026-07-11T20:00']  // m100
+    ['Venc. R16-1', 'Venc. R16-2', '2026-07-09T16:00'], // m097
+    ['Venc. R16-5', 'Venc. R16-6', '2026-07-10T15:00'], // m098
+    ['Venc. R16-3', 'Venc. R16-4', '2026-07-11T17:00'], // m099
+    ['Venc. R16-7', 'Venc. R16-8', '2026-07-11T21:00']  // m100
   ];
   qf.forEach((r,i) => {
     mk('m'+String(97+i).padStart(3,'0'),'Quartas de Final','',r[0],r[1],r[2]+':00-04:00','A definir','QF-'+(i+1));
   });
 
   // ── Semifinais ──
-  mk('m101','Semifinal','','Venc. QF-1','Venc. QF-2','2026-07-14T20:00:00-04:00','A definir','SF-1');
-  mk('m102','Semifinal','','Venc. QF-3','Venc. QF-4','2026-07-15T20:00:00-04:00','A definir','SF-2');
+  mk('m101','Semifinal','','Venc. QF-1','Venc. QF-2','2026-07-14T15:00:00-04:00','A definir','SF-1');
+  mk('m102','Semifinal','','Venc. QF-3','Venc. QF-4','2026-07-15T15:00:00-04:00','A definir','SF-2');
 
   // ── 3º lugar ──
   mk('m103','Terceiro Lugar','','Perd. SF-1','Perd. SF-2','2026-07-18T17:00:00-04:00','A definir','3P');
 
   // ── Final ──
-  mk('m104','Final','','Venc. SF-1','Venc. SF-2','2026-07-19T17:00:00-04:00','MetLife Stadium, NJ','F');
+  mk('m104','Final','','Venc. SF-1','Venc. SF-2','2026-07-19T15:00:00-04:00','MetLife Stadium, NJ','F');
 
   return m;
 })();

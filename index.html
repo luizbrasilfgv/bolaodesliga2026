@@ -4140,9 +4140,11 @@ function renderHome(){
         <div class="s-val green">${accPct}%</div>
         <div class="progress"><div style="width:${accPct}%;background:var(--green-2)"></div></div>
       </div>
-      <div class="stat-card">
-        <div class="s-label"><span class="s-ic">🔥</span> Sequência</div>
-        <div class="s-val red">${myStats.streak}${myStats.streak>=3?' 🔥':''}</div>
+            <div class="stat-card">
+        <div class="s-label"><span class="s-ic">🔮</span> Chance Título</div>
+        <div class="s-val ${titleColor}">${titleChance}%</div>
+        <div class="progress"><div style="width:${titleChance}%;background:var(--${titleColor}-2)"></div></div>
+      </div>
         <div class="s-hint">${myStats.streak>=3?'em chamas!':myStats.streak>0?'acertos seguidos':'comece a pontuar'}</div>
       </div>
     </div>`;

@@ -4128,9 +4128,10 @@ function renderHome(){
   let titleColor = 'muted';
   if(state.winProbabilities && state.winProbabilities[me.id] !== undefined) {
       let pct = state.winProbabilities[me.id];
-      if (pct === 0) {
-          const jokes = ['milagre? 👽','vasco na liberta','só em 2030','chama o ET 🛸','alinhamento astral','faz o pix pra fifa'];
-          titleChance = jokes[me.id.length % jokes.length]; // deterministic per user
+      if (pct.toFixed(1) === '0.0') {
+          const jokes = ['só quando vasco for pra liberta', 'só no próximo alinhamento planetário', 'à espera de vários milagres', 'só se a fifa anular a copa', 'quando o homem chegar em marte'];
+          let hash = 0; for(let i=0; i<me.id.length; i++) hash += me.id.charCodeAt(i);
+          titleChance = jokes[hash % jokes.length];
           titleColor = 'muted';
       } else {
           titleChance = pct.toFixed(1) + '%';
@@ -5446,9 +5447,10 @@ function renderRanking(){
             let chanceColor = 'var(--muted)';
             if (state.winProbabilities && state.winProbabilities[row.p.id] !== undefined) {
                 const pct = state.winProbabilities[row.p.id];
-                if (pct === 0) {
-                    const jokes = ['milagre? 👽','vasco na liberta','só em 2030','chama o ET 🛸','alinhamento astral','pix pra fifa'];
-                    chanceText = jokes[row.p.id.length % jokes.length];
+                if (pct.toFixed(1) === '0.0') {
+                    const jokes = ['só quando vasco for pra liberta', 'só no próximo alinhamento planetário', 'à espera de vários milagres', 'só se a fifa anular a copa', 'quando o homem chegar em marte'];
+                    let hash = 0; for(let i=0; i<row.p.id.length; i++) hash += row.p.id.charCodeAt(i);
+                    chanceText = jokes[hash % jokes.length];
                     chanceColor = 'var(--muted)';
                 } else {
                     chanceText = pct.toFixed(1) + '%';

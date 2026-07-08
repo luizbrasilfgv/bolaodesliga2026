@@ -4123,17 +4123,22 @@ function renderHome(){
   // — STATS GRID —
   const accPct = myStats.scored > 0 ? myStats.accuracy : 0;
 
-  // --- Monte Carlo Sim ---
+    // --- Monte Carlo Sim ---
   let titleChance = '0.0';
   let titleColor = 'red';
-  if(cachedTitleChance !== null) {
-      titleChance = cachedTitleChance;
-      titleColor = cachedTitleColor;
-  } else if(allPlayers.length > 0) {
+  if(allPlayers.length > 0) {
     const remaining = state.matches.filter(m => !m.result || m.status !== 'finished').length;
-    if(remaining === 0) {
+    const currentHash = ranked.map(x=>x.pts).join('-') + '|' + remaining;
+    
+    window.mcCache = window.mcCache || { hash: '', chance: '0.0', color: 'red' };
+    
+    if (window.mcCache.hash === currentHash) {
+        titleChance = window.mcCache.chance;
+        titleColor = window.mcCache.color;
+    } else if(remaining === 0) {
       titleChance = myRank === 1 ? '100' : '0';
       titleColor = myRank === 1 ? 'green' : 'red';
+      window.mcCache = { hash: currentHash, chance: titleChance, color: titleColor };
     } else {
       let wins = 0;
       const ITERS = 3000;
@@ -4154,9 +4159,9 @@ function renderHome(){
       titleChance = pctVal.toFixed(1);
       if(pctVal > 35) titleColor = 'green';
       else if(pctVal > 10) titleColor = 'gold';
+      
+      window.mcCache = { hash: currentHash, chance: titleChance, color: titleColor };
     }
-    cachedTitleChance = titleChance;
-    cachedTitleColor = titleColor;
   }
   // -----------------------
 

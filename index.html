@@ -4126,7 +4126,10 @@ function renderHome(){
   // --- Monte Carlo Sim ---
   let titleChance = '0.0';
   let titleColor = 'red';
-  if(allPlayers.length > 0) {
+  if(cachedTitleChance !== null) {
+      titleChance = cachedTitleChance;
+      titleColor = cachedTitleColor;
+  } else if(allPlayers.length > 0) {
     const remaining = state.matches.filter(m => !m.result || m.status !== 'finished').length;
     if(remaining === 0) {
       titleChance = myRank === 1 ? '100' : '0';
@@ -4152,6 +4155,8 @@ function renderHome(){
       if(pctVal > 35) titleColor = 'green';
       else if(pctVal > 10) titleColor = 'gold';
     }
+    cachedTitleChance = titleChance;
+    cachedTitleColor = titleColor;
   }
   // -----------------------
 

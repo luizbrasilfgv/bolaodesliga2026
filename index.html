@@ -4123,46 +4123,15 @@ function renderHome(){
   // — STATS GRID —
   const accPct = myStats.scored > 0 ? myStats.accuracy : 0;
 
-    // --- Monte Carlo Sim ---
-  let titleChance = '0.0';
-  let titleColor = 'red';
-  if(allPlayers.length > 0) {
-    const remaining = state.matches.filter(m => !m.result || m.status !== 'finished').length;
-    const currentHash = ranked.map(x=>x.pts).join('-') + '|' + remaining;
-    
-    let cachedStr = localStorage.getItem('mcCache');
-    let cacheObj = cachedStr ? JSON.parse(cachedStr) : { hash: '', chance: '0.0', color: 'red' };
-    
-    if (cacheObj.hash === currentHash) {
-        titleChance = cacheObj.chance;
-        titleColor = cacheObj.color;
-    } else if(remaining === 0) {
-      titleChance = myRank === 1 ? '100' : '0';
-      titleColor = myRank === 1 ? 'green' : 'red';
-      localStorage.setItem('mcCache', JSON.stringify({ hash: currentHash, chance: titleChance, color: titleColor }));
-    } else {
-      let wins = 0;
-      const ITERS = 3000;
-      const ptsOpts = [0, 2, 5, 7, 10];
-      const specOpts = [0, 5, 10, 15, 20, 25, 30];
-      const s = ranked.map(x => ({id:x.p.id, base:x.pts}));
-      for(let i=0; i<ITERS; i++){
-        let c = s.map(x => {
-          let pts = x.base;
-          for(let m=0; m<remaining; m++) pts += ptsOpts[Math.floor(Math.random()*5)];
-          pts += specOpts[Math.floor(Math.random()*7)];
-          return {id:x.id, pts};
-        });
-        c.sort((a,b)=>b.pts-a.pts);
-        if(c[0].id === me.id) wins++;
-      }
-      const pctVal = ((wins/ITERS)*100);
-      titleChance = pctVal.toFixed(1);
-      if(pctVal > 35) titleColor = 'green';
-      else if(pctVal > 10) titleColor = 'gold';
-      
-      localStorage.setItem('mcCache', JSON.stringify({ hash: currentHash, chance: titleChance, color: titleColor }));
-    }
+      // --- Chance de Título ---
+  let titleChance = '--';
+  let titleColor = 'muted';
+  if(state.winProbabilities && state.winProbabilities[me.id] !== undefined) {
+      let pct = state.winProbabilities[me.id];
+      titleChance = pct.toFixed(1);
+      if(pct > 35) titleColor = 'green';
+      else if(pct > 10) titleColor = 'gold';
+      else titleColor = 'red';
   }
   // -----------------------
 
@@ -7168,6 +7137,36 @@ function advanceKnockoutWinner(m, currentState) {
   }
 }
 
+
+function updateWinProbabilities() {
+  const allPlayers = state.participants.filter(p => !p.inactive && (p.role!=='admin' || p.alsoPlayer));
+  if(allPlayers.length === 0) return;
+  const ranked = [...allPlayers].map(p => ({id: p.id, pts:getTotalPoints(p.id)})).sort((a,b)=>b.pts-a.pts);
+  const remaining = state.matches.filter(m => !m.result || m.status !== 'finished').length;
+  let probs = {};
+  if (remaining === 0) {
+      ranked.forEach(x => { probs[x.id] = (x.id === ranked[0].id) ? 100.0 : 0.0; });
+  } else {
+      let wins = {};
+      ranked.forEach(x => wins[x.id] = 0);
+      const ITERS = 5000;
+      const ptsOpts = [0, 2, 5, 7, 10];
+      const specOpts = [0, 5, 10, 15, 20, 25, 30];
+      for(let i=0; i<ITERS; i++){
+        let c = ranked.map(x => {
+          let pts = x.pts;
+          for(let m=0; m<remaining; m++) pts += ptsOpts[Math.floor(Math.random()*5)];
+          pts += specOpts[Math.floor(Math.random()*7)];
+          return {id:x.id, pts};
+        });
+        c.sort((a,b)=>b.pts-a.pts);
+        wins[c[0].id]++;
+      }
+      for(let id in wins) probs[id] = (wins[id] / ITERS) * 100;
+  }
+  state.winProbabilities = probs;
+}
+
 async function saveResult(matchId){
   const m = state.matches.find(x => x.id === matchId);
   if(!m){ toast('Jogo não encontrado','err'); return; }
@@ -7189,6 +7188,7 @@ async function saveResult(matchId){
     const pts = calcPoints(p, m);
     if(pts !== null){ p.points = pts; p.status = 'pontuado'; }
   });
+  updateWinProbabilities();
   await saveState();
   toast(`${teamName(m.home)} ${h}–${a} ${teamName(m.away)} · salvo!`, 'ok');
   renderAdmin('results');
@@ -7206,6 +7206,7 @@ async function recalcAllPoints(){
       changed++;
     }
   });
+  updateWinProbabilities();
   await saveState();
   toast(`${changed} palpite(s) recalculado(s)`,'ok');
   renderAdmin('results');
@@ -7219,6 +7220,7 @@ async function undoResult(id){
       m.result = { home: null, away: null };
       m.status = 'scheduled';
       state.predictions.filter(p => p.matchId === id).forEach(p => { p.points = null; p.status = 'confirmed'; });
+      updateWinProbabilities();
       await saveState();
       toast('Resultado desfeito','ok');
       renderAdmin('results');

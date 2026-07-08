@@ -4129,7 +4129,7 @@ function renderHome(){
   if(state.winProbabilities && state.winProbabilities[me.id] !== undefined) {
       let pct = state.winProbabilities[me.id];
       if (pct.toFixed(1) === '0.0') {
-          const jokes = ['só quando vasco for pra liberta', 'só no próximo alinhamento planetário', 'à espera de vários milagres', 'só se a fifa anular a copa', 'quando o homem chegar em marte'];
+          const jokes = ['só quando vasco for pra liberta', 'só no próximo alinhamento planetário', 'à espera de vários milagres', 'só se a fifa anular a copa', 'quando o homem chegar em marte', 'depende do neymar voltar a jogar', 'chama o ET de varginha', 'rezando pra nossa senhora', 'só se o juiz roubar muito', 'faz o pix pro infantino', 'mais fácil chover pra cima', 'só na próxima encarnação'];
           let hash = 0; for(let i=0; i<me.id.length; i++) hash += me.id.charCodeAt(i);
           titleChance = jokes[hash % jokes.length];
           titleColor = 'muted';
@@ -5448,7 +5448,7 @@ function renderRanking(){
             if (state.winProbabilities && state.winProbabilities[row.p.id] !== undefined) {
                 const pct = state.winProbabilities[row.p.id];
                 if (pct.toFixed(1) === '0.0') {
-                    const jokes = ['só quando vasco for pra liberta', 'só no próximo alinhamento planetário', 'à espera de vários milagres', 'só se a fifa anular a copa', 'quando o homem chegar em marte'];
+                    const jokes = ['só quando vasco for pra liberta', 'só no próximo alinhamento planetário', 'à espera de vários milagres', 'só se a fifa anular a copa', 'quando o homem chegar em marte', 'depende do neymar voltar a jogar', 'chama o ET de varginha', 'rezando pra nossa senhora', 'só se o juiz roubar muito', 'faz o pix pro infantino', 'mais fácil chover pra cima', 'só na próxima encarnação'];
                     let hash = 0; for(let i=0; i<row.p.id.length; i++) hash += row.p.id.charCodeAt(i);
                     chanceText = jokes[hash % jokes.length];
                     chanceColor = 'var(--muted)';

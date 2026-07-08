@@ -4133,7 +4133,7 @@ function renderHome(){
       let pct = state.winProbabilities[me.id];
       if (pct.toFixed(1) === '0.0') {
           const jokes = ['só quando vasco for pra liberta', 'só no próximo alinhamento planetário', 'à espera de vários milagres', 'só se a fifa anular a copa', 'quando o homem chegar em marte', 'depende do neymar voltar a jogar', 'chama o ET de varginha', 'rezando pra nossa senhora', 'só se o juiz roubar muito', 'faz o pix pro infantino', 'mais fácil chover pra cima', 'só na próxima encarnação'];
-          let hash = 0; for(let i=0; i<me.id.length; i++) hash += me.id.charCodeAt(i);
+          let hash = 0; let sStr = me.id + (state.meta?.updatedAt || ''); for(let i=0; i<sStr.length; i++) hash += sStr.charCodeAt(i);
           titleChance = jokes[hash % jokes.length];
           titleColor = 'muted';
       } else {
@@ -5455,7 +5455,7 @@ function renderRanking(){
                 const pct = state.winProbabilities[row.p.id];
                 if (pct.toFixed(1) === '0.0') {
                     const jokes = ['só quando vasco for pra liberta', 'só no próximo alinhamento planetário', 'à espera de vários milagres', 'só se a fifa anular a copa', 'quando o homem chegar em marte', 'depende do neymar voltar a jogar', 'chama o ET de varginha', 'rezando pra nossa senhora', 'só se o juiz roubar muito', 'faz o pix pro infantino', 'mais fácil chover pra cima', 'só na próxima encarnação'];
-                    let hash = 0; for(let i=0; i<row.p.id.length; i++) hash += row.p.id.charCodeAt(i);
+                    let hash = 0; let sStr = row.p.id + (state.meta?.updatedAt || ''); for(let i=0; i<sStr.length; i++) hash += sStr.charCodeAt(i);
                     chanceText = jokes[hash % jokes.length];
                     chanceColor = 'var(--muted)';
                 } else {

@@ -4130,15 +4130,16 @@ function renderHome(){
     const remaining = state.matches.filter(m => !m.result || m.status !== 'finished').length;
     const currentHash = ranked.map(x=>x.pts).join('-') + '|' + remaining;
     
-    window.mcCache = window.mcCache || { hash: '', chance: '0.0', color: 'red' };
+    let cachedStr = localStorage.getItem('mcCache');
+    let cacheObj = cachedStr ? JSON.parse(cachedStr) : { hash: '', chance: '0.0', color: 'red' };
     
-    if (window.mcCache.hash === currentHash) {
-        titleChance = window.mcCache.chance;
-        titleColor = window.mcCache.color;
+    if (cacheObj.hash === currentHash) {
+        titleChance = cacheObj.chance;
+        titleColor = cacheObj.color;
     } else if(remaining === 0) {
       titleChance = myRank === 1 ? '100' : '0';
       titleColor = myRank === 1 ? 'green' : 'red';
-      window.mcCache = { hash: currentHash, chance: titleChance, color: titleColor };
+      localStorage.setItem('mcCache', JSON.stringify({ hash: currentHash, chance: titleChance, color: titleColor }));
     } else {
       let wins = 0;
       const ITERS = 3000;
@@ -4160,7 +4161,7 @@ function renderHome(){
       if(pctVal > 35) titleColor = 'green';
       else if(pctVal > 10) titleColor = 'gold';
       
-      window.mcCache = { hash: currentHash, chance: titleChance, color: titleColor };
+      localStorage.setItem('mcCache', JSON.stringify({ hash: currentHash, chance: titleChance, color: titleColor }));
     }
   }
   // -----------------------

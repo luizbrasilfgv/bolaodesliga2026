@@ -4128,10 +4128,16 @@ function renderHome(){
   let titleColor = 'muted';
   if(state.winProbabilities && state.winProbabilities[me.id] !== undefined) {
       let pct = state.winProbabilities[me.id];
-      titleChance = pct.toFixed(1);
-      if(pct > 35) titleColor = 'green';
-      else if(pct > 10) titleColor = 'gold';
-      else titleColor = 'red';
+      if (pct === 0) {
+          const jokes = ['milagre? 👽','vasco na liberta','só em 2030','chama o ET 🛸','alinhamento astral','faz o pix pra fifa'];
+          titleChance = jokes[me.id.length % jokes.length]; // deterministic per user
+          titleColor = 'muted';
+      } else {
+          titleChance = pct.toFixed(1) + '%';
+          if(pct > 35) titleColor = 'green';
+          else if(pct > 10) titleColor = 'gold';
+          else titleColor = 'red';
+      }
   }
   // -----------------------
 
@@ -4155,7 +4161,7 @@ function renderHome(){
       </div>
             <div class="stat-card">
         <div class="s-label"><span class="s-ic">🔮</span> Chance Título</div>
-        <div class="s-val ${titleColor}">${titleChance}%</div>
+        <div class="s-val ${titleColor}" style="font-size:${titleChance.includes(' ')?'14px':'24px'}">${titleChance}</div>
         <div class="progress"><div style="width:${titleChance}%;background:var(--${titleColor}-2)"></div></div>
       </div>
         
@@ -5440,10 +5446,16 @@ function renderRanking(){
             let chanceColor = 'var(--muted)';
             if (state.winProbabilities && state.winProbabilities[row.p.id] !== undefined) {
                 const pct = state.winProbabilities[row.p.id];
-                chanceText = pct.toFixed(1) + '%';
-                if(pct > 35) chanceColor = 'var(--green)';
-                else if(pct > 10) chanceColor = 'var(--gold-2)';
-                else chanceColor = 'var(--red)';
+                if (pct === 0) {
+                    const jokes = ['milagre? 👽','vasco na liberta','só em 2030','chama o ET 🛸','alinhamento astral','pix pra fifa'];
+                    chanceText = jokes[row.p.id.length % jokes.length];
+                    chanceColor = 'var(--muted)';
+                } else {
+                    chanceText = pct.toFixed(1) + '%';
+                    if(pct > 35) chanceColor = 'var(--green)';
+                    else if(pct > 10) chanceColor = 'var(--gold-2)';
+                    else chanceColor = 'var(--red)';
+                }
             }
             const troll = row.p.troll || {};
             const badgeHTML = troll.badge?.active && troll.badge?.label

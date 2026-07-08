@@ -2978,12 +2978,18 @@ function getUserMaxSpecialPoints(participantId, state, elim) {
         if (!team) return [];
         if (paths[team]) return paths[team];
         let p = [];
-        let m = state.matches.find(x => x.phase !== 'Fase de Grupos' && (x.home === team || x.away === team));
-        if (m) {
-            let cur = m;
+        let matches = state.matches.filter(x => x.phase !== 'Fase de Grupos' && (x.home === team || x.away === team));
+        if (matches.length > 0) {
+            matches.sort((a,b) => a.id.localeCompare(b.id));
+            let cur = matches[0];
             while (cur) {
                 if (cur.knockoutLabel) p.push(cur.knockoutLabel);
-                cur = state.matches.find(x => x.home === 'Venc. ' + cur.knockoutLabel || x.away === 'Venc. ' + cur.knockoutLabel);
+                let route = typeof bracketRouting !== 'undefined' ? bracketRouting[cur.id] : null;
+                if (route && route.next) {
+                    cur = state.matches.find(x => x.id === route.next);
+                } else {
+                    break;
+                }
             }
         }
         paths[team] = p;

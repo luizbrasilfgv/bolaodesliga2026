@@ -2965,9 +2965,14 @@ function getEliminatedTeams(state) {
 }
 
 function getUserMaxSpecialPoints(participantId, state, elim) {
-    if (!state.specialPredictions) return 30;
+    const maxC = state.rules?.champion || 15;
+    const maxR = state.rules?.runnerUp || 10;
+    const maxT = state.rules?.thirdPlace || 5;
+    const defaultMax = maxC + maxR + maxT;
+
+    if (!state.specialPredictions) return defaultMax;
     const mySp = Object.values(state.specialPredictions).find(s => s.participantId === participantId);
-    if (!mySp) return 30;
+    if (!mySp) return defaultMax;
     
     let c = mySp.champion;
     let r = mySp.runnerUp;
@@ -3019,7 +3024,7 @@ function getUserMaxSpecialPoints(participantId, state, elim) {
         if (useR && useT && !checkLCA(r, t, [0, 1])) valid = false;
         
         if (valid) {
-            let pts = (useC ? 15 : 0) + (useR ? 8 : 0) + (useT ? 7 : 0);
+            let pts = (useC ? maxC : 0) + (useR ? maxR : 0) + (useT ? maxT : 0);
             if (pts > best) best = pts;
         }
     }
@@ -5943,7 +5948,7 @@ function renderOperator(){
           ${anyFilterActive?`<button class="btn btn-ghost btn-sm" onclick="clearOpFilters()">✕ Limpar</button>`:''}
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button class="btn btn-ghost btn-sm" onclick="opSyncTSDB()" title="Busca resultados de ontem no TheSportsDB (gratuito)">🔄 Buscar resultados (ontem)</button>
+          
           <button class="btn btn-primary btn-sm" onclick="opRecalcAll()">📊 Recalcular pontos</button>
         </div>
       </div>

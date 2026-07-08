@@ -6018,6 +6018,17 @@ async function opSaveResult(matchId){
 
 async function opRecalcAll(){
   if(!isOperator()){ toast('Sem permissão','err'); return; }
+  const delay = ms => new Promise(res => setTimeout(res, ms));
+
+  toast('1. Buscando resultados (TheSportsDB)...', 'ok');
+  await opSyncTSDB(true);
+  await delay(1200);
+
+  toast('2. Atualizando chaves de mata-mata...', 'ok');
+  await autoFillKnockouts();
+  await delay(1200);
+
+  toast('3. Recalculando pontos de todos os palpites...', 'ok');
   let changed = 0;
   state.predictions.forEach(pred => {
     const match = state.matches.find(m => m.id === pred.matchId);
@@ -6025,9 +6036,15 @@ async function opRecalcAll(){
     const pts = calcPoints(pred, match);
     if(pts !== null){ pred.points = pts; pred.status = 'pontuado'; changed++; }
   });
+  await delay(1200);
+
+  toast('4. Atualizando Teto (LCA) e Monte Carlo...', 'ok');
+  updateWinProbabilities();
+  await delay(1200);
+
   await saveState();
   lastRecalculated = Date.now(); updateSyncBar();
-  toast(`${changed} palpite(s) recalculado(s)!`, 'ok');
+  toast(`Tudo pronto! ${changed} palpites processados.`, 'ok');
   renderOperator();
 }
 

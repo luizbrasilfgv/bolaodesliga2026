@@ -5363,6 +5363,8 @@ function specialPredsTableHTML(){
 // ───────────────────────────────────────────
 function renderRanking(){
   const view = document.getElementById('view-ranking');
+  const remainingMatches = state.matches.filter(m => !m.result || m.status !== 'finished').length;
+  const maxRemainingPoints = (remainingMatches * (state.rules?.exactScore || 10)) + 30;
   const allPlayers = state.participants.filter(p => !p.inactive && (p.role!=='admin' || p.alsoPlayer));
   const ranked = allPlayers
     .map(p => ({ p, stats: getParticipantStats(p.id) }))

@@ -4123,6 +4123,39 @@ function renderHome(){
   // — STATS GRID —
   const accPct = myStats.scored > 0 ? myStats.accuracy : 0;
 
+  // --- Monte Carlo Sim ---
+  let titleChance = '0.0';
+  let titleColor = 'red';
+  if(allPlayers.length > 0) {
+    const remaining = state.matches.filter(m => !m.result || m.status !== 'finished').length;
+    if(remaining === 0) {
+      titleChance = myRank === 1 ? '100' : '0';
+      titleColor = myRank === 1 ? 'green' : 'red';
+    } else {
+      let wins = 0;
+      const ITERS = 3000;
+      const ptsOpts = [0, 2, 5, 7, 10];
+      const specOpts = [0, 5, 10, 15, 20, 25, 30];
+      const s = ranked.map(x => ({id:x.p.id, base:x.pts}));
+      for(let i=0; i<ITERS; i++){
+        let c = s.map(x => {
+          let pts = x.base;
+          for(let m=0; m<remaining; m++) pts += ptsOpts[Math.floor(Math.random()*5)];
+          pts += specOpts[Math.floor(Math.random()*7)];
+          return {id:x.id, pts};
+        });
+        c.sort((a,b)=>b.pts-a.pts);
+        if(c[0].id === me.id) wins++;
+      }
+      const pctVal = ((wins/ITERS)*100);
+      titleChance = pctVal.toFixed(1);
+      if(pctVal > 35) titleColor = 'green';
+      else if(pctVal > 10) titleColor = 'gold';
+    }
+  }
+  // -----------------------
+
+
   const statsHTML = `
     <div class="stats-grid">
       <div class="stat-card featured">

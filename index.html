@@ -2927,6 +2927,99 @@ function canSubmitSpecialPred(){
   return state.pool.specialPredOpen === true && !getMySpecialPred();
 }
 
+function getEliminatedTeams(state) {
+    const eliminated = { champion: new Set(), runnerUp: new Set(), thirdPlace: new Set() };
+    if (!state.matches) return eliminated;
+    state.matches.forEach(m => {
+        if (m.result && m.status === 'finished' && m.knockoutLabel) {
+            let loser = null;
+            const hG = m.result.home; 
+            const aG = m.result.away;
+            if (hG > aG) { loser = m.away; }
+            else if (aG > hG) { loser = m.home; }
+            else {
+                const hP = m.result.homePenalties;
+                const aP = m.result.awayPenalties;
+                if (hP !== undefined && aP !== undefined) {
+                    if (hP > aP) { loser = m.away; }
+                    else { loser = m.home; }
+                }
+            }
+            if (loser) {
+                if (m.phase === 'Final') {
+                    eliminated.champion.add(loser);
+                } else if (m.phase.includes('Terceiro')) {
+                    eliminated.thirdPlace.add(loser);
+                } else if (m.phase.includes('Semi')) {
+                    eliminated.champion.add(loser);
+                    eliminated.runnerUp.add(loser);
+                } else {
+                    eliminated.champion.add(loser);
+                    eliminated.runnerUp.add(loser);
+                    eliminated.thirdPlace.add(loser);
+                }
+            }
+        }
+    });
+    return eliminated;
+}
+
+function getUserMaxSpecialPoints(participantId, state, elim) {
+    if (!state.specialPredictions) return 30;
+    const mySp = Object.values(state.specialPredictions).find(s => s.participantId === participantId);
+    if (!mySp) return 30;
+    
+    let c = mySp.champion;
+    let r = mySp.runnerUp;
+    let t = mySp.thirdPlace;
+
+    let paths = {};
+    const getP = (team) => {
+        if (!team) return [];
+        if (paths[team]) return paths[team];
+        let p = [];
+        let m = state.matches.find(x => x.phase !== 'Fase de Grupos' && (x.home === team || x.away === team));
+        if (m) {
+            let cur = m;
+            while (cur) {
+                if (cur.knockoutLabel) p.push(cur.knockoutLabel);
+                cur = state.matches.find(x => x.home === 'Venc. ' + cur.knockoutLabel || x.away === 'Venc. ' + cur.knockoutLabel);
+            }
+        }
+        paths[team] = p;
+        return p;
+    };
+
+    const checkLCA = (t1, t2, allowed) => {
+        if (!t1 || !t2) return true;
+        let p1 = getP(t1); let p2 = getP(t2);
+        if (!p1.length || !p2.length) return true;
+        let lca = null;
+        for (let l of p1) { if (p2.includes(l)) { lca = l; break; } }
+        if (!lca) return true; 
+        let lcaLevel = lca === 'F' ? 0 : (lca.startsWith('SF') ? 1 : 2);
+        return allowed.includes(lcaLevel);
+    };
+
+    let best = 0;
+    for (let mask = 0; mask < 8; mask++) {
+        let useC = (mask & 1) && c && !elim.champion.has(c);
+        let useR = (mask & 2) && r && !elim.runnerUp.has(r);
+        let useT = (mask & 4) && t && !elim.thirdPlace.has(t);
+        
+        let valid = true;
+        if (useC && useR && !checkLCA(c, r, [0])) valid = false;
+        if (useC && useT && !checkLCA(c, t, [0, 1])) valid = false;
+        if (useR && useT && !checkLCA(r, t, [0, 1])) valid = false;
+        
+        if (valid) {
+            let pts = (useC ? 15 : 0) + (useR ? 8 : 0) + (useT ? 7 : 0);
+            if (pts > best) best = pts;
+        }
+    }
+    return best;
+}
+
 function getZeroJokeForUser(userId) {
     const jokes = ['só quando vasco for pra liberta', 'só no próximo alinhamento planetário', 'à espera de vários milagres', 'só se a fifa anular a copa', 'quando o homem chegar em marte', 'depende do neymar voltar a jogar', 'chama o ET de varginha', 'rezando pra nossa senhora', 'só se o juiz roubar muito', 'faz o pix pro infantino', 'mais fácil chover pra cima', 'só na próxima encarnação'];
     if (!state.winProbabilities) return jokes[0];
@@ -5387,7 +5480,8 @@ function specialPredsTableHTML(){
 function renderRanking(){
   const view = document.getElementById('view-ranking');
   const remainingMatches = state.matches.filter(m => !m.result || m.status !== 'finished').length;
-  const maxRemainingPoints = (remainingMatches * (state.rules?.exactScore || 10)) + 30;
+  const maxRemainingPointsGlobal = (remainingMatches * (state.rules?.exactScore || 10)) + 30;
+  const elim = getEliminatedTeams(state);
   const allPlayers = state.participants.filter(p => !p.inactive && (p.role!=='admin' || p.alsoPlayer));
   const ranked = allPlayers
     .map(p => ({ p, stats: getParticipantStats(p.id) }))
@@ -5500,7 +5594,7 @@ function renderRanking(){
                 ${s.streak>=3?`<div style="font-size:10px;color:var(--orange)">🔥 seq. ${s.streak}</div>`:''}
               </td>
               <td style="padding:10px;text-align:center;font-weight:700;font-size:11px;color:${chanceColor}">${chanceText}</td>
-              <td style="padding:10px;text-align:center;font-weight:800;color:var(--gold-2)">${s.total + maxRemainingPoints}</td>
+              <td style="padding:10px;text-align:center;font-weight:800;color:var(--gold-2)">${s.total + (remainingMatches * (state.rules?.exactScore || 10)) + getUserMaxSpecialPoints(row.p.id, state, elim)}</td>
               <td style="padding:10px;text-align:center;font-weight:800;color:#22c55e">${s.ec}</td>
               <td style="padding:10px;text-align:center;font-weight:800;color:#8b5cf6">${s.exDiff}</td>
               <td style="padding:10px;text-align:center;font-weight:800;color:#3b82f6">${s.res}</td>
@@ -5526,7 +5620,7 @@ function renderRanking(){
 
   view.innerHTML = `
     <div class="section-title">🏆 Ranking</div>
-    <div class="section-sub">${ranked.length} participantes · <span style="color:var(--gold-2);font-weight:700">${maxRemainingPoints} pts em disputa</span> · classificação geral · clique numa linha para ver palpites</div>
+    <div class="section-sub">${ranked.length} participantes · <span style="color:var(--gold-2);font-weight:700">${maxRemainingPointsGlobal} pts totais em disputa</span> · classificação geral · clique numa linha para ver palpites</div>
     <div class="panel">
       ${podiumHTML}
       <div>${listHTML}</div>
@@ -7204,12 +7298,15 @@ function updateWinProbabilities() {
       ranked.forEach(x => wins[x.id] = 0);
       const ITERS = 5000;
       const ptsOpts = [0, 2, 5, 7, 10];
-      const specOpts = [0, 5, 10, 15, 20, 25, 30];
+      const elim = getEliminatedTeams(state);
+      const userSpecMax = {};
+      ranked.forEach(x => userSpecMax[x.id] = getUserMaxSpecialPoints(x.id, state, elim));
+      
       for(let i=0; i<ITERS; i++){
         let c = ranked.map(x => {
           let pts = x.pts;
           for(let m=0; m<remaining; m++) pts += ptsOpts[Math.floor(Math.random()*5)];
-          pts += specOpts[Math.floor(Math.random()*7)];
+          pts += Math.floor(Math.random() * (userSpecMax[x.id] + 1));
           return {id:x.id, pts};
         });
         c.sort((a,b)=>b.pts-a.pts);

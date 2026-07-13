@@ -7359,7 +7359,7 @@ function updateWinProbabilities() {
   } else {
       let wins = {};
       ranked.forEach(x => wins[x.id] = 0);
-      const ITERS = 5000;
+      const ITERS = 50000;
       const ptsOpts = [0, 2, 5, 7, 10];
       const elim = getEliminatedTeams(state);
       const userSpecMax = {};

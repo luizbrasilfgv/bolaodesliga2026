@@ -5528,6 +5528,7 @@ function renderRanking(){
         ${podium[0] ? `
           <div class="podium-medal">🥇</div>
           <div class="podium-name">${esc(podium[0].p.name)}</div>
+          <div style="font-size:10px;background:#ca8a04;color:#fff;border-radius:4px;padding:2px 6px;margin:2px 0 4px;font-weight:bold">${prizeText}</div>
           ${podium[0].p.troll?.podiumLabel?.active && podium[0].p.troll.podiumLabel.text ? `<div style="font-size:11px;color:#ef4444;font-weight:700;margin:-2px 0 4px">${esc(podium[0].p.troll.podiumLabel.icon||'')} ${esc(podium[0].p.troll.podiumLabel.text)}</div>` : ''}
           <div class="podium-pts">${podium[0].stats.total}</div>
           <div class="podium-stats">${podium[0].stats.exact} exatos · ${podium[0].stats.accuracy}%</div>

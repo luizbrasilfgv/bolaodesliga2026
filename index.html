@@ -5509,6 +5509,16 @@ function renderRanking(){
   const leader = ranked[0];
   const me = ranked.find(r => r.p.id === currentUser.id);
 
+  const prizePool = allPlayers.length * 20;
+  const isTiedForFirst = ranked.length > 1 && 
+    ranked[0].stats.total === ranked[1].stats.total &&
+    ranked[0].stats.ec === ranked[1].stats.ec &&
+    ranked[0].stats.exDiff === ranked[1].stats.exDiff &&
+    ranked[0].stats.res === ranked[1].stats.res &&
+    ranked[0].stats.one === ranked[1].stats.one &&
+    ranked[0].stats.zero === ranked[1].stats.zero;
+  const prizeText = isTiedForFirst ? 'Prêmio: R$ ' + prizePool + ',00 (Dividido)' : 'Prêmio: R$ ' + prizePool + ',00';
+
   // podium
   const podium = ranked.slice(0,3);
   while(podium.length < 3) podium.push(null);

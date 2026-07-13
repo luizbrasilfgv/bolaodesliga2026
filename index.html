@@ -5983,6 +5983,27 @@ async function opSaveResult(matchId){
   const aVal = document.getElementById('op-a-'+matchId)?.value;
   const st   = document.getElementById('op-s-'+matchId)?.value;
 
+  if(hVal === '' && aVal === ''){
+    m.result = { home: null, away: null };
+    if(st && st !== 'finished' && st !== 'closed'){
+      m.status = st;
+    } else {
+      m.status = 'scheduled';
+    }
+    let changed = 0;
+    state.predictions.forEach(p => {
+      if(p.matchId === matchId && p.points !== null) {
+        p.points = null; p.status = 'confirmed'; changed++;
+      }
+    });
+    updateWinProbabilities();
+    await saveState();
+    lastResultSaved = Date.now(); updateSyncBar();
+    toast('Resultado limpo! ' + changed + ' palpites estornados.', 'ok');
+    renderOperator();
+    return;
+  }
+
   if(st) m.status = st;
 
   if(hVal !== '' && aVal !== '' && hVal !== undefined && aVal !== undefined){

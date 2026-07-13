@@ -5646,6 +5646,9 @@ function renderRanking(){
     <div style="font-size:11px;color:var(--muted);background:var(--surface-2);padding:10px 14px;border-radius:8px;margin-bottom:16px;line-height:1.6;">
       <strong style="color:var(--text)">Critérios de Desempate (em ordem):</strong> 1º Pontuação, 2º Placares exatos, 3º Saldos exatos, 4º Resultados certos, 5º Gols de 1 time, 6º Menos erros (0 pts). Empates absolutos dividem o prêmio. O dinheiro em jogo é de <strong>R$ ${prizePool},00</strong>.
     </div>
+    <div style="font-size:11px;color:var(--muted);background:var(--surface-2);padding:10px 14px;border-radius:8px;margin-bottom:16px;line-height:1.6;margin-top:-8px;">
+      <strong style="color:var(--text)">Motor de IA (Monte Carlo):</strong> A chance de título (coluna %) é calculada por um algoritmo que avalia <strong>50.000 cenários futuros possíveis</strong>. O robô cruza os jogos restantes e os limites de teto de cada jogador 50 mil vezes por segundo para prever matematicamente a probabilidade real de vitória de cada participante.
+    </div>
     <div class="panel">
       ${podiumHTML}
       <div>${listHTML}</div>

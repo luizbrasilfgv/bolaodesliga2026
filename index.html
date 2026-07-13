@@ -2970,9 +2970,9 @@ function getUserMaxSpecialPoints(participantId, state, elim) {
     const maxT = state.rules?.thirdPlace || 5;
     const defaultMax = maxC + maxR + maxT;
 
-    if (!state.specialPredictions) return defaultMax;
+        if (!state.specialPredictions) return 0;
     const mySp = Object.values(state.specialPredictions).find(s => s.participantId === participantId);
-    if (!mySp) return defaultMax;
+    if (!mySp) return 0;
     
     let c = mySp.champion;
     let r = mySp.runnerUp;

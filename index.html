@@ -2966,9 +2966,18 @@ function getEliminatedTeams(state) {
 }
 
 function getUserMaxSpecialPoints(participantId, state, elim) {
-    const maxC = state.rules?.champion || 15;
-    const maxR = state.rules?.runnerUp || 10;
-    const maxT = state.rules?.thirdPlace || 5;
+    let maxC = state.rules?.champion || 15;
+    let maxR = state.rules?.runnerUp || 10;
+    let maxT = state.rules?.thirdPlace || 5;
+
+    const finalMatch = state.matches.find(m => m.phase === 'Final');
+    if (finalMatch && finalMatch.status === 'finished') {
+        maxC = 0; maxR = 0;
+    }
+    const thirdMatch = state.matches.find(m => m.phase && m.phase.includes('Terceiro'));
+    if (thirdMatch && thirdMatch.status === 'finished') {
+        maxT = 0;
+    }
     const defaultMax = maxC + maxR + maxT;
 
         if (!state.specialPredictions) return 0;

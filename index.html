@@ -2938,11 +2938,10 @@ function getEliminatedTeams(state) {
             if (hG > aG) { loser = m.away; }
             else if (aG > hG) { loser = m.home; }
             else {
-                const hP = m.result.homePenalties;
-                const aP = m.result.awayPenalties;
-                if (hP !== undefined && aP !== undefined) {
-                    if (hP > aP) { loser = m.away; }
-                    else { loser = m.home; }
+                if (m.result.penaltyWinner === 'home' || m.result.penaltyWinner === m.home) {
+                    loser = m.away;
+                } else if (m.result.penaltyWinner === 'away' || m.result.penaltyWinner === m.away) {
+                    loser = m.home;
                 }
             }
             if (loser) {
@@ -2953,6 +2952,8 @@ function getEliminatedTeams(state) {
                 } else if (m.phase.includes('Semi')) {
                     eliminated.champion.add(loser);
                     eliminated.runnerUp.add(loser);
+                    const winner = loser === m.home ? m.away : m.home;
+                    eliminated.thirdPlace.add(winner);
                 } else {
                     eliminated.champion.add(loser);
                     eliminated.runnerUp.add(loser);

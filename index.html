@@ -2653,7 +2653,8 @@ const STORAGE = 'bolao_copa2026_v2';
 const SESSION_KEY = 'bolao_session_v1';
 const THEME_KEY = 'bolao_theme';
 const BRACKET_STYLE_KEY = 'bolao_bracket_style';
-const APP_VERSION = 'v1.6.0';
+const APP_VERSION = 'v1.7.0';
+const IS_ARCHIVED = true;
 let lastLoaded = null;
 let lastResultSaved = null;
 let lastRecalculated = null;
@@ -3312,6 +3313,11 @@ function mergeUserData(other){
 }
 
 async function saveState(){
+  if (IS_ARCHIVED) {
+    saveLocal();
+    showToast('Bolão encerrado. A base de dados está em modo somente-leitura.', 'info');
+    return true;
+  }
   state.meta = state.meta || {};
   state.meta.updatedAt = new Date().toISOString();
   state.meta.updatedBy = currentUser?.name || 'Sistema';
